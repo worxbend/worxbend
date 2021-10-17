@@ -1,0 +1,91 @@
+kind: pipeline
+type: docker
+name: test
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
+    - custom
+steps:
+  - name: test
+    image: golang:1.17
+    commands:
+      - echo Running tests...
+    when:
+      event:
+        - custom
+        - push
+      branch:
+        - main
+
+  - name: build
+    image: golang:1.17
+    commands:
+      - echo Building...
+    when:
+      event:
+        - push
+        - custom
+      branch:
+        - main
+
+  - name: publish
+    image: golang:1.17
+    commands:
+      - echo Publishing artifact
+    when:
+      event:
+        - push
+        - custom
+      branch:
+        - main
+
+  - name: docker-hub
+    image: golang:1.17
+    environment:
+      TEST_ENV: Test
+    commands:
+      - echo Docker Hub $TEST_ENV
+    when:
+      event:
+        - push
+        - custom
+      branch:
+        - main
+
+---
+kind: pipeline
+type: ssh
+name: ssh-connect
+
+trigger:
+  branch:
+    - main
+  event:
+    - custom
+    - push
+
+
+server:
+  host:
+    from_secret: SSH_HOST
+  user:
+    from_secret: SSH_LOGIN
+  password:
+    from_secret: SSH_PASS
+
+steps:
+  - name: command
+    commands:
+      - echo To be replaced with command for deployment
+    when:
+      event:
+        - push
+        - custom
+      branch:
+        - main
+
+depends_on:
+  - test

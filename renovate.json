@@ -1,0 +1,51 @@
+{
+  "assignAutomerge": true,
+  "schedule": [
+    "after 10pm every weekday",
+    "before 5am every weekday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "assignees": [
+    "@limpid-kzonix"
+  ],
+  "branchName": "feature/deps-{{{branchPrefix}}}{{{managerBranchPrefix}}}{{{branchTopic}}}",
+  "enabledManagers": [
+    "ansible",
+    "bazel",
+    "cargo",
+    "circleci",
+    "deps-edn",
+    "docker-compose",
+    "dockerfile",
+    "droneci",
+    "github-actions",
+    "gitlabci",
+    "gitlabci-include",
+    "gomod",
+    "gradle",
+    "gradle-wrapper",
+    "kubernetes",
+    "maven",
+    "npm",
+    "pip_requirements",
+    "pip_setup",
+    "pipenv",
+    "poetry",
+    "sbt",
+    "terraform",
+    "travis"
+  ],
+  "extends": [
+    "config:base"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security"
+    ],
+    "assignees": [
+      "@limpid-kzonix"
+    ]
+  }
+}

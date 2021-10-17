@@ -1,0 +1,15 @@
+@startuml
+package "plugins" {
+    [common-settings-plugin] as common_settings_plugin
+    [project-builder] as project_builder
+    [project-dependencies] as project_deps
+
+}
+
+package "applications" {
+    [redprime] as redprime
+    [Configuration Managements System] as helios
+    [Service Registry] as pharos
+}
+
+@enduml
