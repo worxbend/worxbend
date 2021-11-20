@@ -132,8 +132,8 @@ object Dependencies {
     val Akka                 = "2.6.15"
     val Jackson              = "2.12.4"
     val AlpakkaKafka         = "2.1.1"
-    val KafkaClients         = "2.7.0"
-    val Logback              = "1.2.5"
+    val KafkaClients         = "2.8.0"
+    val Logback              = "1.2.7"
     val MicrometerPrometheus = "1.7.4"
     val Atomix               = "3.1.10"
   }

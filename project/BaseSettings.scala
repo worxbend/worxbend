@@ -38,7 +38,7 @@ object BaseSettings {
     organization := "io.kzonix",
     organizationName := "Kzonix Projects",
     version := Utils.Versions.version(),
-    scalaVersion := "3.0.2",
+    scalaVersion := "3.1.0",
     scalacOptions := Seq[String](
       "-unchecked",
       "-deprecation",
