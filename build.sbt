@@ -4,30 +4,32 @@ import ProjectUtils._
 import com.typesafe.sbt.SbtNativePackager.Docker
 import sbt.Test
 
-/* -- START: Global Settings -- */
+/* -- BEGIN: Global Settings -- */
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / homepage := Some(url("https://recursive-escalator.io"))
 Global / startYear := Some(2018)
-
 /* -- END:   Global Settings  -- */
 
-lazy val commonSettings =
-  defaultSettings
+/* -- BEGIN: inThisBuild */
+ThisBuild / scalaVersion := "3.1.0"
 
-/* Root project
- * ---------------------------------------------------------------------------------------------------------------------
- * ---------------------------------------------------------------------------------------------------------------------
- * ---------------------------------------------------------------------------------------------------------------------
- * */
+/* -- END:   inThisBuild */
 
+lazy val commonSettings = defaultSettings
+
+/* -- BEGIN: Root project -- */
 lazy val `kzonix-mono` = (project in file("."))
   .settings(defaultSettings: _*)
   .settings(
     name := "kzonix-mono"
   )
+  .aggregate(`common-build-settings`)
 
-/*
- * ---------------------------------------------------------------------------------------------------------------------
- * ---------------------------------------------------------------------------------------------------------------------
- * ---------------------------------------------------------------------------------------------------------------------
- * */
+/* -- END:   Root project -- */
+
+/* -- BEGIN: Plugins -- */
+lazy val `common-build-settings` = ProjectRef(
+  file("plugins/common-build-settings"),
+  "common-build-settings"
+)
+
+/* -- END:   Plugins -- */

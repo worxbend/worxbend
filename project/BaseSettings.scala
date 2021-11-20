@@ -28,8 +28,7 @@ object BaseSettings {
     "-Ycheck-mods",
     "-Ycheck-reentrant",
     "-Ycook-comments",
-    "-Ydebug-error",
-    ""
+    "-Ydebug-error"
   )
 
   val defaultSettings: Seq[Setting[_]] = Seq(

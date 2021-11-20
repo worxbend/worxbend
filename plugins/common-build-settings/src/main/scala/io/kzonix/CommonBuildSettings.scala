@@ -4,13 +4,13 @@ import sbt._
 import sbt.Keys._
 import bloop.integrations.sbt.BloopDefaults
 import bloop.integrations.sbt.BloopPlugin.autoImport._
+import CompilerOptions._
 
 object CommonBuildSettings extends AutoPlugin {
 
   object autoImport {
 
     val IntTest = config("it").extend(IntegrationTest)
-    val Api     = config("api").extend(Default)
 
     val buildEnv   = settingKey[BuildOptions.Environment]("The build environment (`production`, `develop`)")
     val buildStage = settingKey[BuildOptions.BuildStage]("The build environment (`ci`, `gh-ci`, `other`)")
@@ -29,7 +29,10 @@ object CommonBuildSettings extends AutoPlugin {
 
   import autoImport._
 
-  override def projectSettings: Seq[Def.Setting[_]] = super.projectSettings
+  override def projectSettings: Seq[Def.Setting[_]] =
+    super.projectSettings ++ Seq(
+      scalacOptions := StandardOptions ++ AdvancedOptions
+    )
 
   override def globalSettings: Seq[Def.Setting[_]] = super.globalSettings
 
@@ -44,7 +47,7 @@ object CommonBuildSettings extends AutoPlugin {
 
   override val label: String = "CommonBuildSettings"
 
-  override def toString(): String = super.toString() + "(KzonixPlugin)"
+  override def toString(): String = super.toString() + "[KzonixPlugin]"
 
   override def projectConfigurations: Seq[Configuration] = super.projectConfigurations
 

@@ -1,35 +1,25 @@
-//import CompilerOptions._
+import Versions.Bloop
+import Versions.Scala
+import Versions.Sbt
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val `common-build-settings` = project in file(".")
+
+ThisBuild / sbtVersion := Sbt
+ThisBuild / scalaVersion := Scala
 
 ThisBuild / sbtPlugin := true
 ThisBuild / name := "CommonBuildSettings"
 ThisBuild / organizationName := "N/A"
 ThisBuild / organization := "io.kzonix"
 
-ThisBuild / dynverVTagPrefix := true
-ThisBuild / version ~= (
-  _.replace(
-    '+',
-    '-'
-  )
-)
-ThisBuild / dynver ~= (
-  _.replace(
-    '+',
-    '-'
-  )
-)
-ThisBuild / dynverSonatypeSnapshots := true
-ThisBuild / dynverSeparator := "-"
-
+ThisBuild / version := "0.0.1.0-SNAPSHOT"
 ThisBuild / versionScheme := Some("early-semver")
 
-ThisBuild / sbtVersion := "1.5.5"
-ThisBuild / scalaVersion := "2.12.15"
-ThisBuild / update / aggregate := false
+ThisBuild / update / aggregate := true
 ThisBuild / updateOptions := updateOptions.value
-  .withCachedResolution(true)
+  .withCachedResolution(false)
   .withLatestSnapshots(false)
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.11")
+
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % Bloop)

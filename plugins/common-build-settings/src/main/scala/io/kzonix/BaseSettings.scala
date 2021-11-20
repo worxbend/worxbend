@@ -8,6 +8,7 @@ import sbt.url
 
 object BaseSettings {
 
+  // TODO: move to another plugin
   val ProjectSettings: Seq[Def.Setting[_]] = Seq(
     description := "Project Description",
     startYear := Some(2020),
