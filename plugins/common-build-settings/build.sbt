@@ -7,6 +7,8 @@ ThisBuild / sbtPlugin := true
 ThisBuild / name := "CommonBuildSettings"
 ThisBuild / organizationName := "N/A"
 ThisBuild / organization := "io.kzonix"
+
+ThisBuild / dynverVTagPrefix := true
 ThisBuild / version ~= (
   _.replace(
     '+',
