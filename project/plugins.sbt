@@ -2,6 +2,12 @@ logLevel := util.Level.Debug
 ThisBuild / scalaVersion := "2.12.15"
 ThisBuild / sbtVersion := "1.5.5"
 
+dependsOn(
+  RootProject(file("../plugins/common-build-settings"))
+)
+
+
+
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.4.3")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter"  % "0.6.1")
 addSbtPlugin("io.gatling"        % "gatling-sbt"         % "3.2.2")
