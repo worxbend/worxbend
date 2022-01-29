@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           distribution: temurin
-          java-version: 13
+          java-version: 17.0.2+8
       - name: "Coursier cache"
         uses: coursier/cache-action@v6
       - name: "Build & Run tests"
