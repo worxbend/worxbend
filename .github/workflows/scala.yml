@@ -26,4 +26,4 @@ jobs:
       - name: "Coursier cache"
         uses: coursier/cache-action@v6
       - name: "Build & Run tests"
-        run: sbt -v +test
+        run: sbt -v test
