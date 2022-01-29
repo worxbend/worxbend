@@ -1,6 +1,5 @@
 import BaseSettings._
 import Dependencies._
-import ProjectUtils._
 import com.typesafe.sbt.SbtNativePackager.Docker
 import sbt.Test
 
@@ -18,12 +17,15 @@ lazy val commonSettings = defaultSettings
 
 /* -- BEGIN: Root project -- */
 lazy val `kzonix-mono` = (project in file("."))
-  .enablePlugins(CommonBuildSettings)
+  .enablePlugins(CommonBuildSettings, ProjectBuilder)
   .settings(defaultSettings: _*)
   .settings(
     name := "kzonix-mono"
   )
-  .aggregate(`common-build-settings`)
+  .aggregate(
+    `common-build-settings`,
+    `project-builder`
+  )
 
 /* -- END:   Root project -- */
 
@@ -31,6 +33,11 @@ lazy val `kzonix-mono` = (project in file("."))
 lazy val `common-build-settings` = ProjectRef(
   file("plugins/common-build-settings"),
   "common-build-settings"
+)
+
+lazy val `project-builder` = ProjectRef(
+  file("plugins/project-builder"),
+  "project-builder"
 )
 
 /* -- END:   Plugins -- */

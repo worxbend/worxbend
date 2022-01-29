@@ -96,7 +96,7 @@ object Dependencies {
     val scalatic   = ("org.scalactic"  %% "scalactic"  % ScalaTest).cross(CrossVersion.for3Use2_13)
     val scalaCheck = ("org.scalacheck" %% "scalacheck" % ScalaCheck).cross(CrossVersion.for3Use2_13)
 
-    val specs2                               = Seq(
+    val specs2: Seq[ModuleID]                = Seq(
       "specs2-mock",
       "specs2-shapeless",
       "specs2-fp",
@@ -115,27 +115,26 @@ object Dependencies {
 
   private[Dependencies] object Versions {
     val TypesafeConfig       = "1.4.1"
-    val ScalaGuice           = "5.0.1"
+    val ScalaGuice           = "5.0.2"
     val Circe                = "0.14.0"
     val Monix                = "3.4.0"
-    val Cats                 = "2.6.1"
-    val CatsEffect           = "3.2.1"
+    val Cats                 = "2.7.0"
+    val CatsEffect           = "3.3.4"
     val CatsMtl              = "1.2.1"
     val PureConfig           = "0.15.0"
     val ScalaLogging         = "3.9.4"
     val Enumeratum           = "1.7.0"
     // Test dependencies
-    val ScalaMock            = "5.1.0"
+    val ScalaMock            = "5.2.0"
     val ScalaCheck           = "1.15.4"
     val ScalaTest            = "3.2.9"
     val Specs2               = "4.12.0"
-    val Akka                 = "2.6.15"
+    val Akka                 = "2.6.18"
     val Jackson              = "2.12.4"
     val AlpakkaKafka         = "2.1.1"
     val KafkaClients         = "2.8.0"
-    val Logback              = "1.2.7"
-    val MicrometerPrometheus = "1.7.4"
-    val Atomix               = "3.1.10"
+    val Logback              = "1.2.10"
+    val MicrometerPrometheus = "1.8.2"
   }
 
 }
