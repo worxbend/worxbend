@@ -9,4 +9,7 @@ ThisBuild / publishLocalConfiguration := publishLocalConfiguration.value.withOve
 
 githubOwner := "kzonix"
 githubRepository := "kzonix-nova"
-githubTokenSource := TokenSource.GitConfig("github.token")
+githubTokenSource := TokenSource.Or(
+  TokenSource.Environment("GITHUB_TOKEN"),
+  TokenSource.GitConfig("github.token")
+)
