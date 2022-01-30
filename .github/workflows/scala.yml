@@ -27,8 +27,7 @@ jobs:
 
       - uses: openlawteam/scalafmt-ci@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          compare-branch: 'origin/${{github.base_ref}}'
+          args: "--list"
   build:
     runs-on: ubuntu-latest
     env:
