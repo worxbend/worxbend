@@ -17,17 +17,6 @@ on:
       - "build.sbt"
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Checkout repository"
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-
-      - uses: openlawteam/scalafmt-ci@v2
-        with:
-          args: "--list"
   build:
     runs-on: ubuntu-latest
     env:
@@ -48,3 +37,18 @@ jobs:
         uses: coursier/cache-action@v6
       - name: "Build & Run tests"
         run: sbt -v test
+      - name: "Scalafmt"
+        run: sbt scalafmtAll
+      - name: "Verify Changed files"
+        uses: tj-actions/verify-changed-files@v8.8
+        id: verify-changed-files
+        with:
+          files: |
+            .(sbt|scala)$
+      - uses: matheusalbino/git-commit@v1.1.0
+        with:
+          user-name: "scalafmt"
+          user-email: balyszyn@gmail.com
+          message: This a commit from Github Actions
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.base_ref }} # default value
