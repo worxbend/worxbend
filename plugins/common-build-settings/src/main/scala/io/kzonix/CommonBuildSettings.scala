@@ -4,11 +4,7 @@ import bloop.integrations.sbt.BloopDefaults
 import sbt.Def
 import sbt.*
 import CompilerOptions.*
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-import com.typesafe.sbt.packager.docker.DockerPlugin
-import de.heikoseeberger.sbtheader.AutomateHeaderPlugin
 import sbt.Keys.*
-import sbt.plugins.JvmPlugin
 
 object CommonBuildSettings extends AutoPlugin {
 

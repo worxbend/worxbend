@@ -22,8 +22,10 @@ jobs:
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
 
-      - uses: stringbean/scalafmt-action@v2
+      - uses: openlawteam/scalafmt-ci@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           compare-branch: 'origin/${{github.base_ref}}'
