@@ -3,6 +3,10 @@ name: Scala CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - "applications/**"
+      - "libs/**"
+      - "build.sbt"
   pull_request:
     branches: [ main ]
 
