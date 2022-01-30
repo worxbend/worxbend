@@ -51,7 +51,7 @@ object CommonBuildSettings extends AutoPlugin {
     * remove the burden of ordering from the user, allowing the plugin authors greater freedom and power when providing
     * feature for their users.
     */
-  override def trigger = super.trigger
+  override def trigger = allRequirements
 
   /** The requires method returns a value of type Plugins, which is a DSL for constructing the dependency list. The
     * requires method typically contains one of the following values:

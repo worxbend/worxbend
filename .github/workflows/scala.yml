@@ -6,6 +6,7 @@ on:
     paths:
       - "applications/**"
       - "libs/**"
+      - "plugins/**"
       - "build.sbt"
   pull_request:
     branches: [ main ]
