@@ -74,3 +74,5 @@ jobs:
           # The message for the commit.
           # Default: 'Commit from GitHub Actions (name of the workflow)'
           message: 'Your commit message'
+
+          push: origin "${{github.base_ref}}" "${{github.head_ref}}"
