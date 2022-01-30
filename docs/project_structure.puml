@@ -8,6 +8,8 @@ package "plugins" {
 
 package "applications" {
     [redprime] as redprime
+    [Configuration Managements System] as helios
+    [Service Registry] as pharos
 }
 
 @enduml
