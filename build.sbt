@@ -17,7 +17,10 @@ lazy val commonSettings = defaultSettings
 
 /* -- BEGIN: Root project -- */
 lazy val `kzonix-mono` = (project in file("."))
-  .enablePlugins(CommonBuildSettings, ProjectBuilder)
+  .enablePlugins(
+    CommonBuildSettings,
+    ProjectBuilder
+  )
   .settings(defaultSettings: _*)
   .settings(
     name := "kzonix-mono"
