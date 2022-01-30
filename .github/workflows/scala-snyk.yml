@@ -6,9 +6,18 @@ name: Scala using Snyk
 on:
   push:
     branches: [ main ]
+    paths:
+      - "applications/**"
+      - "libs/**"
+      - "plugins/**"
+      - "build.sbt"
   pull_request:
     branches: [ main ]
-
+    paths:
+      - "applications/**"
+      - "libs/**"
+      - "plugins/**"
+      - "build.sbt"
 jobs:
   security:
     runs-on: ubuntu-latest
