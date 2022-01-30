@@ -5,8 +5,8 @@ object BuildOptions {
   sealed trait Environment
 
   object Environment {
-    case object Production extends Environment
-    case object Develop    extends Environment {}
+    case object Production        extends Environment
+    case object Develop               extends Environment {}
   }
 
   sealed trait BuildStage
