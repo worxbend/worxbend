@@ -39,4 +39,5 @@ object ProjectBuilder extends AutoPlugin {
   override def derivedProjects(proj: ProjectDefinition[_]) = super.derivedProjects(proj)
 
   override def allRequirements: PluginTrigger = super.allRequirements
+
 }
