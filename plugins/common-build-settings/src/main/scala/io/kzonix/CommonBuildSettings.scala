@@ -69,7 +69,6 @@ object CommonBuildSettings extends AutoPlugin {
   override def allRequirements: PluginTrigger = super.allRequirements
 
   lazy val printRequiredPlugins = Def.task {
-
     println("")
   }
 

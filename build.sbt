@@ -27,7 +27,8 @@ lazy val `kzonix-mono` = (project in file("."))
   )
   .aggregate(
     `common-build-settings`,
-    `project-builder`
+    `project-builder`,
+    `project-dependencies`,
   )
 
 /* -- END:   Root project -- */
@@ -41,6 +42,12 @@ lazy val `common-build-settings` = ProjectRef(
 lazy val `project-builder` = ProjectRef(
   file("plugins/project-builder"),
   "project-builder"
+)
+
+
+lazy val `project-dependencies` = ProjectRef(
+  file("plugins/project-dependencies"),
+  "project-dependencies"
 )
 
 /* -- END:   Plugins -- */

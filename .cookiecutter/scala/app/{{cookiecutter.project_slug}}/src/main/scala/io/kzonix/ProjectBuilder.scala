@@ -4,7 +4,6 @@ import sbt._
 import sbt.Keys._
 import bloop.integrations.sbt.BloopDefaults
 import bloop.integrations.sbt.BloopPlugin.autoImport._
-
 import ProjectDefaults.ProjectSettings
 import ProjectDefaults.OrganizationSettings
 
