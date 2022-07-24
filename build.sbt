@@ -1,11 +1,12 @@
 import BaseSettings._
+
 import Dependencies._
 import com.typesafe.sbt.SbtNativePackager.Docker
 import sbt.Test
 
 /* -- BEGIN: Global Settings -- */
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / startYear := Some(2018)
+Global / startYear            := Some(2018)
 /* -- END:   Global Settings  -- */
 
 /* -- BEGIN: inThisBuild */
@@ -19,7 +20,7 @@ lazy val commonSettings = defaultSettings
 lazy val `kzonix-mono` = (project in file("."))
   .enablePlugins(
     CommonBuildSettings,
-    ProjectBuilder
+    ProjectBuilder,
   )
   .settings(defaultSettings: _*)
   .settings(
@@ -29,6 +30,7 @@ lazy val `kzonix-mono` = (project in file("."))
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
+    `nerd-galaxy`,
   )
 
 /* -- END:   Root project -- */
@@ -36,18 +38,24 @@ lazy val `kzonix-mono` = (project in file("."))
 /* -- BEGIN: Plugins -- */
 lazy val `common-build-settings` = ProjectRef(
   file("plugins/common-build-settings"),
-  "common-build-settings"
+  "common-build-settings",
 )
 
 lazy val `project-builder` = ProjectRef(
   file("plugins/project-builder"),
-  "project-builder"
+  "project-builder",
 )
-
 
 lazy val `project-dependencies` = ProjectRef(
   file("plugins/project-dependencies"),
-  "project-dependencies"
+  "project-dependencies",
 )
 
+/* -- END:   Plugins -- */
+
+/* -- BEGIN: Application -- */
+lazy val `nerd-galaxy` = ProjectRef(
+  file("applications/nerd-galaxy"),
+  "nerd-galaxy",
+)
 /* -- END:   Plugins -- */
