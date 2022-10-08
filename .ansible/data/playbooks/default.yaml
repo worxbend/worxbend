@@ -1,0 +1,16 @@
+- hosts: rpi:rock
+  name: Network Getting Started First Playbook
+  connection: ansible.builtin.ssh
+  tasks:
+    - name: Update cache.
+      apt: update_cache=yes
+      changed_when: false
+      become: yes
+
+    - name: Upgrade all packages
+      apt: upgrade=yes
+      become: yes
+
+    - name: Run auto-remove
+      apt: autoremove=yes
+      become: yes

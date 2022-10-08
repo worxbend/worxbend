@@ -1,0 +1,32 @@
+rpi:
+  hosts:
+    rpi1:
+      ansible_connection: ssh
+      ansible_user: ubuntu
+      ansible_host: 192.168.1.151
+    rpi2:
+      ansible_connection: ssh
+      ansible_user: ubuntu
+      ansible_host: 192.168.1.152
+    rpi3:
+      ansible_connection: ssh
+      ansible_user: ubuntu
+      ansible_host: 192.168.1.153
+    rpi4:
+      ansible_connection: ssh
+      ansible_user: ubuntu
+      ansible_host: 192.168.1.154
+rock:
+  hosts:
+    rock1:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.171
+    rock2:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.172
+    rock3:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.173

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  ansible-controller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        username: alpine
+    volumes:
+      - ./data/etc/ansible:/etc/ansible
+      - ./data/playbooks:/home/alpine/playbooks
+      - ./start.sh:/home/alpine/start.sh:rwx
+    env_file:
+      - .env

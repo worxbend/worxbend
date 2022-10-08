@@ -1,12 +1,12 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / scalaVersion := "2.12.15"
-ThisBuild / sbtVersion := "1.5.5"
-ThisBuild / useSuperShell := false
+ThisBuild / scalaVersion    := "2.12.15"
+ThisBuild / sbtVersion      := "1.5.5"
+ThisBuild / useSuperShell   := false
 ThisBuild / autoStartServer := false
 
 ThisBuild / update / evictionWarningOptions := EvictionWarningOptions.empty
-update / evictionWarningOptions := EvictionWarningOptions.empty
+update / evictionWarningOptions             := EvictionWarningOptions.empty
 
 addDependencyTreePlugin
 

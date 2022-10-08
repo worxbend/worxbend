@@ -15,7 +15,6 @@ ThisBuild / sbtVersion := Sbt
  * to the latest too.
  * */
 
-ThisBuild / sbtPlugin := true
 ThisBuild / name := "{{cookiecutter.project_name}}"
 ThisBuild / organizationName := "{{cookiecutter.organization_name}}"
 ThisBuild / organization := "{{cookiecutter.organization_package}}"
