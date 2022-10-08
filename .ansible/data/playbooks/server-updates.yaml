@@ -1,4 +1,4 @@
-- hosts: rpi:rock
+- hosts: rock
   name: Network Getting Started First Playbook
   connection: ansible.builtin.ssh
   tasks:
