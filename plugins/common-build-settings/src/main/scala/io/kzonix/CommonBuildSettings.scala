@@ -1,6 +1,5 @@
 package io.kzonix
 
-import bloop.integrations.sbt.BloopDefaults
 import sbt.Def
 import sbt.*
 import CompilerOptions.*
@@ -21,8 +20,7 @@ object CommonBuildSettings extends AutoPlugin {
           Seq(
             IntegrationTest / parallelExecution := false,
             IntegrationTest / scalaSource := baseDirectory.value / "src/it/scala"
-          ) ++
-          BloopDefaults.configSettings
+          )
       )
 
     val printPluginDependencies = taskKey[Unit]("It prints all the plugins")
@@ -30,7 +28,7 @@ object CommonBuildSettings extends AutoPlugin {
 
   override def projectSettings: Seq[Def.Setting[?]] =
     super.projectSettings ++ Seq(
-      ThisBuild / scalacOptions := StandardOptions ++ AdvancedOptions
+      ThisBuild / scalacOptions := Seq.empty //StandardOptions ++ AdvancedOptions
     )
 
   override def globalSettings: Seq[Def.Setting[?]] = super.globalSettings

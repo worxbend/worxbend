@@ -1,10 +1,7 @@
 import sbt.Keys._
 import sbt.Resolver
 import sbt.Setting
-import sbt.url
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
 import scala.language.postfixOps
 
 object BaseSettings {

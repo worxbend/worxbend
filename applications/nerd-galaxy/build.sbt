@@ -2,18 +2,16 @@ import sbtassembly.AssemblyPlugin.defaultShellScript
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-val AkkaVersion     = "2.6.19"
-val AkkaHttpVersion = "10.2.9"
-val TapirVersion    = "1.0.0-RC1"
-val CirceVersion    = "0.14.2"
+val AkkaVersion     = "2.7.0"
+val AkkaHttpVersion = "10.4.0"
+val TapirVersion    = "1.2.8"
+val CirceVersion    = "0.14.4"
 val Http4sVersion   = "1.0.0-M32"
-val MacwireVersion  = "2.5.7"
+val MacwireVersion  = "2.5.8"
 
-ThisBuild / scalaVersion               := "2.13.8"
+ThisBuild / scalaVersion               := "3.2.0"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
-ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
-Global / scalafixScalaBinaryVersion    := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
 lazy val commonSettings =
   commonScalacOptions ++ Seq(
@@ -56,46 +54,31 @@ lazy val `nerd-galaxy` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     libraryDependencies ++= Seq(
-      "commons-io"                   % "commons-io"               % "2.11.0",
+      "commons-io"                   % "commons-io"               % "20030203.000550",
       "org.apache.commons"           % "commons-math"             % "2.2",
       "org.scala-lang.modules"      %% "scala-java8-compat"       % "1.0.2",
-      "org.slf4j"                    % "slf4j-api"                % "1.7.9",
-      "org.reactivemongo"           %% "reactivemongo-scalafix"   % "1.1.0-RC4",
-      "org.mongodb.scala"           %% "mongo-scala-driver"       % "4.6.0",
-      "com.github.pureconfig"       %% "pureconfig"               % "0.17.1",
+      "org.slf4j"                    % "slf4j-api"                % "2.0.5",
       "com.typesafe"                 % "config"                   % "1.4.2",
       "com.typesafe.scala-logging"  %% "scala-logging"            % "3.9.5",
-      "ch.qos.logback"               % "logback-classic"          % "1.2.11",
-      "io.kamon"                    %% "kamon-core"               % "2.5.3",
-      "io.kamon"                    %% "kamon-system-metrics"     % "2.5.3",
-      "io.kamon"                    %% "kamon-testkit"            % "2.5.3"      % Test,
+      "ch.qos.logback"               % "logback-classic"          % "1.4.5",
+      "io.kamon"                    %% "kamon-core"               % "2.6.0",
+      "io.kamon"                    %% "kamon-system-metrics"     % "2.6.0",
+      "io.kamon"                    %% "kamon-testkit"            % "2.6.0"      % Test,
       "io.circe"                    %% "circe-core"               % CirceVersion,
       "io.circe"                    %% "circe-generic"            % CirceVersion,
       "io.circe"                    %% "circe-parser"             % CirceVersion,
       "io.circe"                    %% "circe-testing"            % CirceVersion % Test,
-      "io.circe"                    %% "circe-generic-extras"     % CirceVersion,
       "io.circe"                    %% "circe-jawn"               % CirceVersion,
-      "org.typelevel"               %% "cats-core"                % "2.7.0",
-      "org.typelevel"               %% "cats-effect"              % "3.3.12",
-      "org.typelevel"               %% "cats-mtl"                 % "1.2.0",
+      "org.typelevel"               %% "cats-core"                % "2.9.0",
+      "org.typelevel"               %% "cats-effect"              % "3.4.7",
+      "org.typelevel"               %% "cats-mtl"                 % "1.3.0",
       "org.typelevel"               %% "kittens"                  % "3.0.0-M4",
-      "org.typelevel"               %% "cats-collections-core"    % "0.9.0",
-      "com.typesafe.akka"           %% "akka-slf4j"               % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-actor-typed"         % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-actor"               % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-discovery"           % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-coordination"        % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-cluster-typed"       % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-stream"              % AkkaVersion,
-      "com.typesafe.akka"           %% "akka-actor-testkit-typed" % AkkaVersion  % Test,
-      "com.typesafe.akka"           %% "akka-testkit"             % AkkaVersion  % Test,
-      "com.typesafe.akka"           %% "akka-http"                % AkkaHttpVersion,
-      "com.typesafe.akka"           %% "akka-http-testkit"        % AkkaHttpVersion,
+      "org.typelevel"               %% "cats-collections-core"    % "0.9.5",
+
       "com.softwaremill.sttp.tapir" %% "tapir-core"               % TapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"  % TapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-redoc-bundle"       % TapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % TapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server"   % TapirVersion,
       "com.softwaremill.macwire"    %% "macros"                   % MacwireVersion,
       "com.softwaremill.macwire"    %% "util"                     % MacwireVersion,
       "com.softwaremill.macwire"    %% "proxy"                    % MacwireVersion,

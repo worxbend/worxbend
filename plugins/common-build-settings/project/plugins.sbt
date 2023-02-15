@@ -1,19 +1,15 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / sbtVersion := "1.6.1"
-ThisBuild / useSuperShell := false
+ThisBuild / sbtVersion      := "1.8.2"
+ThisBuild / useSuperShell   := false
 ThisBuild / autoStartServer := false
 
 ThisBuild / update / evictionWarningOptions := EvictionWarningOptions.empty
 
 addDependencyTreePlugin
 
-addSbtPlugin("com.codecommit"    % "sbt-github-packages" % "0.5.3")
-addSbtPlugin("com.dwijnand"      % "sbt-dynver"          % "4.1.1")
-
-addSbtPlugin("ch.epfl.scala"     % "sbt-bloop"           % "1.4.11")
-addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.4.6")
-addSbtPlugin("com.github.sbt"    % "sbt-unidoc"          % "0.5.0")
-addSbtPlugin("com.typesafe.sbt"  % "sbt-git"             % "1.0.2")
-addSbtPlugin("de.heikoseeberger" % "sbt-header"          % "5.6.0")
-addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.8.1")
+addSbtPlugin("com.github.sbt"   % "sbt-git"             % "2.0.0")
+addSbtPlugin("com.timushev.sbt" % "sbt-rewarn"          % "0.1.3")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates"         % "0.6.4")
+addSbtPlugin("io.spray"         % "sbt-revolver"        % "0.9.1")
+addSbtPlugin("org.scalameta"    % "sbt-scalafmt"        % "2.5.0")

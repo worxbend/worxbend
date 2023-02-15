@@ -1,13 +1,11 @@
-import Versions.Bloop
 
-import Versions.Scala
-import Versions.Sbt
+import Versions._
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val `project-dependencies` = project in file(".")
 
-ThisBuild / sbtVersion       := Sbt
+ThisBuild / sbtVersion       := SbtVersion
 /*
  * sbt plugins must be compiled with Scala 2.12.x that sbt itself is compiled in.
  * By NOT specifying scalaVersion, sbt will default to the Scala version suited for a plugin.
@@ -30,4 +28,3 @@ ThisBuild / updateOptions      := updateOptions
   .withCachedResolution(false)
   .withLatestSnapshots(false)
 
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % Bloop)
