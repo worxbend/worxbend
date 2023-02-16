@@ -10,7 +10,7 @@ Global / startYear            := Some(2018)
 /* -- END:   Global Settings  -- */
 
 /* -- BEGIN: inThisBuild */
-ThisBuild / scalaVersion := "3.1.0"
+ThisBuild / scalaVersion := "3.2.2"
 
 /* -- END:   inThisBuild */
 
@@ -30,11 +30,10 @@ lazy val `kzonix-mono` = (project in file("."))
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
-    `nerd-galaxy`,
+    `felis`,
     `cetus`,
   )
-
-/* -- END:   Root project -- */
+/* -- END: Root project -- */
 
 /* -- BEGIN: Plugins -- */
 lazy val `common-build-settings` = ProjectRef(
@@ -51,23 +50,18 @@ lazy val `project-dependencies` = ProjectRef(
   file("plugins/project-dependencies"),
   "project-dependencies",
 )
-
-/* -- END:   Plugins -- */
+/* -- END: Plugins -- */
 
 /* -- BEGIN: Applications -- */
-lazy val `nerd-galaxy` = ProjectRef(
-  file("applications/nerd-galaxy"),
-  "nerd-galaxy",
+lazy val `felis` = ProjectRef(
+  file("applications/felis"),
+  "felis",
 )
-
 /* ------------------------- */
-
-
-lazy val `cetus` = ProjectRef(
+lazy val `cetus`       = ProjectRef(
   file("applications/cetus"),
   "cetus",
 )
-
 /* ------------------------- */
 
-/* -- END:   Applications -- */
+/* -- END: Applications -- */

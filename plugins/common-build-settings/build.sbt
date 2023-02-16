@@ -1,8 +1,6 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val `common-build-settings` = project in file(".")
-
-ThisBuild / sbtVersion := "1.8.2"
 /*
  * sbt plugins must be compiled with Scala 2.12.x that sbt itself is compiled in.
  * By NOT specifying scalaVersion, sbt will default to the Scala version suited for a plugin.

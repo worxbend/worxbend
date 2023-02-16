@@ -14,20 +14,23 @@ lazy val commonSettings =
   )
 
 lazy val commonScalacOptions = Seq(
-  Compile / console / scalacOptions := ScalacOptions.Common,
+  Compile / console / scalacOptions --= Seq(
+    "-Wunused:_",
+    "-Xfatal-warnings",
+  ),
   Test / console / scalacOptions :=
     (Compile / console / scalacOptions).value,
 )
 
-lazy val `cetus` = (project in file("."))
+lazy val `felis` = (project in file("."))
   .enablePlugins(
     UniversalPlugin,
     JavaAppPackaging,
   )
   .settings(commonSettings)
   .settings(
-    name                             := "cetus",
-    Compile / mainClass              := Some("io.kzonix.cetus.Main"),
+    name                             := "felis",
+    Compile / mainClass              := Some("io.kzonix.felis.Main"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
