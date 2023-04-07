@@ -27,6 +27,7 @@ lazy val `kzonix-mono` = (project in file("."))
     `project-dependencies`,
     `felis`,
     `cetus`,
+    `meeter`
   )
 /* -- END: Root project -- */
 
@@ -56,6 +57,13 @@ lazy val `felis` = ProjectRef(
 lazy val `cetus` = ProjectRef(
   file("applications/cetus"),
   "cetus",
+)
+/* ------------------------- */
+
+/* ------------------------- */
+lazy val `meeter` = ProjectRef(
+  file("applications/meeter"),
+  "meeter",
 )
 /* ------------------------- */
 
