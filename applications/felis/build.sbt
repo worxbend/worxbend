@@ -14,11 +14,8 @@ lazy val commonSettings =
   )
 
 lazy val commonScalacOptions = Seq(
-  Compile / console / scalacOptions --= Seq(
-    "-Wunused:_",
-    "-Xfatal-warnings",
-  ),
-  Test / console / scalacOptions :=
+  Compile / console / scalacOptions := ScalacOptions.Common,
+  Test / console / scalacOptions    :=
     (Compile / console / scalacOptions).value,
 )
 

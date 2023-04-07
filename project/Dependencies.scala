@@ -6,6 +6,7 @@ import sbt._
 import scala.language.postfixOps
 
 object Dependencies {
+
   import Test._
   import Versions._
 
@@ -13,7 +14,7 @@ object Dependencies {
     Seq(
       libraryDependencies ++= Seq(
         scalaGuice,
-        scalaLogging
+        scalaLogging,
       )
     )
 
@@ -24,7 +25,7 @@ object Dependencies {
           scalaTest,
           scalatic,
           scalaCheck,
-          scalaMock
+          scalaMock,
         ) ++
           specs2)
           .map(testDependency)
@@ -41,7 +42,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-stream"                % Akka,
     "com.typesafe.akka" %% "akka-actor-typed"           % Akka,
     "com.typesafe.akka" %% "akka-slf4j"                 % Akka,
-    "com.typesafe.akka" %% "akka-serialization-jackson" % Akka
+    "com.typesafe.akka" %% "akka-serialization-jackson" % Akka,
   ).map(_.cross(CrossVersion.for3Use2_13))
 
   val config = Seq(
@@ -50,7 +51,7 @@ object Dependencies {
 
   val akkaTest: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % Akka,
-    "com.typesafe.akka" %% "akka-stream-testkit"      % Akka
+    "com.typesafe.akka" %% "akka-stream-testkit"      % Akka,
   ).map(testDependency)
     .map(_.cross(CrossVersion.for3Use2_13))
 
@@ -63,30 +64,30 @@ object Dependencies {
     "circe-jawn",
     "circe-testing",
     "circe-shapes",
-    "circe-refined" // ?
+    "circe-refined", // ?
   ).map(artifact => "io.circe" %% artifact % Circe)
     .map(_.cross(CrossVersion.for3Use2_13))
 
-  val monix: Seq[ModuleID]      = Seq(
+  val monix: Seq[ModuleID] = Seq(
     "monix"
   ).map(artifact => "io.monix" %% artifact % Monix)
 
   val pureConfig: Seq[ModuleID] = Seq(
     "pureconfig",
     "pureconfig-cats",
-    "pureconfig-circe"
+    "pureconfig-circe",
   ).map(artifact => "com.github.pureconfig" %% artifact % PureConfig)
     .map(_.cross(CrossVersion.for3Use2_13))
 
   val micrometerPrometheus: Seq[ModuleID] = Seq(
     "io.micrometer" % "micrometer-registry-prometheus" % MicrometerPrometheus,
-    "io.micrometer" % "micrometer-core"                % MicrometerPrometheus
+    "io.micrometer" % "micrometer-core"                % MicrometerPrometheus,
   )
 
   val cats: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-core"   % Cats,
     "org.typelevel" %% "cats-effect" % CatsEffect,
-    "org.typelevel" %% "cats-mtl"    % CatsMtl
+    "org.typelevel" %% "cats-mtl"    % CatsMtl,
   )
 
   object Test {
@@ -96,7 +97,7 @@ object Dependencies {
     val scalatic   = ("org.scalactic"  %% "scalactic"  % ScalaTest).cross(CrossVersion.for3Use2_13)
     val scalaCheck = ("org.scalacheck" %% "scalacheck" % ScalaCheck).cross(CrossVersion.for3Use2_13)
 
-    val specs2: Seq[ModuleID]                = Seq(
+    val specs2: Seq[ModuleID] = Seq(
       "specs2-mock",
       "specs2-shapeless",
       "specs2-fp",
@@ -106,7 +107,7 @@ object Dependencies {
       "specs2-matcher",
       "specs2-core",
       "specs2-common",
-      "specs2-cats"
+      "specs2-cats",
     ).map(artifact => "org.specs2" %% artifact % Specs2)
 
     def testDependency: ModuleID => ModuleID = (module: ModuleID) => module % "test"
@@ -114,6 +115,7 @@ object Dependencies {
   }
 
   private[Dependencies] object Versions {
+
     val TypesafeConfig       = "1.4.1"
     val ScalaGuice           = "5.0.2"
     val Circe                = "0.14.0"
@@ -135,6 +137,7 @@ object Dependencies {
     val KafkaClients         = "2.8.0"
     val Logback              = "1.2.10"
     val MicrometerPrometheus = "1.8.2"
+
   }
 
 }

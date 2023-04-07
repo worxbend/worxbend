@@ -1,0 +1,21 @@
+package io.kzonix.cetus.routes.models
+
+import zio.json.DeriveJsonEncoder
+import zio.json.JsonEncoder
+import zio.json.SnakeCase
+import zio.json.jsonMemberNames
+
+@jsonMemberNames(SnakeCase)
+case class ServerInfo(
+    id:         String,
+    hostname:   String,
+    url:        String,
+    method:     String,
+    ip:         List[String],
+    headers:    Map[String, String],
+    host:       String,
+    remoteAddr: String,
+  )
+
+object ServerInfo:
+  implicit val encoder: JsonEncoder[ServerInfo] = DeriveJsonEncoder.gen[ServerInfo]

@@ -2,13 +2,20 @@
 <configuration>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
         <encoder>
             <pattern>[%cyan(%date{ISO8601})] [%yellow(%-5.100thread{10})] [%highlight(%-5.15level)] [%magenta(%-10.100logger{10})] - %msg %red(%ex{full}) %n
             </pattern>
         </encoder>
+    </appender>
+
+    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+            <jsonFormatter
+                    class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+
+            </jsonFormatter>
+            <timestampFormat>yyyy-MM-dd' 'HH:mm:ss.SSS</timestampFormat>
+        </layout>
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -18,8 +25,8 @@
             <fileNamePattern>app_%d{yyyy-MM-dd}.log</fileNamePattern>
         </rollingPolicy>
         <encoder>
-            <pattern>[%date{ISO8601}] [%-5.100thread{10}] [%-5.15level] [%-15.150logger{15}] - %msg %ex{full}%n</pattern>
-
+            <pattern>[%date{ISO8601}] [%-5.100thread{10}] [%-5.15level] [%-15.150logger{15}] - %msg %ex{full}%n
+            </pattern>
         </encoder>
     </appender>
 
@@ -37,7 +44,7 @@
 
 
     <root level="INFO">
-        <appender-ref ref="ASYNC-STDOUT"/>
-        <appender-ref ref="ASYNC-FILE"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>

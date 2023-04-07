@@ -1,9 +1,5 @@
 import BaseSettings._
 
-import Dependencies._
-import com.typesafe.sbt.SbtNativePackager.Docker
-import sbt.Test
-
 /* -- BEGIN: Global Settings -- */
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / startYear            := Some(2018)
@@ -11,7 +7,6 @@ Global / startYear            := Some(2018)
 
 /* -- BEGIN: inThisBuild */
 ThisBuild / scalaVersion := "3.2.2"
-
 /* -- END:   inThisBuild */
 
 lazy val commonSettings = defaultSettings
@@ -40,13 +35,13 @@ lazy val `common-build-settings` = ProjectRef(
   file("plugins/common-build-settings"),
   "common-build-settings",
 )
-
-lazy val `project-builder` = ProjectRef(
+/* ------------------------- */
+lazy val `project-builder`       = ProjectRef(
   file("plugins/project-builder"),
   "project-builder",
 )
-
-lazy val `project-dependencies` = ProjectRef(
+/* ------------------------- */
+lazy val `project-dependencies`  = ProjectRef(
   file("plugins/project-dependencies"),
   "project-dependencies",
 )
@@ -58,7 +53,7 @@ lazy val `felis` = ProjectRef(
   "felis",
 )
 /* ------------------------- */
-lazy val `cetus`       = ProjectRef(
+lazy val `cetus` = ProjectRef(
   file("applications/cetus"),
   "cetus",
 )

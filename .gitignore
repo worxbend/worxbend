@@ -474,3 +474,4 @@ project/plugins/project/
 ### dot Env
 **/.env
 docker/lenses/.env
+/docs/obsidian/worxbend/.obsidian/
