@@ -20,7 +20,7 @@ import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
-import io.kzonix.cetus.routes.models.ServerInfo
+import io.kzonix.cetus.routes.models.ServerInfoResponse
 
 import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
@@ -45,7 +45,7 @@ class ServerInfoRoutes(serverConfig: ServerConfig) extends AppRoutes[Client, Thr
     val method  = req.method.toString
     val headers = req.headers.map(h => (h.key.toString, h.value.toString)).toMap
 
-    ServerInfo(
+    ServerInfoResponse(
       id = host,
       hostname = host,
       url = path,

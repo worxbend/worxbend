@@ -28,7 +28,7 @@ lazy val `meeter` = (project in file("."))
   .settings(commonSettings)
   .settings(
     name                             := "cetus",
-    Compile / mainClass              := Some("io.kzonix.meeter.CetusApp"),
+    Compile / mainClass              := Some("io.kzonix.meeter.MeeterApp"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
@@ -48,23 +48,16 @@ lazy val `meeter` = (project in file("."))
     },
     libraryDependencies ++= Seq(
       "dev.zio"                    %% "zio"                    % "2.0.10",
-      "dev.zio" %% "zio-streams" % "2.0.10",
-      "dev.zio" %% "zio-config" % "4.0.0-RC12",
-      "dev.zio" %% "zio-config-magnolia" % "4.0.0-RC12",
-      "dev.zio" %% "zio-config-typesafe" % "4.0.0-RC12",
-      "dev.zio" %% "zio-config-refined" % "4.0.0-RC12",
+      "dev.zio"                    %% "zio-streams"            % "2.0.10",
+      "dev.zio"                    %% "zio-config"             % "4.0.0-RC14",
+      "dev.zio"                    %% "zio-config-magnolia"    % "4.0.0-RC14",
+      "dev.zio"                    %% "zio-config-typesafe"    % "4.0.0-RC14",
       "dev.zio"                    %% "zio-http"               % "0.0.5",
       "dev.zio"                    %% "zio-json"               % "0.5.0",
       "dev.zio"                    %% "zio-logging"            % "2.1.11",
-      "dev.zio"                    %% "zio-logging-slf4j2"     % "2.1.11",
       "dev.zio"                    %% "zio-metrics-connectors" % "2.0.7",
-      /* */
+      "dev.zio"                    %% "zio-nio"                % "2.0.1",
       "org.scala-lang.modules"     %% "scala-java8-compat"     % "1.0.2",
-      "com.typesafe.scala-logging" %% "scala-logging"          % "3.9.5",
-      /* */
-      /**/
-      "org.slf4j"                   % "slf4j-api"              % "2.0.5",
-      "ch.qos.logback"              % "logback-classic"        % "1.4.6",
     ),
     graalVMNativeImageGraalVersion   := Some("latest"),
     graalVMNativeImageOptions ++= Seq(
@@ -78,7 +71,6 @@ lazy val `meeter` = (project in file("."))
       "--trace-class-initialization=ch.qos.logback.classic.Logger",
       "--initialize-at-build-time=org.slf4j,ch.qos.logback",
       "--initialize-at-run-time=io.netty",
-      "-H:ConfigurationResourceRoots=/opt/graalvm/"
-
+      "-H:ConfigurationResourceRoots=/opt/graalvm/",
     ),
   )

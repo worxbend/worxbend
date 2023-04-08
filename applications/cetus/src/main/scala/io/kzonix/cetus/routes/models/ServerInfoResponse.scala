@@ -6,7 +6,7 @@ import zio.json.SnakeCase
 import zio.json.jsonMemberNames
 
 @jsonMemberNames(SnakeCase)
-case class ServerInfo(
+case class ServerInfoResponse(
     id:         String,
     hostname:   String,
     url:        String,
@@ -17,5 +17,5 @@ case class ServerInfo(
     remoteAddr: String,
   )
 
-object ServerInfo:
-  implicit val encoder: JsonEncoder[ServerInfo] = DeriveJsonEncoder.gen[ServerInfo]
+object ServerInfoResponse:
+  implicit val encoder: JsonEncoder[ServerInfoResponse] = DeriveJsonEncoder.gen[ServerInfoResponse]
