@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Loop through each child directory
+for dir in */; do
+    # Check if the directory is empty
+    if [ -z "$(ls -A $dir)" ]; then
+        # Create .gitkeep file in the empty directory
+        touch "${dir}.gitkeep"
+        echo ".gitkeep created in ${dir}"
+    fi
+done
