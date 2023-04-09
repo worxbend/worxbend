@@ -9,10 +9,16 @@ import zio.json.DeriveJsonEncoder
 import zio.json.JsonEncoder
 import zio.json.SnakeCase
 import zio.json.jsonMemberNames
+import zio.kafka.consumer.Consumer
+import zio.kafka.consumer.ConsumerSettings
+import zio.kafka.producer.Producer
+import zio.kafka.producer.ProducerSettings
 import zio.logging.*
 import zio.logging.LogAnnotation
 import zio.logging.LogAnnotation.*
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import scala.collection.immutable
 
 import java.time.Instant
 import java.util.UUID
@@ -58,5 +64,29 @@ object MeeterApp extends ZIOAppDefault:
     (for {
       _ <- ZIO.logInfo("Hello ZIO")
     } yield ()).provide(
+      consumerLayer
       // ZLayer.Debug.tree,
+    )
+
+  def producerRegistry(clusters: Map[String, String]) = {
+    val producers                                              = clusters.map {
+      case (cluster, bootstrapServers) =>
+        producerLayer(bootstrapServers.split(',').toList)
+          .map(p => (cluster, p))
+    }
+    val registry: ZIO[Scope, Throwable, Map[String, Producer]] = ZIO.collectAll(producers).map(_.toMap)
+    ZIO.scoped(registry)
+
+  }
+
+  def producerLayer(bootstrapServers: List[String]) =
+    Producer.make(
+      settings = ProducerSettings(bootstrapServers)
+    )
+
+  def consumerLayer: ZLayer[Any, Throwable, Consumer] =
+    ZLayer.scoped(
+      Consumer.make(
+        ConsumerSettings(List("localhost:9092")).withGroupId("group")
+      )
     )

@@ -93,7 +93,13 @@ By using these techniques, you should be able to identify the source of the OOM 
 
 The amount of memory you need to reserve for OS inside a K8S pod and your Java application depends on several factors, including the application's memory usage patterns, the size of your heap, and any other non-heap memory requirements.
 
-As a general rule of thumb, you should allocate at least 512 MB (in case of Alpine Linux, it is reasonable to set 128-256 MB, minimal system requirement is 128 MB) of memory for the OS and other system resources, in addition to the amount of memory needed for your Java application. However, this may vary depending on your specific application requirements.
+As a general rule of thumb, you should allocate at least 512 MB of memory for the OS and other system resources, in addition to the amount of memory needed for your Java application.
+
+The recommended memory limit for Alpine Linux running in a container will depend on several factors such as the size of the container, the number of processes it's running, and the workload it's expected to handle.
+
+However, a good starting point would be to allocate at least 128 MB of memory to the container. This is the minimum recommended memory for running Alpine Linux without any additional services or applications.
+
+If you plan to run additional services or applications, you may need to allocate more memory to the container. It's recommended to monitor the memory usage of the container over time and adjust the memory limit accordingly to ensure optimal performance.
 
 To calculate the amount of memory needed for your Java application, you can use the following formula:
 ```
