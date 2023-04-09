@@ -42,7 +42,7 @@ object MeeterApp extends ZIOAppDefault:
       workflowId: String,
       tenantId:   String,
     )
-  private object WorkflowInfo:
+  object WorkflowInfo:
     implicit val encoder: JsonEncoder[WorkflowInfo] = DeriveJsonEncoder.gen[WorkflowInfo]
   private val config                            = ConfigFactory.load()
   private val configProvider                    = TypesafeConfigProvider.fromTypesafeConfig(config)
