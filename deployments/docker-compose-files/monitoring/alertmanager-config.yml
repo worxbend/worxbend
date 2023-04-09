@@ -1,0 +1,12 @@
+route:
+  - match:
+      severity: critical
+    receiver: stardata-telegram
+
+receivers:
+- name: 'stardata-telegram'
+  telegram_configs:
+  - bot_token: YOUR_BOT_TOKEN
+    api_url: https://api.telegram.org
+    chat_id: YOUR_CHAT_ID
+    parse_mode: ''

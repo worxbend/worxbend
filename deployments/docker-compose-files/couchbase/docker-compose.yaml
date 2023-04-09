@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  couchbase-leader:
+    container_name: couchbase-leader
+    image: couchbase:latest
+    ports:
+      - "8091-8096:8091-8096"
+      - "11210-11211:11210-11211"
+    volumes:
+      - couchbase-leader:/opt/couchbase/var
+    networks:
+      - couchbase
+    restart: always
+
+  couchbase-replica:
+    container_name: couchbase-replica
+    image: couchbase:latest
+    depends_on:
+      - "couchbase-leader"
+    volumes:
+      - couchbase-replica:/opt/couchbase/var
+    networks:
+      - couchbase
+    restart: always
+
+volumes:
+  couchbase-leader:
+   driver: local
+   driver_opts:
+     type: "bind"
+     o: bind
+     device: $PWD/.volumes/couchbase-leader
+  couchbase-replica:
+    driver: local
+    driver_opts:
+      type: "bind"
+      o: bind
+      device: $PWD/.volumes/couchbase-replica
+networks:
+  couchbase:
