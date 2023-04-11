@@ -1,23 +1,11 @@
 package io.kzonix.reqflect.routes
 
-import zio.ZIO
-import zio.http.model.Method
-import zio.http.Http
-import zio.http.HttpApp
-import zio.http.Response
-import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.*
 import zio.http.*
-import zio.logging.*
 import zio.http.model.Method
-import zio.ExitCode
-import zio.Runtime
-import zio.Scope
-import zio.ZIO
-import zio.ZIOAppArgs
-import zio.ZIOAppDefault
-import zio.ZLayer
 import zio.json.*
+import zio.logging.*
+import zio.metrics.connectors.prometheus.PrometheusPublisher
 
 class MetricsRoutes extends AppRoutes[PrometheusPublisher, Throwable] {
   override def routes: HttpApp[PrometheusPublisher, Throwable] =
@@ -32,5 +20,5 @@ class MetricsRoutes extends AppRoutes[PrometheusPublisher, Throwable] {
 }
 
 object MetricsRoutes {
-  def apply() = new MetricsRoutes()
+  def make() = new MetricsRoutes()
 }

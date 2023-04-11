@@ -6,15 +6,12 @@ import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverlo
 import zio.*
 import zio.http.*
 import zio.metrics.Metric.Counter
-import zio.metrics.Metric
-import zio.metrics.MetricKeyType
-import zio.metrics.MetricLabel
-import zio.metrics.MetricState
+import zio.metrics.{Metric, MetricKeyType, MetricLabel, MetricState}
 import zio.metrics.connectors.prometheus.*
 
 import java.time.temporal.ChronoUnit
 
-case class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes) {
+class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes):
 
   private def routes: HttpApp[Client & PrometheusPublisher, Throwable] =
     (demoRoutes.routes ++ metricsRoutes.routes)
@@ -22,4 +19,9 @@ case class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: Me
 
   def start: URIO[Client & PrometheusPublisher & Server, Nothing] = Server.serve(routes.withDefaultErrorResponse)
 
-}
+object ReqflectHttpServerApp:
+  def make(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes) =
+    new ReqflectHttpServerApp(
+      demoRoutes,
+      metricsRoutes,
+    )

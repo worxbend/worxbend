@@ -1,7 +1,11 @@
 package io.kzonix.reqflect
 
 import com.typesafe.config.ConfigFactory
+import io.kzonix.reqflect.AppModule.*
+import io.kzonix.reqflect.routes.*
+import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 import zio.*
+import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.*
 import zio.http.model.Method
 import zio.json.*
@@ -9,14 +13,8 @@ import zio.logging.*
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.PrometheusPublisher
-import zio.metrics.connectors.prometheus.prometheusLayer
-import zio.metrics.connectors.prometheus.publisherLayer
+import zio.metrics.connectors.prometheus.{PrometheusPublisher, prometheusLayer, publisherLayer}
 import zio.metrics.jvm.DefaultJvmMetrics
-import AppModule.*
-import io.kzonix.reqflect.routes.*
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
-import zio.config.typesafe.TypesafeConfigProvider
 
 import scala.util.Try
 
@@ -47,6 +45,7 @@ object ReqflectApp extends ZIOAppDefault {
       metricsConfig,
       prometheusLayer,
       publisherLayer,
+      serverInfoProviderService,
       ServerConfig.live,
       Server.live,
       Client.default
