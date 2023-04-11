@@ -1,5 +1,7 @@
-package io.kzonix.cetus
+package io.kzonix.reqflect
 
+import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
+import io.kzonix.reqflect.routes.{MetricsRoutes, ServerInfoRoutes}
 import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 import zio.*
 import zio.http.*
@@ -12,7 +14,7 @@ import zio.metrics.connectors.prometheus.*
 
 import java.time.temporal.ChronoUnit
 
-case class CetusHttpApp(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes) {
+case class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes) {
 
   private def routes: HttpApp[Client & PrometheusPublisher, Throwable] =
     (demoRoutes.routes ++ metricsRoutes.routes)

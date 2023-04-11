@@ -1,0 +1,1 @@
+"Reqflect" (combines the words "request" and "reflect") is reflecting or echoing the caller's request back to them, while also emphasizing the focus on requests. This name could work well for a service that provides information about the origin and details of incoming requests.

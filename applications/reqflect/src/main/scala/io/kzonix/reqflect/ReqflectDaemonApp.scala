@@ -1,11 +1,10 @@
-package io.kzonix.cetus
+package io.kzonix.reqflect
 
 import zio.*
 import zio.http.*
 import zio.http.model.Method
 import zio.json.*
 import zio.logging.*
-import zio.logging.backend.SLF4J
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
@@ -15,15 +14,15 @@ import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
+import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
+import io.kzonix.reqflect.routes.MetricsRoutes
+
 import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import scala.util.Try
 
 import java.time.temporal.ChronoUnit
-
-import org.slf4j.LoggerFactory
-
-case class CetusDaemonApp() {
+case class ReqflectDaemonApp() {
 
   def start: ZIO[Client, Throwable, Unit] =
     for {
@@ -35,11 +34,7 @@ case class CetusDaemonApp() {
           _           <- ZIO.logInfo(s"Iteration $i")
           _           <- iteration.set(i + 1)
           response    <- makeReq()
-          responseStr <- response.body.asString
-          _           <- ZIO.logInfo(s"${ responseStr.substring(
-                             0,
-                             10,
-                           ) }")
+          _           <- ZIO.logInfo(s"$response")
         } yield ()).repeat(Schedule.spaced(60.seconds))
     } yield ()
 
@@ -51,7 +46,8 @@ case class CetusDaemonApp() {
         url,
         addZioUserAgentHeader = true,
       )
-      .onError(e => ZIO.succeed(Response.text(e.prettyPrint)))
+      .map(resp => resp.server.getOrElse("unknown"))
+      .onError(e => ZIO.logErrorCause("ClientException:", e) &> ZIO.succeed("unknown"))
   }
 
 }

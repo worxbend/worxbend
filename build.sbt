@@ -17,7 +17,7 @@ lazy val `kzonix-mono` = (project in file("."))
     CommonBuildSettings,
     ProjectBuilder,
   )
-  .settings(defaultSettings: _*)
+  .settings(defaultSettings *)
   .settings(
     name := "kzonix-mono"
   )
@@ -27,7 +27,8 @@ lazy val `kzonix-mono` = (project in file("."))
     `project-dependencies`,
     `felis`,
     `cetus`,
-    `meeter`
+    `meeter`,
+    `reqflect`
   )
 /* -- END: Root project -- */
 
@@ -64,6 +65,13 @@ lazy val `cetus` = ProjectRef(
 lazy val `meeter` = ProjectRef(
   file("applications/meeter"),
   "meeter",
+)
+/* ------------------------- */
+
+/* ------------------------- */
+lazy val `reqflect` = ProjectRef(
+  file("applications/reqflect"),
+  "reqflect",
 )
 /* ------------------------- */
 

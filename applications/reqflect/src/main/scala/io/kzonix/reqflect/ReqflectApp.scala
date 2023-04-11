@@ -1,11 +1,11 @@
-package io.kzonix.cetus
+package io.kzonix.reqflect
 
+import com.typesafe.config.ConfigFactory
 import zio.*
 import zio.http.*
 import zio.http.model.Method
 import zio.json.*
 import zio.logging.*
-import zio.logging.backend.SLF4J
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
@@ -13,25 +13,31 @@ import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
-
+import AppModule.*
+import io.kzonix.reqflect.routes.*
 import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
+import zio.config.typesafe.TypesafeConfigProvider
 
 import scala.util.Try
 
-import org.slf4j.LoggerFactory
 
-object CetusApp extends ZIOAppDefault {
+object ReqflectApp extends ZIOAppDefault {
 
-  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+  private val config = ConfigFactory.load()
+  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
+
+  override val bootstrap: ZLayer[Any, Any, Any] =
     Runtime.removeDefaultLoggers
-      >>> SLF4J.slf4j
+      >>> Runtime.setConfigProvider(configProvider)
+      >>> consoleJsonLogger()
+      >>> logMetrics
       >>> DefaultJvmMetrics.live
       >>> startupVerificationLayer
 
   override def run: ZIO[Any, Any, Any] =
     (for {
-      httpApp   <- ZIO.service[CetusHttpApp]
-      daemonApp <- ZIO.service[CetusDaemonApp]
+      httpApp   <- ZIO.service[ReqflectHttpServerApp]
+      daemonApp <- ZIO.service[ReqflectDaemonApp]
       _         <- httpApp.start.zipPar(daemonApp.start)
     } yield ()).provide(
       daemonApp,
@@ -43,8 +49,7 @@ object CetusApp extends ZIOAppDefault {
       publisherLayer,
       ServerConfig.live,
       Server.live,
-      Client.default,
-      //ZLayer.Debug.tree,
+      Client.default
     )
 
 }

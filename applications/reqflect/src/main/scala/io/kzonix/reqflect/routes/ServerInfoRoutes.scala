@@ -1,5 +1,6 @@
-package io.kzonix.cetus.routes
+package io.kzonix.reqflect.routes
 
+import io.kzonix.reqflect.routes.models.ServerInfoResponse
 import zio.*
 import zio.ExitCode
 import zio.Runtime
@@ -11,7 +12,6 @@ import zio.http.*
 import zio.http.model.Method
 import zio.json.*
 import zio.logging.*
-import zio.logging.backend.SLF4J
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
@@ -23,8 +23,6 @@ import zio.metrics.jvm.DefaultJvmMetrics
 import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import scala.util.Try
-
-import org.slf4j.LoggerFactory
 
 class ServerInfoRoutes(serverConfig: ServerConfig) extends AppRoutes[Client, Throwable] {
 
