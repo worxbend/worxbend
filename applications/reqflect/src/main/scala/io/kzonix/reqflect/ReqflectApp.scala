@@ -20,7 +20,7 @@ import scala.util.Try
 
 object ReqflectApp extends ZIOAppDefault {
 
-  private val config = ConfigFactory.load()
+  private val config         = ConfigFactory.load()
   private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 
   override val bootstrap: ZLayer[Any, Any, Any] =
