@@ -18,7 +18,6 @@ import zio.metrics.jvm.DefaultJvmMetrics
 
 import scala.util.Try
 
-
 object ReqflectApp extends ZIOAppDefault {
 
   private val config = ConfigFactory.load()
@@ -48,7 +47,7 @@ object ReqflectApp extends ZIOAppDefault {
       serverInfoProviderService,
       ServerConfig.live,
       Server.live,
-      Client.default
+      Client.default,
     )
 
 }
