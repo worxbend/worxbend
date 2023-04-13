@@ -1,13 +1,19 @@
 package io.kzonix.reqflect
 
 import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
-import io.kzonix.reqflect.routes.{MetricsRoutes, ServerInfoRoutes}
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
+import io.kzonix.reqflect.routes.MetricsRoutes
+import io.kzonix.reqflect.routes.ServerInfoRoutes
+
 import zio.*
 import zio.http.*
+import zio.metrics.Metric
 import zio.metrics.Metric.Counter
-import zio.metrics.{Metric, MetricKeyType, MetricLabel, MetricState}
+import zio.metrics.MetricKeyType
+import zio.metrics.MetricLabel
+import zio.metrics.MetricState
 import zio.metrics.connectors.prometheus.*
+
+import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import java.time.temporal.ChronoUnit
 

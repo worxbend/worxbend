@@ -6,7 +6,6 @@ case class SystemInfo(
                        containerId: String,
                        containerName: String,
                        containerImage: String,
-                       containerIp: String,
                        operatingSystemName: String,
                        operatingSystemVersion: String,
                        operatingSystemArchitecture: String,

@@ -1,7 +1,7 @@
 package io.kzonix.reqflect.routes
 
 import io.kzonix.reqflect.routes.models.ServerInfoResponse
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
+
 import zio.*
 import zio.http.*
 import zio.http.model.Method
@@ -10,8 +10,12 @@ import zio.logging.*
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.{PrometheusPublisher, prometheusLayer, publisherLayer}
+import zio.metrics.connectors.prometheus.PrometheusPublisher
+import zio.metrics.connectors.prometheus.prometheusLayer
+import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import scala.util.Try
 
@@ -19,7 +23,7 @@ class ServerInfoRoutes(serverConfig: ServerConfig) extends AppRoutes[Client, Thr
 
   override def routes: HttpApp[Client, Throwable] =
     Http.collectZIO {
-      case req@Method.GET -> !! / "info" =>
+      case req @ Method.GET -> !! / "info" =>
         for {
           response <- ZIO.succeed(Response.json(getServerInfo(req).toJson))
         } yield response

@@ -17,8 +17,6 @@ import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
-
 import scala.util.Try
 
 import com.typesafe.config.ConfigFactory
@@ -49,7 +47,8 @@ object ReqflectApp extends ZIOAppDefault {
       metricsConfig,
       prometheusLayer,
       publisherLayer,
-      serverInfoProviderService,
+      serverInfoCache,
+      cacheAwareServerInfoProviderService,
       ServerConfig.live,
       Server.live,
       Client.default,

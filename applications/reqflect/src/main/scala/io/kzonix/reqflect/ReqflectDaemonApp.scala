@@ -3,7 +3,6 @@ package io.kzonix.reqflect
 import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
 import io.kzonix.reqflect.routes.MetricsRoutes
 import io.kzonix.reqflect.services.ServerInfoProviderService
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 import zio.*
 import zio.http.*
 import zio.http.model.Method
@@ -33,7 +32,7 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
           serverInfo <- serverInfoProviderService.getSystemInfo().either
           _ <- ZIO.logInfo(s"$response")
           _ <- ZIO.logInfo(s"$serverInfo")
-        } yield ()).repeat(Schedule.spaced(60.seconds))
+        } yield ()).repeat(Schedule.spaced(5.seconds))
     } yield ()
 
   private def makeReq() = {
