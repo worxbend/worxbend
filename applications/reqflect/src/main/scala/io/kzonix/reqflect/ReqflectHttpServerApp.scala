@@ -2,7 +2,7 @@ package io.kzonix.reqflect
 
 import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
 import io.kzonix.reqflect.routes.MetricsRoutes
-import io.kzonix.reqflect.routes.ServerInfoRoutes
+import io.kzonix.reqflect.routes.MainRoutes
 
 import zio.*
 import zio.http.*
@@ -13,11 +13,10 @@ import zio.metrics.MetricLabel
 import zio.metrics.MetricState
 import zio.metrics.connectors.prometheus.*
 
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import java.time.temporal.ChronoUnit
 
-class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes):
+class ReqflectHttpServerApp(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes):
 
   private def routes: HttpApp[Client & PrometheusPublisher, Throwable] =
     (demoRoutes.routes ++ metricsRoutes.routes)
@@ -26,7 +25,7 @@ class ReqflectHttpServerApp(demoRoutes: ServerInfoRoutes, metricsRoutes: Metrics
   def start: URIO[Client & PrometheusPublisher & Server, Nothing] = Server.serve(routes.withDefaultErrorResponse)
 
 object ReqflectHttpServerApp:
-  def make(demoRoutes: ServerInfoRoutes, metricsRoutes: MetricsRoutes) =
+  def make(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes) =
     new ReqflectHttpServerApp(
       demoRoutes,
       metricsRoutes,

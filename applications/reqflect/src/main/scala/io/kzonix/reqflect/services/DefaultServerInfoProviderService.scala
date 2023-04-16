@@ -74,7 +74,7 @@ class DefaultServerInfoProviderService extends ServerInfoProviderService {
             mtu = interface.getMTU,
             hardwareAddress = Option(interface.getHardwareAddress)
               .map(_.map("%02X" format _).mkString(":"))
-              .getOrElse("unknown"),
+              .getOrElse("n/a"),
             inetAddresses = interface.getInetAddresses.asScala.toList.map(_.toString),
           )
         }.toList
@@ -85,4 +85,5 @@ class DefaultServerInfoProviderService extends ServerInfoProviderService {
 }
 
 object DefaultServerInfoProviderService:
+
   def make(): DefaultServerInfoProviderService = new DefaultServerInfoProviderService

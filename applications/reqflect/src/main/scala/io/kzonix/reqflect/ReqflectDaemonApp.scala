@@ -46,7 +46,7 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
       .map(resp => resp.server.getOrElse("unknown"))
       .onError(e =>
         ZIO.logErrorCause(
-          "ClientException:",
+          s"ClientException:${e.prettyPrint}",
           e,
         ) &> ZIO.succeed("unknown"))
   }

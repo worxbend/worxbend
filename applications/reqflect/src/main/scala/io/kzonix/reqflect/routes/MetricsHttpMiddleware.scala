@@ -6,7 +6,6 @@ import zio.metrics.*
 import zio.metrics.MetricKeyType.Counter
 import zio.metrics.connectors.prometheus.*
 
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
 
 import java.time.temporal.ChronoUnit
 
