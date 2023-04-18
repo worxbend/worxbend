@@ -1,4 +1,4 @@
-import Util._
+import Util.*
 
 addCommandAlias(
   "l",
@@ -18,7 +18,7 @@ addCommandAlias(
 )
 addCommandAlias(
   "root",
-  "cd kzonix-mono"
+  "cd worxbend"
 )
 addCommandAlias(
   "c",

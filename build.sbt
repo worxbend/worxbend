@@ -1,4 +1,4 @@
-import BaseSettings._
+import BaseSettings.*
 
 /* -- BEGIN: Global Settings -- */
 Global / onChangedBuildSource := ReloadOnSourceChanges
@@ -12,14 +12,14 @@ ThisBuild / scalaVersion := "3.2.2"
 lazy val commonSettings = defaultSettings
 
 /* -- BEGIN: Root project -- */
-lazy val `kzonix-mono` = (project in file("."))
+lazy val `worxbend` = (project in file("."))
   .enablePlugins(
     CommonBuildSettings,
     ProjectBuilder,
   )
   .settings(defaultSettings *)
   .settings(
-    name := "kzonix-mono"
+    name := "worxbend"
   )
   .aggregate(
     `common-build-settings`,
