@@ -1,4 +1,4 @@
-- hosts: rpi:rock
+- hosts: rpi
   name: Network Getting Started First Playbook
   connection: ansible.builtin.ssh
   tasks:
@@ -10,6 +10,22 @@
     - name: Upgrade all packages
       apt: upgrade=yes
       become: yes
+
+    - name: Install required system packages
+      become: yes
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+          - vim
+          - neovim
+        state: latest
+        update_cache: true
 
     - name: Run auto-remove
       apt: autoremove=yes
