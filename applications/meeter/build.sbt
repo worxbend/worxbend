@@ -17,16 +17,16 @@ lazy val commonScalacOptions = Seq(
     (Compile / console / scalacOptions).value,
 )
 
-lazy val `meeter` = (project in file("."))
+lazy val meeter = (project in file("."))
   .enablePlugins(
     UniversalPlugin,
     JavaAppPackaging,
-    GraalVMNativeImagePlugin,
+    AssemblyPlugin,
   )
   .settings(commonSettings)
   .settings(
-    name                             := "cetus",
-    Compile / mainClass              := Some("io.kzonix.meeter.MeeterApp"),
+    name                             := "meeter",
+    Compile / mainClass              := Some("com.worxbend.meeter.MeeterApp"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
@@ -36,8 +36,9 @@ lazy val `meeter` = (project in file("."))
     assembly / assemblyMergeStrategy := {
       case "logback.xml"                         => MergeStrategy.discard
       case "logback-test.xml"                    => MergeStrategy.discard
-      case x if x.endsWith(".conf")              => MergeStrategy.concat
-      case x if x.endsWith(".example")           => MergeStrategy.concat
+      case x if x.endsWith("application.conf")   => MergeStrategy.discard
+      case x if x.endsWith("reference.conf")     => MergeStrategy.concat
+      case x if x.endsWith(".example")           => MergeStrategy.discard
       case PathList("META-INF", "services", _*)  => MergeStrategy.concat
       case PathList("META-INF", "maven", _*)     => MergeStrategy.last
       case PathList("META-INF", "resources", _*) => MergeStrategy.last
@@ -45,31 +46,20 @@ lazy val `meeter` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     libraryDependencies ++= Seq(
-      "dev.zio"                %% "zio"                    % "2.0.11",
-      "dev.zio"                %% "zio-streams"            % "2.0.11",
-      "dev.zio"                %% "zio-config"             % "4.0.0-RC14",
-      "dev.zio"                %% "zio-config-magnolia"    % "4.0.0-RC14",
-      "dev.zio"                %% "zio-config-typesafe"    % "4.0.0-RC14",
-      "dev.zio"                %% "zio-http"               % "0.0.5",
-      "dev.zio"                %% "zio-json"               % "0.5.0",
-      "dev.zio"                %% "zio-logging"            % "2.1.12",
-      "dev.zio"                %% "zio-metrics-connectors" % "2.0.7",
-      "dev.zio"                %% "zio-nio"                % "2.0.1",
-      "dev.zio"                %% "zio-kafka"              % "2.2",
-      "org.scala-lang.modules" %% "scala-java8-compat"     % "1.0.2",
-    ),
-    graalVMNativeImageGraalVersion   := Some("latest"),
-    graalVMNativeImageOptions ++= Seq(
-      "--trace-object-instantiation=ch.qos.logback.classic.Logger",
-      "-H:IncludeResources=logback.xml",
-      "-H:+ReportUnsupportedElementsAtRuntime",
-      "-H:+JNI",
-      "--add-opens=java.base/java.nio=ALL-UNNAMED",
-      "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
-      "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
-      "--trace-class-initialization=ch.qos.logback.classic.Logger",
-      "--initialize-at-build-time=org.slf4j,ch.qos.logback",
-      "--initialize-at-run-time=io.netty",
-      "-H:ConfigurationResourceRoots=/opt/graalvm/",
+      "dev.zio"                     %% "zio"                    % "2.0.13",
+      "dev.zio"                     %% "zio-streams"            % "2.0.13",
+      "dev.zio"                     %% "zio-config"             % "4.0.0-RC14",
+      "dev.zio"                     %% "zio-config-magnolia"    % "4.0.0-RC14",
+      "dev.zio"                     %% "zio-config-typesafe"    % "4.0.0-RC14",
+      "dev.zio"                     %% "zio-config-refined"     % "4.0.0-RC14",
+      "dev.zio"                     %% "zio-http"               % "3.0.0-RC1",
+      "dev.zio"                     %% "zio-json"               % "0.5.0",
+      "dev.zio"                     %% "zio-logging"            % "2.1.12",
+      "dev.zio"                     %% "zio-metrics-connectors" % "2.0.8",
+      "dev.zio"                     %% "zio-interop-cats"       % "23.0.03",
+      "dev.zio"                     %% "zio-prelude"            % "1.0.0-RC19",
+      "com.softwaremill.sttp.tapir" %% "tapir-zio"              % "1.3.0",
+      "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server"  % "1.3.0",
+      "com.softwaremill.sttp.tapir" %% "tapir-json-zio"         % "1.3.0",
     ),
   )

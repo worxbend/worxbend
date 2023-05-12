@@ -6,7 +6,6 @@ import zio.metrics.*
 import zio.metrics.MetricKeyType.Counter
 import zio.metrics.connectors.prometheus.*
 
-
 import java.time.temporal.ChronoUnit
 
 object MetricsHttpMiddleware {
@@ -56,17 +55,15 @@ object MetricsHttpMiddleware {
         ): Handler[R1, Err1, Request, Response] =
         Handler.fromFunctionZIO { request =>
           for {
-            _                   <- ZIO.logInfo(">>>")
-            result              <-
-              handler.runZIO(request).timed
-                @@ requestHistogram(
-                  request.method.toString,
-                  request.url.encode,
-                ).trackDuration
-                @@ requestCounter(
-                  request.method.toString,
-                  request.url.encode,
-                )
+            _                   <- ZIO.logInfo(
+                                     "Request handling: " +
+                                       s"method=${ request.method } " +
+                                       s"headers=${ request.method } " +
+                                       s"path=${ request.url.encode } ")
+            result              <- wrapWithMetrics(
+                                     handler,
+                                     request,
+                                   )
             (duration, response) = result
             _                   <- ZIO.logInfo(
                                      "Request handled: " +
@@ -78,5 +75,19 @@ object MetricsHttpMiddleware {
           } yield response
         }
     }
+
+  private def wrapWithMetrics[Err1 >: Nothing, R1 <: Any](
+      handler: Handler[R1, Err1, Request, Response],
+      request: Request,
+    ) =
+    handler.runZIO(request).timed
+      @@ requestHistogram(
+        request.method.toString,
+        request.url.encode,
+      ).trackDuration
+      @@ requestCounter(
+        request.method.toString,
+        request.url.encode,
+      )
 
 }

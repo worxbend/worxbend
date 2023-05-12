@@ -4,7 +4,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 val CirceVersion = "0.14.4"
 
-ThisBuild / scalaVersion               := "3.2.0"
+ThisBuild / scalaVersion               := "3.3.0-RC4"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 
@@ -27,7 +27,7 @@ lazy val `felis` = (project in file("."))
   .settings(commonSettings)
   .settings(
     name                             := "felis",
-    Compile / mainClass              := Some("io.kzonix.felis.Main"),
+    Compile / mainClass              := Some("io.worxbend.felis.Main"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
@@ -46,17 +46,8 @@ lazy val `felis` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     libraryDependencies ++= Seq(
-      "commons-io"                  % "commons-io"         % "20030203.000550",
-      "org.apache.commons"          % "commons-math"       % "2.2",
-      "org.scala-lang.modules"     %% "scala-java8-compat" % "1.0.2",
-      "org.slf4j"                   % "slf4j-api"          % "2.0.5",
-      "com.typesafe"                % "config"             % "1.4.2",
-      "com.typesafe.scala-logging" %% "scala-logging"      % "3.9.5",
-      "ch.qos.logback"              % "logback-classic"    % "1.4.5",
-      "io.circe"                   %% "circe-core"         % CirceVersion,
-      "io.circe"                   %% "circe-generic"      % CirceVersion,
-      "io.circe"                   %% "circe-parser"       % CirceVersion,
-      "io.circe"                   %% "circe-testing"      % CirceVersion % Test,
-      "io.circe"                   %% "circe-jawn"         % CirceVersion,
+      "org.typelevel"  %% "cats-effect"  % "3.4.10",
+      "org.typelevel"  %% "cats-core"    % "2.9.0",
+      "io.7mind.izumi" %% "distage-core" % "1.1.0-M21",
     ),
   )

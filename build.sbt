@@ -28,7 +28,7 @@ lazy val `worxbend` = (project in file("."))
     `felis`,
     `cetus`,
     `meeter`,
-    `reqflect`
+    `reqflect`,
   )
 /* -- END: Root project -- */
 
@@ -62,7 +62,7 @@ lazy val `cetus` = ProjectRef(
 /* ------------------------- */
 
 /* ------------------------- */
-lazy val `meeter` = ProjectRef(
+lazy val meeter = ProjectRef(
   file("applications/meeter"),
   "meeter",
 )

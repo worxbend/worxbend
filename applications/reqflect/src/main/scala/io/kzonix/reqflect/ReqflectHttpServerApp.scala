@@ -18,7 +18,8 @@ import java.time.temporal.ChronoUnit
 
 class ReqflectHttpServerApp(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes):
 
-  private def routes: HttpApp[Client & PrometheusPublisher, Throwable] =
+  private type Requirements = Client & PrometheusPublisher
+  private def routes: HttpApp[Requirements, Throwable] =
     (demoRoutes.routes ++ metricsRoutes.routes)
       @@ (HttpAppMiddleware.timeout(5.seconds) ++ metricsMiddleware)
 

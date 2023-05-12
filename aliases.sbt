@@ -2,53 +2,53 @@ import Util.*
 
 addCommandAlias(
   "l",
-  "projects"
+  "projects",
 )
 addCommandAlias(
   "ll",
-  "projects"
+  "projects",
 )
 addCommandAlias(
   "ls",
-  "projects"
+  "projects",
 )
 addCommandAlias(
   "cd",
-  "project"
+  "project",
 )
 addCommandAlias(
   "root",
-  "cd worxbend"
+  "cd worxbend",
 )
 addCommandAlias(
   "c",
-  "compile"
+  "compile",
 )
 addCommandAlias(
   "ca",
-  "Test / compile"
+  "Test / compile",
 )
 addCommandAlias(
   "t",
-  "test"
+  "test",
 )
 addCommandAlias(
   "r",
-  "run"
+  "run",
 )
 addCommandAlias(
   "rs",
-  "reStart"
+  "reStart",
 )
 addCommandAlias(
   "s",
-  "reStop"
+  "reStop",
 )
 addCommandAlias(
   "styleCheck",
-  "scalafmtSbtCheck; scalafmtCheckAll"
+  "scalafmtSbtCheck; scalafmtCheckAll",
 )
 addCommandAlias(
   "styleFix",
-  "scalafmtSbt; scalafmtAll"
+  "scalafmtSbt; scalafmtAll",
 )

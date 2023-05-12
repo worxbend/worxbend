@@ -1,6 +1,7 @@
 package io.kzonix.cetus
 
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
+import io.kzonix.cetus.routes.MetricsHttpMiddleware.metricsMiddleware
+import io.kzonix.cetus.routes.{MetricsRoutes, ServerInfoRoutes}
 import zio.*
 import zio.http.*
 import zio.metrics.Metric.Counter

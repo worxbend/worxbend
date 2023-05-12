@@ -1,9 +1,9 @@
+import scala.language.postfixOps
+
+import sbt._
 import sbt.Keys._
 import sbt.ModuleID
 import sbt.Setting
-import sbt._
-
-import scala.language.postfixOps
 
 object Dependencies {
 

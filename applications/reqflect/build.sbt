@@ -28,7 +28,7 @@ lazy val `reqflect` = (project in file("."))
   .settings(commonSettings)
   .settings(
     name                             := "reqflect",
-    Compile / mainClass              := Some("io.kzonix.cetus.ReqflectApp"),
+    Compile / mainClass              := Some("io.kzonix.reqflect.ReqflectApp"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
@@ -47,35 +47,29 @@ lazy val `reqflect` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     libraryDependencies ++= Seq(
-      "dev.zio"           %% "zio"                    % "2.0.12",
-      "dev.zio"           %% "zio-streams"            % "2.0.12",
-      "dev.zio"           %% "zio-config"             % "4.0.0-RC14",
-      "dev.zio"           %% "zio-config-magnolia"    % "4.0.0-RC14",
-      "dev.zio"           %% "zio-config-typesafe"    % "4.0.0-RC14",
-      "dev.zio"           %% "zio-config-refined"     % "4.0.0-RC14",
-      "dev.zio"           %% "zio-http"               % "0.0.5",
-      "dev.zio"           %% "zio-json"               % "0.5.0",
-      "dev.zio"           %% "zio-logging"            % "2.1.12",
-      "dev.zio"           %% "zio-metrics-connectors" % "2.0.7",
-      "dev.zio"           %% "zio-cache"              % "0.2.3",
-      
-      /* --- */
-      "io.github.arainko" %% "ducktape"               % "0.1.4",
+      "dev.zio" %% "zio"                    % "2.0.12",
+      "dev.zio" %% "zio-streams"            % "2.0.12",
+      "dev.zio" %% "zio-config"             % "4.0.0-RC14",
+      "dev.zio" %% "zio-config-magnolia"    % "4.0.0-RC14",
+      "dev.zio" %% "zio-config-typesafe"    % "4.0.0-RC14",
+      "dev.zio" %% "zio-config-refined"     % "4.0.0-RC14",
+      "dev.zio" %% "zio-http"               % "0.0.5",
+      "dev.zio" %% "zio-json"               % "0.5.0",
+      "dev.zio" %% "zio-logging"            % "2.1.12",
+      "dev.zio" %% "zio-metrics-connectors" % "2.0.7",
+      "dev.zio" %% "zio-cache"              % "0.2.3",
 
       /* --- */
-      "io.lettuce" % "lettuce-core" % "6.2.3.RELEASE",
+      "io.github.arainko" %% "ducktape" % "0.1.4",
     ),
     graalVMNativeImageGraalVersion   := Some("latest"),
     graalVMNativeImageOptions ++= Seq(
-      "--trace-object-instantiation=ch.qos.logback.classic.Logger",
       "-H:IncludeResources=logback.xml",
       "-H:+ReportUnsupportedElementsAtRuntime",
       "-H:+JNI",
       "--add-opens=java.base/java.nio=ALL-UNNAMED",
       "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
       "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED",
-      "--trace-class-initialization=ch.qos.logback.classic.Logger",
-      "--initialize-at-build-time=org.slf4j,ch.qos.logback",
       "--initialize-at-run-time=io.netty",
       "-H:ConfigurationResourceRoots=/opt/graalvm/",
     ),

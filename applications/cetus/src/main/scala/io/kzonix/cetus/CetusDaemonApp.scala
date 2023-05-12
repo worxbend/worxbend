@@ -2,10 +2,9 @@ package io.kzonix.cetus
 
 import zio.*
 import zio.http.*
-import zio.http.model.Method
 import zio.json.*
+import zio.json.ast.Json
 import zio.logging.*
-import zio.logging.backend.SLF4J
 import zio.metrics.*
 import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
@@ -15,41 +14,27 @@ import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
-import izumi.reflect.dottyreflection.ReflectionUtil.reflectiveUncheckedNonOverloadedSelectable
-
 import scala.util.Try
 
 import java.time.temporal.ChronoUnit
-
-import org.slf4j.LoggerFactory
 
 case class CetusDaemonApp() {
 
   def start: ZIO[Client, Throwable, Unit] =
     for {
-      _         <- ZIO.logInfo("Starting scheduler")
-      iteration <- Ref.make(1)
-      _         <-
+      _ <- ZIO.logInfo("Starting scheduler")
+      _ <-
         (for {
-          i           <- iteration.get
-          _           <- ZIO.logInfo(s"Iteration $i")
-          _           <- iteration.set(i + 1)
-          response    <- makeReq()
-          responseStr <- response.body.asString
-          _           <- ZIO.logInfo(s"${ responseStr.substring(
-                             0,
-                             10,
-                           ) }")
+          text <- makeReq().flatMap(resp => resp.body.asString)
+          _    <- ZIO.logInfo(s"${ text.fromJson[Json].map(_.toJsonPretty) }")
         } yield ()).repeat(Schedule.spaced(60.seconds))
     } yield ()
 
   private def makeReq() = {
-    val url = "https://distrowatch.com/news/dw.xml"
-
+    val url = "https://httpbin.org/anything"
     Client
       .request(
-        url,
-        addZioUserAgentHeader = true,
+        url
       )
       .onError(e => ZIO.succeed(Response.text(e.prettyPrint)))
   }

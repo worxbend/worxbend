@@ -22,12 +22,9 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
   def start: ZIO[Client, Throwable, Unit] =
     for {
       _ <- ZIO.logInfo("Starting scheduler")
-      iteration <- Ref.make(1)
       _ <-
         (for {
-          i <- iteration.get
-          _ <- ZIO.logInfo(s"Iteration $i")
-          _ <- iteration.set(i + 1)
+          _ <- ZIO.logInfo(s"Scheduled operation...")
           response <- makeReq()
           serverInfo <- serverInfoProviderService.getSystemInfo().either
           _ <- ZIO.logInfo(s"$response")
