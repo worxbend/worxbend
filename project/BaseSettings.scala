@@ -14,7 +14,6 @@ object BaseSettings {
     resolvers ++= Seq(
       Resolver.mavenLocal,
       Resolver.mavenCentral,
-      Resolver.sonatypeRepo("snapshots"),
-    ),
+    ) ++ Resolver.sonatypeOssRepos("snapshots"),
   )
 }
