@@ -36,6 +36,8 @@ lazy val `worxbend` = (project in file("."))
   )
 /* >>----- END: Root project -----<< */
 
+
+
 /* >>----- BEGIN: Plugins -----<< */
 lazy val `common-build-settings` = ProjectRef(
   file("plugins/common-build-settings"),
@@ -52,6 +54,7 @@ lazy val `project-dependencies`  = ProjectRef(
   "project-dependencies",
 )
 /* >>----- END: Plugins -----<< */
+
 
 
 /* >>----- BEGIN: Libraries -----<< */
@@ -79,7 +82,11 @@ lazy val `worxflowr-server` = ProjectRef(
 
 /* >>----- END: Libraries -----<< */
 
+
+
 /* >>----- BEGIN: Applications -----<< */
+
+/* >>-------------------------------<< */
 lazy val `felis` = ProjectRef(
   file("applications/felis"),
   "felis",
@@ -106,3 +113,7 @@ lazy val `reqflect` = ProjectRef(
 /* >>-------------------------------<< */
 
 /* >>----- END: Applications -----<< */
+
+
+
+/* >>-------------------------------<< */
