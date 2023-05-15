@@ -475,5 +475,6 @@ project/plugins/project/
 **/.env
 docker/lenses/.env
 /docs/obsidian/worxbend/.obsidian/*
+**/.obsidian/**
 **/.volumes/
 /deployments/**/**/.volumes/
