@@ -2,7 +2,7 @@ import sbtassembly.AssemblyPlugin.defaultShellScript
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion               := "3.2.0"
+ThisBuild / scalaVersion               := "3.3.0-RC2"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 
@@ -17,11 +17,12 @@ lazy val commonScalacOptions = Seq(
     (Compile / console / scalacOptions).value,
 )
 
-lazy val meeter = (project in file("."))
+lazy val `meeter` = (project in file("."))
   .enablePlugins(
     UniversalPlugin,
     JavaAppPackaging,
     AssemblyPlugin,
+    NativeImagePlugin,
   )
   .settings(commonSettings)
   .settings(
@@ -62,4 +63,17 @@ lazy val meeter = (project in file("."))
       "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server"  % "1.3.0",
       "com.softwaremill.sttp.tapir" %% "tapir-json-zio"         % "1.3.0",
     ),
+    nativeImageJvm                   := "graalvm-java17",
+    nativeImageVersion               := "22.3.2",
+    nativeImageOptions ++=
+      Seq(
+        "-H:+JNI",
+        "--initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger",
+        "--initialize-at-run-time=io.netty.util.AbstractReferenceCounted",
+        "--initialize-at-run-time=io.netty.channel.epoll",
+        "--initialize-at-run-time=io.netty.handler.ssl",
+        "--initialize-at-run-time=io.netty.channel.unix",
+        "--report-unsupported-elements-at-runtime",
+        "--no-fallback",
+      ),
   )
