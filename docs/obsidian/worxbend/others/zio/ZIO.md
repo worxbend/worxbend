@@ -42,7 +42,7 @@ The `ZIO[R, E, A]` data type has three type parameters:
 ---
 -   **`E` - Failure Type**. The effect may fail with a value of type `E`. Some applications will use `Throwable`. If this type parameter is `Nothing`, it means the effect cannot fail, because there are no values of type `Nothing`.
 ---
--   **`A` - Success Type** **Outut**. The effect may succeed with a value of type `A`. If this type parameter is `Unit`, it means the effect produces no useful information, while if it is `Nothing`, it means the effect runs forever (or until failure).
+-   **`A` - Success Type** **Ouput**. The effect may succeed with a value of type `A`. If this type parameter is `Unit`, it means the effect produces no useful information, while if it is `Nothing`, it means the effect runs forever (or until failure).
 ---
 # Runtime
 A `Runtime[R]` is capable of executing tasks (`ZIO`) within an environment `R`.

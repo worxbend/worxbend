@@ -23,18 +23,26 @@ import com.typesafe.config.ConfigFactory
 
 object ReqflectApp extends ZIOAppDefault {
 
-  private val config         = ConfigFactory.load()
-  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
-
-  override val bootstrap: ZLayer[Any, Any, Any] =
+  override val bootstrap: ZLayer[
+    Any,
+    Any,
+    Any,
+  ] =
     Runtime.removeDefaultLoggers
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
       >>> logMetrics
       >>> DefaultJvmMetrics.live
       >>> startupVerificationLayer
+  val unusedVal = "unused"
+  private val config         = ConfigFactory.load()
+  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 
-  override def run: ZIO[Any, Any, Any] =
+  override def run: ZIO[
+    Any,
+    Any,
+    Any,
+  ] =
     (for {
       httpApp   <- ZIO.service[ReqflectHttpServerApp]
       daemonApp <- ZIO.service[ReqflectDaemonApp]

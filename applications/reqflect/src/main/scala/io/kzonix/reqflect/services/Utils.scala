@@ -1,5 +1,3 @@
 package io.kzonix.reqflect.services
 
-object Utils {
-
-}
+object Utils {}

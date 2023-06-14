@@ -10,7 +10,7 @@ import zio.metrics.connectors.prometheus.PrometheusPublisher
 class MetricsRoutes extends AppRoutes[PrometheusPublisher, Throwable] {
   override def routes: HttpApp[PrometheusPublisher, Throwable] =
     Http.collectZIO {
-      case _ @ Method.GET -> !! / "metrics" =>
+      case _ @Method.GET -> !! / "metrics" =>
         for {
           publisher <- ZIO.service[PrometheusPublisher]
           metrics   <- publisher.get

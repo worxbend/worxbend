@@ -9,16 +9,17 @@ lazy val `common-build-settings` = project in file(".")
  * to the latest too.
  * */
 
-ThisBuild / sbtPlugin := true
-ThisBuild / name := "CommonBuildSettings"
+ThisBuild / sbtPlugin        := true
+ThisBuild / name             := "CommonBuildSettings"
 ThisBuild / organizationName := "N/A"
-ThisBuild / organization := "io.kzonix"
+ThisBuild / organization     := "io.kzonix"
 
-ThisBuild / version := "0.0.1.2-SNAPSHOT"
+ThisBuild / version       := "0.0.1.2-SNAPSHOT"
 ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / update / aggregate := true
-ThisBuild / updateOptions := updateOptions.value
+ThisBuild / updateOptions      := updateOptions
+  .value
   .withCachedResolution(false)
   .withLatestSnapshots(false)
 
@@ -31,6 +32,6 @@ addSbtPlugin("com.timushev.sbt" % "sbt-rewarn"          % "0.1.3")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates"         % "0.6.4")
 addSbtPlugin("io.spray"         % "sbt-revolver"        % "0.9.1")
 addSbtPlugin("org.scalameta"    % "sbt-scalafmt"        % "2.5.0")
-addSbtPlugin("com.github.sbt"  % "sbt-native-packager" % "1.9.15")
+addSbtPlugin("com.github.sbt"   % "sbt-native-packager" % "1.9.15")
 
 addDependencyTreePlugin

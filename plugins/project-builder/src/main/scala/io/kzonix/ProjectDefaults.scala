@@ -10,12 +10,12 @@ object ProjectDefaults {
 
   val ProjectSettings: Seq[Def.Setting[_]] = Seq(
     ThisBuild / homepage := Some(url("https://kzonix.app")),
-    ThisBuild / licenses += ("MIT", url("https://www.gnu.org/licenses/gpl-2.0.html"))
+    ThisBuild / licenses += ("MIT", url("https://www.gnu.org/licenses/gpl-2.0.html")),
   )
 
   val OrganizationSettings: Seq[Def.Setting[_]] = Seq(
-    ThisBuild / organization := "io.kzonix",
-    ThisBuild / organizationName := "Kzonix"
+    ThisBuild / organization     := "io.kzonix",
+    ThisBuild / organizationName := "Kzonix",
   )
 
 }

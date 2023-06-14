@@ -19,7 +19,7 @@ dependsOn(
 addDependencyTreePlugin
 
 addSbtPlugin("org.wartremover"   % "sbt-wartremover"     % "3.0.9")
-addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"        % "0.10.4")
+addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"        % "0.11.0")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.4.3")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter"  % "0.6.1")
 addSbtPlugin("io.gatling"        % "gatling-sbt"         % "3.2.2")

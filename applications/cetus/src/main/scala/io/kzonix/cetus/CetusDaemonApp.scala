@@ -20,7 +20,11 @@ import java.time.temporal.ChronoUnit
 
 case class CetusDaemonApp() {
 
-  def start: ZIO[Client, Throwable, Unit] =
+  def start: ZIO[
+    Client,
+    Throwable,
+    Unit,
+  ] =
     for {
       _ <- ZIO.logInfo("Starting scheduler")
       _ <-

@@ -2,7 +2,7 @@ import sbtassembly.AssemblyPlugin.defaultShellScript
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion               := "3.3.0-RC2"
+ThisBuild / scalaVersion               := "3.3.0"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 
@@ -47,22 +47,19 @@ lazy val `meeter` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     libraryDependencies ++= Seq(
-      "dev.zio"                     %% "zio"                    % "2.0.13",
-      "dev.zio"                     %% "zio-streams"            % "2.0.13",
-      "dev.zio"                     %% "zio-config"             % "4.0.0-RC14",
-      "dev.zio"                     %% "zio-config-magnolia"    % "4.0.0-RC14",
-      "dev.zio"                     %% "zio-config-typesafe"    % "4.0.0-RC14",
-      "dev.zio"                     %% "zio-config-refined"     % "4.0.0-RC14",
-      "dev.zio"                     %% "zio-http"               % "3.0.0-RC1",
-      "dev.zio"                     %% "zio-json"               % "0.5.0",
-      "dev.zio"                     %% "zio-logging"            % "2.1.12",
-      "dev.zio"                     %% "zio-metrics-connectors" % "2.0.8",
-      "dev.zio"                     %% "zio-interop-cats"       % "23.0.03",
-      "dev.zio"                     %% "zio-prelude"            % "1.0.0-RC19",
-      "com.softwaremill.sttp.tapir" %% "tapir-zio"              % "1.3.0",
-      "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server"  % "1.3.0",
-      "com.softwaremill.sttp.tapir" %% "tapir-json-zio"         % "1.3.0",
+      "dev.zio" %% "zio"                    % "2.0.15",
+      "dev.zio" %% "zio-streams"            % "2.0.15",
+      "dev.zio" %% "zio-config"             % "4.0.0-RC16",
+      "dev.zio" %% "zio-config-magnolia"    % "4.0.0-RC16",
+      "dev.zio" %% "zio-config-typesafe"    % "4.0.0-RC16",
+      "dev.zio" %% "zio-config-refined"     % "4.0.0-RC16",
+      "dev.zio" %% "zio-http"               % "3.0.0-RC2",
+      "dev.zio" %% "zio-json"               % "0.5.0",
+      "dev.zio" %% "zio-logging"            % "2.1.13",
+      "dev.zio" %% "zio-metrics-connectors" % "2.0.8",
+      "dev.zio" %% "zio-prelude"            % "1.0.0-RC19",
     ),
+    semanticdbEnabled                := true,
     nativeImageJvm                   := "graalvm-java17",
     nativeImageVersion               := "22.3.2",
     nativeImageOptions ++=

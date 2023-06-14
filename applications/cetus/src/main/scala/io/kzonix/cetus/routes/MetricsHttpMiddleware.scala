@@ -6,12 +6,15 @@ import zio.metrics.*
 import zio.metrics.MetricKeyType.Counter
 import zio.metrics.connectors.prometheus.*
 
-
 import java.time.temporal.ChronoUnit
 
 object MetricsHttpMiddleware {
 
-  private def requestCounter(method: String, handler: String): Metric[Counter, Any, MetricState.Counter] =
+  private def requestCounter(method: String, handler: String): Metric[
+    Counter,
+    Any,
+    MetricState.Counter,
+  ] =
     Metric
       .counterInt("http_requests_total")
       .fromConst(0)
@@ -29,7 +32,11 @@ object MetricsHttpMiddleware {
   private def requestHistogram(
       method: String,
       handler: String,
-    ): Metric[MetricKeyType.Histogram, zio.Duration, MetricState.Histogram] =
+    ): Metric[
+    MetricKeyType.Histogram,
+    zio.Duration,
+    MetricState.Histogram,
+  ] =
     Metric
       .timer(
         "http_requests",
@@ -47,13 +54,28 @@ object MetricsHttpMiddleware {
         ),
       )
 
-  def metricsMiddleware: RequestHandlerMiddleware[Nothing, Any, Nothing, Any] =
+  def metricsMiddleware: RequestHandlerMiddleware[
+    Nothing,
+    Any,
+    Nothing,
+    Any,
+  ] =
     new RequestHandlerMiddleware.Simple[Any, Nothing] {
       override def apply[R1 <: Any, Err1 >: Nothing](
-          handler: Handler[R1, Err1, Request, Response]
+          handler: Handler[
+            R1,
+            Err1,
+            Request,
+            Response,
+          ]
         )(implicit
           trace: Trace
-        ): Handler[R1, Err1, Request, Response] =
+        ): Handler[
+        R1,
+        Err1,
+        Request,
+        Response,
+      ] =
         Handler.fromFunctionZIO { request =>
           for {
             _                   <- ZIO.logInfo(">>>")

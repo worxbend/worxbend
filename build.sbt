@@ -23,6 +23,8 @@ lazy val `worxbend` = (project in file("."))
   )
   .aggregate(
     /* >>----------<< */
+    /*`scalafix-rules` ,*/
+    /* >>----------<< */
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
@@ -36,7 +38,11 @@ lazy val `worxbend` = (project in file("."))
   )
 /* >>----- END: Root project -----<< */
 
+/* >>----- BEGIN: Scalafix -----<< */
 
+/* ... */
+
+/* >>----- END: Scalafix -----<< */
 
 /* >>----- BEGIN: Plugins -----<< */
 lazy val `common-build-settings` = ProjectRef(
@@ -54,8 +60,6 @@ lazy val `project-dependencies`  = ProjectRef(
   "project-dependencies",
 )
 /* >>----- END: Plugins -----<< */
-
-
 
 /* >>----- BEGIN: Libraries -----<< */
 
@@ -81,8 +85,6 @@ lazy val `worxflowr-server` = ProjectRef(
 /* >>-------------------------------<< */
 
 /* >>----- END: Libraries -----<< */
-
-
 
 /* >>----- BEGIN: Applications -----<< */
 
@@ -113,7 +115,5 @@ lazy val `reqflect` = ProjectRef(
 /* >>-------------------------------<< */
 
 /* >>----- END: Applications -----<< */
-
-
 
 /* >>-------------------------------<< */

@@ -1,5 +1,7 @@
 package com.worxbend.meeter
 
+import com.worxbend.meeter.MeeterAppModule.res
+
 import zio.*
 import zio.ZLayer
 import zio.config.typesafe.TypesafeConfigProvider
@@ -9,21 +11,27 @@ import zio.metrics.jvm.DefaultJvmMetrics
 import zio.prelude.NonEmptyList
 
 import com.typesafe.config.ConfigFactory
-import com.worxbend.meeter.MeeterAppModule.res
 
 object MeeterApp extends ZIOAppDefault:
 
-  private val config         = ConfigFactory.load()
-  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
-
-  override val bootstrap: ZLayer[Any, Any, Any] =
+  override val bootstrap: ZLayer[
+    Any,
+    Any,
+    Any,
+  ] =
     Runtime.removeDefaultLoggers
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
       >>> logMetrics
       >>> DefaultJvmMetrics.live
+  private val config         = ConfigFactory.load()
+  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 
-  override def run: ZIO[Any, Any, Any] =
+  override def run: ZIO[
+    Any,
+    Any,
+    Any,
+  ] =
     (for {
       _ <-
         (for {

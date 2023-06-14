@@ -1,6 +1,7 @@
 package io.kzonix.cetus.routes
 
 import io.kzonix.cetus.routes.models.ServerInfoResponse
+
 import zio.*
 import zio.ExitCode
 import zio.Runtime
@@ -33,9 +34,9 @@ class ServerInfoRoutes(serverConfig: Server) extends AppRoutes[Client, Throwable
     }
 
   private def getServerInfo(req: Request) = {
-    val ips     = req.remoteAddress.map(_.toString).getOrElse("unknown")
-    val path    = req.path.encode
-    val method  = req.method.toString
+    val ips    = req.remoteAddress.map(_.toString).getOrElse("unknown")
+    val path   = req.path.encode
+    val method = req.method.toString
 
     ServerInfoResponse(
       id = ips,

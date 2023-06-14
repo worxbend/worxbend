@@ -4,7 +4,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 val CirceVersion = "0.14.5"
 
-ThisBuild / scalaVersion               := "3.2.0"
+ThisBuild / scalaVersion               := "3.3.0"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 
@@ -46,6 +46,7 @@ lazy val `reqflect` = (project in file("."))
       case PathList("META-INF", _*)              => MergeStrategy.discard
       case _                                     => MergeStrategy.first
     },
+    run / fork                       := true,
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio"                    % "2.0.12",
       "dev.zio" %% "zio-streams"            % "2.0.12",
@@ -55,6 +56,8 @@ lazy val `reqflect` = (project in file("."))
       "dev.zio" %% "zio-config-refined"     % "4.0.0-RC14",
       "dev.zio" %% "zio-http"               % "0.0.5",
       "dev.zio" %% "zio-json"               % "0.5.0",
+      "dev.zio" %% "zio-schema"             % "0.4.12",
+      "dev.zio" %% "zio-schema-json"        % "0.4.12",
       "dev.zio" %% "zio-logging"            % "2.1.12",
       "dev.zio" %% "zio-metrics-connectors" % "2.0.7",
       "dev.zio" %% "zio-cache"              % "0.2.3",

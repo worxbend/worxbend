@@ -17,4 +17,5 @@ case class NetworkInterfaceResponse(
   )
 
 object NetworkInterfaceResponse:
+
   implicit val encoder: JsonCodec[NetworkInterfaceResponse] = DeriveJsonCodec.gen[NetworkInterfaceResponse]

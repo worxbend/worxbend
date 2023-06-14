@@ -33,7 +33,11 @@ class MainRoutes(serverConfig: ServerConfig, serverInfoProviderService: ServerIn
         } yield response
     }
 
-  private def getServerInfo(req: Request): ZIO[Any, Throwable, ServerInfoResponse] = {
+  private def getServerInfo(req: Request): ZIO[
+    Any,
+    Throwable,
+    ServerInfoResponse,
+  ] = {
     val remoteAddress                = req.remoteAddress.map(_.toString).getOrElse("unknown")
     val path                         = req.path.encode
     val host                         = req.host.map(_.toString).getOrElse("unknown")

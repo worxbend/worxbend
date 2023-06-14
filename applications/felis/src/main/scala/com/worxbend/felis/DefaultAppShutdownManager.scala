@@ -1,5 +1,3 @@
 package com.worxbend.felis
 
-class DefaultAppShutdownManager() {
-
-}
+class DefaultAppShutdownManager() {}

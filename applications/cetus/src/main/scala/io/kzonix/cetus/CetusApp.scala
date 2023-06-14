@@ -1,8 +1,7 @@
 package io.kzonix.cetus
 
-import com.typesafe.config.ConfigFactory
 import io.kzonix.cetus.AppModule.*
-import izumi.distage.model.definition.ModuleDef
+
 import zio.*
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.*
@@ -17,22 +16,33 @@ import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
+import izumi.distage.model.definition.ModuleDef
+
 import scala.util.Try
 
+import com.typesafe.config.ConfigFactory
+
 object CetusApp extends ZIOAppDefault {
-  private val config = ConfigFactory.load()
+
+  private val config         = ConfigFactory.load()
   private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 
-
-  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+  override val bootstrap: ZLayer[
+    ZIOAppArgs,
+    Any,
+    Any,
+  ] =
     Runtime.removeDefaultLoggers
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
       >>> DefaultJvmMetrics.live
       >>> startupVerificationLayer
 
-  
-  override def run: ZIO[Any, Any, Any] =
+  override def run: ZIO[
+    Any,
+    Any,
+    Any,
+  ] =
     (for {
       httpApp   <- ZIO.service[CetusHttpApp]
       daemonApp <- ZIO.service[CetusDaemonApp]

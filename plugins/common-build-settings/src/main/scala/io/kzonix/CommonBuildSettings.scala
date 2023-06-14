@@ -1,8 +1,8 @@
 package io.kzonix
 
-import sbt.Def
-import sbt.*
 import CompilerOptions.*
+import sbt.*
+import sbt.Def
 import sbt.Keys.*
 
 object CommonBuildSettings extends AutoPlugin {
@@ -19,24 +19,24 @@ object CommonBuildSettings extends AutoPlugin {
         Defaults.testSettings ++
           Seq(
             IntegrationTest / parallelExecution := false,
-            IntegrationTest / scalaSource := baseDirectory.value / "src/it/scala"
+            IntegrationTest / scalaSource       := baseDirectory.value / "src/it/scala",
           )
       )
 
     val printPluginDependencies = taskKey[Unit]("It prints all the plugins")
+
   }
 
   override def projectSettings: Seq[Def.Setting[?]] =
     super.projectSettings ++ Seq(
-      ThisBuild / scalacOptions := Seq.empty //StandardOptions ++ AdvancedOptions
+      ThisBuild / scalacOptions := Seq.empty // StandardOptions ++ AdvancedOptions
     )
 
   override def globalSettings: Seq[Def.Setting[?]] = super.globalSettings
 
   override def extraProjects: Seq[Project] = super.extraProjects
 
-  override def buildSettings: Seq[Def.Setting[?]] =
-    super.buildSettings
+  override def buildSettings: Seq[Def.Setting[?]] = super.buildSettings
 
   /** !revise-me: consider `allRequirements` trigger. The build user still needs to include this plugin in
     * project/plugins.sbt, but it is no longer needed to be included in build.sbt. This becomes more interesting when

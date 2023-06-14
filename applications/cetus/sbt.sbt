@@ -13,7 +13,7 @@ Test / testOptions += Tests.Argument(
   "-oSD",
 )
 
-Test / turbo             := true
+Test / turbo := true
 
 ThisBuild / autoStartServer        := false
 ThisBuild / includePluginResolvers := true

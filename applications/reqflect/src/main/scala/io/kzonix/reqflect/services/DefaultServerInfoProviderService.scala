@@ -18,7 +18,11 @@ import java.net.NetworkInterface
 
 class DefaultServerInfoProviderService extends ServerInfoProviderService {
 
-  override def getSystemInfo(): ZIO[Any, ReqflectServiceException, SystemInfo] =
+  override def getSystemInfo(): ZIO[
+    Any,
+    ReqflectServiceException,
+    SystemInfo,
+  ] =
     for {
       _   <- ZIO.logInfo("Loading from system")
       res <- fetchSystemInfo()
@@ -51,19 +55,34 @@ class DefaultServerInfoProviderService extends ServerInfoProviderService {
       default = "",
     )
 
-  private def readProp(name: String): ZIO[Any, GeneralException, String] =
-    read(
-      f = zio.System.property(name),
-      default = "",
-    )
-
-  private def read[V](f: => ZIO[Any, Throwable, Option[V]], default: V) =
+  private def read[V](
+      f: => ZIO[
+        Any,
+        Throwable,
+        Option[V],
+      ],
+      default: V,
+    ) =
     f.mapBoth(
       e => GeneralException(e.getMessage),
       _.getOrElse(default),
     )
 
-  private def fetchNetworkInfo(): ZIO[Any, ReqflectServiceException, List[SystemInfo.NetworkInterface]] =
+  private def readProp(name: String): ZIO[
+    Any,
+    GeneralException,
+    String,
+  ] =
+    read(
+      f = zio.System.property(name),
+      default = "",
+    )
+
+  private def fetchNetworkInfo(): ZIO[
+    Any,
+    ReqflectServiceException,
+    List[SystemInfo.NetworkInterface],
+  ] =
     ZIO
       .attemptBlocking {
         val interfaces: Seq[NetworkInterface] = NetworkInterface.getNetworkInterfaces.asScala.toList
@@ -85,5 +104,4 @@ class DefaultServerInfoProviderService extends ServerInfoProviderService {
 }
 
 object DefaultServerInfoProviderService:
-
   def make(): DefaultServerInfoProviderService = new DefaultServerInfoProviderService
