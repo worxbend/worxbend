@@ -88,7 +88,6 @@ jobs:
     steps:
       - id: notify-error
         name: Notify on error (build)
-        if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_NOTIFY_CHAT }}
