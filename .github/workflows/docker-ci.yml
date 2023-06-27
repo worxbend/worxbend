@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: checkout
-        if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
         name: Checkout
         uses: actions/checkout@v3
       - id: changes
