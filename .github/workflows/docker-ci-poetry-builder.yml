@@ -79,3 +79,20 @@ jobs:
         run: |
           echo "Image ID: ${{ steps.build.outputs.imageid }} 
           echo "Image digest : ${{ steps.build.outputs.digest }}
+
+
+  notify-job:
+    runs-on: ubuntu-20.04
+    needs: [ build-and-deploy-poetry-builder ]
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    steps:
+      - id: notify-error
+        name: Notify on error (build)
+        if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_NOTIFY_CHAT }}
+          token: ${{ secrets.TELEGRAM_NOTIFY_TOKEN }}
+          message: |
+            #notifications
+            ❌ Failed to build `poetry-builder` image!
