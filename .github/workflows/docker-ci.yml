@@ -8,6 +8,10 @@ jobs:
   build-and-deploy-poetry-builder:
     runs-on: ubuntu-latest
     steps:
+      - id: checkout
+        if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
+        name: Checkout
+        uses: actions/checkout@v3
       - id: changes
         uses: dorny/paths-filter@v2
         name: Detect changes in Dockerfile of 'poetry-builder'
@@ -28,10 +32,6 @@ jobs:
             ✒ Commit message: ${{ github.event.commits[0].message }}
             🗃 Repository: ${{ github.repository }}, Dockerfile: poetry-builder
             📊 See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
-      - id: checkout
-        if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
-        name: Checkout
-        uses: actions/checkout@v3
       - name: Login to Docker Hub
         if: ${{ steps.changes.outputs.poetry-builder == 'true' }}
         uses: docker/login-action@v2
