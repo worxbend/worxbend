@@ -11,7 +11,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Add poetry to PATH
 ENV PATH="${PATH}:$POETRY_HOME/bin"
 
-RUN apt purge curl && \
+RUN apt purge curl -y && \
     apt autoclean && \
     apt autoremove
 
