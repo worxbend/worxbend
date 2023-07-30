@@ -34,7 +34,6 @@ object ReqflectApp extends ZIOAppDefault {
       >>> logMetrics
       >>> DefaultJvmMetrics.live
       >>> startupVerificationLayer
-  val unusedVal = "unused"
   private val config         = ConfigFactory.load()
   private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 

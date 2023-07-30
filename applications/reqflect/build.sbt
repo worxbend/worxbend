@@ -65,7 +65,7 @@ lazy val `reqflect` = (project in file("."))
       /* --- */
       "io.github.arainko" %% "ducktape" % "0.1.4",
     ),
-    graalVMNativeImageGraalVersion   := Some("latest"),
+    graalVMNativeImageGraalVersion   := Some("22.3.0"),
     graalVMNativeImageOptions ++= Seq(
       "-H:IncludeResources=logback.xml",
       "-H:+ReportUnsupportedElementsAtRuntime",

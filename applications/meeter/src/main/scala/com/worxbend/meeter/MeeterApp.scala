@@ -14,6 +14,8 @@ import com.typesafe.config.ConfigFactory
 
 object MeeterApp extends ZIOAppDefault:
 
+  private val config         = ConfigFactory.load()
+  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
   override val bootstrap: ZLayer[
     Any,
     Any,
@@ -24,8 +26,6 @@ object MeeterApp extends ZIOAppDefault:
       >>> consoleJsonLogger()
       >>> logMetrics
       >>> DefaultJvmMetrics.live
-  private val config         = ConfigFactory.load()
-  private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 
   override def run: ZIO[
     Any,
