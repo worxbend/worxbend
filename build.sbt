@@ -33,6 +33,7 @@ lazy val `worxbend` = (project in file("."))
     `cetus`,
     `meeter`,
     `reqflect`,
+    `sandbox`,
     /* >>----------<< */
     `worxflowr-core`,
   )
@@ -111,6 +112,11 @@ lazy val meeter = ProjectRef(
 lazy val `reqflect` = ProjectRef(
   file("applications/reqflect"),
   "reqflect",
+)
+
+lazy val `sandbox` = ProjectRef(
+  file("applications/sandbox"),
+  "sandbox",
 )
 /* >>-------------------------------<< */
 
