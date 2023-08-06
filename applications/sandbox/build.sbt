@@ -19,7 +19,7 @@ lazy val `sandbox` = (project in file("."))
   .settings(commonSettings)
   .settings(
     name                             := "sandbox",
-    Compile / mainClass              := Some("io.worxbend.SandboxApp"),
+    Compile / mainClass              := Some("com.worxbend.sandbox.SandboxApp"),
     assembly / mainClass             := (Compile / mainClass).value,
     assembly / assemblyJarName       := s"${ name.value }-${ version.value }.jar",
     assembly / assemblyCacheOutput   := false,
@@ -38,5 +38,7 @@ lazy val `sandbox` = (project in file("."))
       case _                                     => MergeStrategy.first
     },
     run / fork                       := true,
-    libraryDependencies ++= Seq(),
+    libraryDependencies ++= Seq(
+      "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.3"
+    ),
   )

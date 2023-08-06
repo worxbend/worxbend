@@ -16,5 +16,6 @@ object ScalacOptions {
     "-Wunused:params",              // show warnings about unused things
     "-Wunused:unsafe-warn-patvars", // show warnings about unused things
     "-Wunused:linted",              // show warnings about unused things
+    "-Xcheck-macros"
   )
 }

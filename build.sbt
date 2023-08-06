@@ -47,18 +47,18 @@ lazy val `worxbend` = (project in file("."))
 
 /* >>----- BEGIN: Plugins -----<< */
 lazy val `common-build-settings` = ProjectRef(
-  file("plugins/common-build-settings"),
-  "common-build-settings",
+  base = file("plugins/common-build-settings"),
+  id = "common-build-settings",
 )
 /* >>-------------------------------<< */
 lazy val `project-builder`       = ProjectRef(
-  file("plugins/project-builder"),
-  "project-builder",
+  base = file("plugins/project-builder"),
+  id = "project-builder",
 )
 /* >>-------------------------------<< */
 lazy val `project-dependencies`  = ProjectRef(
-  file("plugins/project-dependencies"),
-  "project-dependencies",
+  base = file("plugins/project-dependencies"),
+  id = "project-dependencies",
 )
 /* >>----- END: Plugins -----<< */
 
@@ -66,22 +66,22 @@ lazy val `project-dependencies`  = ProjectRef(
 
 /* >>-------------------------------<< */
 lazy val `worxflowr-core` = ProjectRef(
-  file("libs/worxflowr/worxflowr-core"),
-  "worxflowr-core",
+  base = file("libs/worxflowr/worxflowr-core"),
+  id = "worxflowr-core",
 )
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `worxflowr-scheduler` = ProjectRef(
-  file("libs/worxflowr/worxflowr-scheduler"),
-  "worxflowr-scheduler",
+  base = file("libs/worxflowr/worxflowr-scheduler"),
+  id = "worxflowr-scheduler",
 )
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `worxflowr-server` = ProjectRef(
-  file("libs/worxflowr/worxflowr-server"),
-  "worxflowr-server",
+  base = file("libs/worxflowr/worxflowr-server"),
+  id = "worxflowr-server",
 )
 /* >>-------------------------------<< */
 
@@ -91,32 +91,32 @@ lazy val `worxflowr-server` = ProjectRef(
 
 /* >>-------------------------------<< */
 lazy val `felis` = ProjectRef(
-  file("applications/felis"),
-  "felis",
+  base = file("applications/felis"),
+  id = "felis",
 )
 /* >>-------------------------------<< */
 lazy val `cetus` = ProjectRef(
-  file("applications/cetus"),
-  "cetus",
+  base = file("applications/cetus"),
+  id = "cetus",
 )
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val meeter = ProjectRef(
-  file("applications/meeter"),
-  "meeter",
+  base = file("applications/meeter"),
+  id = "meeter",
 )
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `reqflect` = ProjectRef(
-  file("applications/reqflect"),
-  "reqflect",
+  base = file("applications/reqflect"),
+  id = "reqflect",
 )
 
 lazy val `sandbox` = ProjectRef(
-  file("applications/sandbox"),
-  "sandbox",
+  base = file("applications/sandbox"),
+  id = "sandbox",
 )
 /* >>-------------------------------<< */
 
