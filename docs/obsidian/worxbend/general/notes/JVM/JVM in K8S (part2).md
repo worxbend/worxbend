@@ -1,4 +1,7 @@
+https://blog.ghaiklor.com/2018/02/20/avoid-running-nodejs-as-pid-1-under-docker-images/
+
 It is generally recommended to use a process supervisor as the initial process (PID 1) inside a container rather than running the Java application directly as PID 1. This is because a process supervisor, such as `systemd`or `supervisord`, can perform several important tasks that are critical for the proper functioning of the container.
+
 
 One of the most important tasks of the process supervisor is to handle signals properly. When a container receives a shutdown signal (such as SIGTERM), the process supervisor can ensure that the Java application is properly shut down and any resources that it is using are released before the container is stopped. If the Java application is running as PID 1, it may not handle signals correctly and can result in a misbehaving container that doesn't shut down cleanly.
 

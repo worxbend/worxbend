@@ -15,4 +15,4 @@ JVM Memory Configuration: Configuring JVM memory settings can be complex, but it
 3.  Use memory profiling tools: Memory profiling tools, such as jmap and jstat, can help identify memory leaks and optimize memory usage. These tools can be used to monitor heap usage, track object allocation, and identify areas for optimization.
     
 
-Conclusion: Running JVM applications in K8S can be challenging, but with the right configuration and tuning, it's possible to achieve optimal performance and stability. By setting appropriate resource limits, configuring JVM memory settings, and using memory profiling tools, you can avoid common JVM memory issues and ensure that your applications run smoothly in K8S.
+Conclusion: Running JVM applications in K8S can be challenging, but with the right configuration and tuning, achieving optimal performance and stability is possible. By setting appropriate resource limits, configuring JVM memory settings, and using memory profiling tools, you can avoid common JVM memory issues and ensure your applications run smoothly in K8S.
