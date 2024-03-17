@@ -1,0 +1,1 @@
+`fsck` command is used to check and optionally repair one or more Linux file systems. You don’t have to create or alter/modify any file. All you need to do is just create empty file called `/forcefsck`
