@@ -6,7 +6,7 @@ Global / startYear            := Some(2018)
 /* >>----- END:   Global Settings  -----<< */
 
 /* >>----- BEGIN: inThisBuild -----<< */
-ThisBuild / scalaVersion := "3.2.2"
+ThisBuild / scalaVersion := "3.3.3"
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
@@ -29,6 +29,7 @@ lazy val `worxbend` = (project in file("."))
     `project-builder`,
     `project-dependencies`,
     /* >>----------<< */
+    `aeon`,
     `felis`,
     `cetus`,
     `meeter`,
@@ -91,6 +92,14 @@ lazy val `worxflowr-server` = ProjectRef(
 
 
 /* >>----- BEGIN: Applications -----<< */
+
+/* >>-------------------------------<< */
+lazy val `aeon` = ProjectRef(
+  base = file("applications/aeon"),
+  id = "aeon",
+)
+
+/* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `felis` = ProjectRef(

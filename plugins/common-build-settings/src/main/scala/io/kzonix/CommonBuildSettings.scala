@@ -9,19 +9,9 @@ object CommonBuildSettings extends AutoPlugin {
 
   object autoImport {
 
-    val IntTest = config("it").extend(IntegrationTest)
 
     val buildEnv   = settingKey[BuildOptions.Environment]("The build environment (`production`, `develop`)")
     val buildStage = settingKey[BuildOptions.BuildStage]("The build environment (`ci`, `gh-ci`, `other`)")
-
-    lazy val IntegrationTestSettings: Seq[Def.Setting[?]] =
-      inConfig(IntTest)(
-        Defaults.testSettings ++
-          Seq(
-            IntegrationTest / parallelExecution := false,
-            IntegrationTest / scalaSource       := baseDirectory.value / "src/it/scala",
-          )
-      )
 
     val printPluginDependencies = taskKey[Unit]("It prints all the plugins")
 
