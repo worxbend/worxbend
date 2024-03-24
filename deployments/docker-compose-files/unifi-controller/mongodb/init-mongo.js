@@ -1,4 +1,4 @@
-const MONGODB_PASS='<replace_it>'
+const MONGODB_PASS='${MONGODB_PASS}'
 db.getSiblingDB("unifi").createUser({
     user: "unifi",
     pwd: `${MONGODB_PASS}`,
