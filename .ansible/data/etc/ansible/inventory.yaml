@@ -20,6 +20,10 @@ rpi:
       ansible_connection: ssh
       ansible_user: ubuntu
       ansible_host: 192.168.1.154
+    rpi5:
+      ansible_connection: ssh
+      ansible_user: pi
+      ansible_host: 192.168.1.155
 rock:
   hosts:
     rock1:

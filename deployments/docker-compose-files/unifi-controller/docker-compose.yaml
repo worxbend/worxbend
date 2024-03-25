@@ -31,7 +31,7 @@ services:
       - 5514:5514/udp #optional
 
   unifi-db:
-    image: mongo:latest
+    image: mongo:7.0.7
     container_name: unifi-db
     volumes:
       - ./mongodb/data:/data/db
