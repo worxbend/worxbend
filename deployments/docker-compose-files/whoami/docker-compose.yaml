@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  info-server:
+    container_name: info-server
+    restart: always
+    image: traefik/whoami:latest
+    command:
+      - --port=12345
+      - --name=info-server
+    ports:
+      - 12345:12345
