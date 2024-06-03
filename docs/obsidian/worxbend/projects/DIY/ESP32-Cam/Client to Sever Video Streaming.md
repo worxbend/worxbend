@@ -10,9 +10,9 @@
 
 ### Check connectivity and network speed
 
+**TO BE ADDED**
 
 ## Reconnect to Wi-Fi Network After Lost Connection
-
 
 To reconnect to Wi-Fi after a connection is lost, you can use WiFi.reconnect() to try to reconnect to the previously connected access point:
 
