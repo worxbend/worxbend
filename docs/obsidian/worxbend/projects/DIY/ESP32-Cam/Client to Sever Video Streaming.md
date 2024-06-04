@@ -154,3 +154,10 @@ void loop(){
 
 Reference:
 - https://randomnerdtutorials.com/solved-reconnect-esp32-to-wifi/
+
+
+## ESP32 Cam Library
+
+ https://github.com/espressif/esp32-camera
+ 
+ https://github.com/espressif/esp32-camera?tab=readme-ov-file#jpeg-http-stream
