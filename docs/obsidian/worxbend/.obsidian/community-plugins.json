@@ -4,5 +4,8 @@
   "obsidian-kanban",
   "obsidian-git",
   "obsidian-pandoc",
-  "obsidian-tasks-plugin"
+  "obsidian-tasks-plugin",
+  "obsidian-icon-folder",
+  "smart-connections",
+  "copilot"
 ]
