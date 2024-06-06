@@ -61,3 +61,55 @@ Since you can't connect parts of fans, we round down to the nearest whole number
     
 
 By following these guidelines, you can safely connect multiple 0.2A fans to your L298N driver for your Raspberry Pi cluster fan hub.
+
+
+# L298N
+
+Details - https://lastminuteengineers.com/l298n-dc-stepper-driver-arduino-tutorial/
+
+## L298N Motor Driver Module Pinout
+
+The L298N module has 11 pins that allow it to communicate with the outside world. The pinout is as follows:
+![[Pasted image 20240606121736.png]]
+
+### Power Pins
+
+The L298N motor driver module receives power from a 3-pin, 3.5mm-pitch screw terminal.
+
+The L298N motor driver has two input power pins: VS and VSS.
+
+ - VS pin powers the IC’s internal H-Bridge, which drives the motors. This pin accepts input voltages ranging from 5 to 12V.
+
+ - VSS is used to power the logic circuitry within the L298N IC, and can range between 5V and 7V.
+
+ - GND is the common ground pin.
+![[Pasted image 20240606121747.png]]
+
+### Output Pins
+![[Pasted image 20240606121802.png]]
+
+The output channels of the L298N motor driver, `OUT1` and `OUT2` for `motor A` and `OUT3` and `OUT4` for `motor B`, are broken out to the edge of the module with two 3.5mm-pitch screw terminals. You can connect two 5-12V DC motors to these terminals. Each channel on the module can supply up to 2A to the DC motor. The amount of current supplied to the motor, however, depends on the capacity of the motor power supply.
+
+### Direction Control Pins
+
+The direction control pins allow you to control whether the motor rotates forward or backward. These pins actually control the switches of the H-Bridge circuit within the L298N chip.
+![[Pasted image 20240606122157.png]]
+The module has two direction control pins. The IN1 and IN2 pins control the spinning direction of motor A; While IN3 and IN4 control the spinning direction of motor B.
+
+The spinning direction of the motor can be controlled by applying logic HIGH (5V) or logic LOW (Ground) to these inputs. The chart below shows various combinations and their outcomes.
+
+|   |   |   |
+|---|---|---|
+|Input1|Input2|Spinning Direction|
+|Low(0)|Low(0)|Motor OFF|
+|High(1)|Low(0)|Forward|
+|Low(0)|High(1)|Backward|
+|High(1)|High(1)|Motor OFF|
+
+### Speed Control Pins
+
+The speed control pins ENA and ENB are used to turn on/off the motors and control their speed.
+![[Pasted image 20240606122207.png]]
+Pulling these pins HIGH will cause the motors to spin, while pulling them LOW will stop them. However, with Pulse Width Modulation (PWM), the speed of the motors can be controlled.
+
+The module usually comes with a jumper on these pins. When this jumper is in place, the motor spins at full speed. If you want to control the speed of the motors programmatically, remove the jumpers and connect them to the Arduino’s PWM-enabled pins.
