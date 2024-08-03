@@ -6,7 +6,7 @@ Global / startYear            := Some(2018)
 /* >>----- END:   Global Settings  -----<< */
 
 /* >>----- BEGIN: inThisBuild -----<< */
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / scalaVersion := "3.4.2"
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
