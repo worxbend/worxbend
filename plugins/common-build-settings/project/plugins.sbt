@@ -1,6 +1,6 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / sbtVersion      := "1.9.8"
+ThisBuild / sbtVersion      := "1.10.1"
 ThisBuild / useSuperShell   := false
 ThisBuild / autoStartServer := false
 

@@ -1,6 +1,6 @@
 logLevel                 := util.Level.Debug
 ThisBuild / scalaVersion := "2.12.18"
-ThisBuild / sbtVersion   := "1.9.8"
+ThisBuild / sbtVersion   := "1.10.1"
 
 dependsOn(
   ProjectRef(
@@ -16,9 +16,6 @@ dependsOn(
   )
 )
 
-addDependencyTreePlugin
-
-addSbtPlugin("org.wartremover"   % "sbt-wartremover"     % "3.0.9")
 addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"        % "0.11.0")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.4.3")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter"  % "0.6.1")
