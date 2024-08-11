@@ -161,3 +161,177 @@ Reference:
  https://github.com/espressif/esp32-camera
  
  https://github.com/espressif/esp32-camera?tab=readme-ov-file#jpeg-http-stream
+
+## Streaming MJPEG Video
+
+The ESP32-CAM does not have built-in hardware support for H.264 encoding, but it can handle MJPEG (Motion JPEG) compression
+
+MJPEG (Motion JPEG): The ESP32-CAM can capture and encode video frames in MJPEG format. 
+This format compresses each frame as a separate JPEG image, which is straightforward to implement and can be streamed over HTTP
+
+ESP32-CAM Code Example (MJPEG Streaming):
+
+```
+#include <WiFi.h>
+#include <ESP32WebServer.h>
+#include <esp_camera.h>
+
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+ESP32WebServer server(80);
+
+void setup() {
+    Serial.begin(115200);
+    camera_config_t config;
+    // Camera configuration here
+    esp_camera_init(&config);
+    
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.print(".");
+    }
+    Serial.println("Connected to WiFi");
+    
+    server.on("/stream", HTTP_GET, []() {
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (!fb) {
+            server.send(500, "text/plain", "Failed to capture image");
+            return;
+        }
+        server.sendHeader("Access-Control-Allow-Origin", "*");
+        server.send_P(200, "multipart/x-mixed-replace; boundary=boundary","--boundary\r\nContent-Type: image/jpeg\r\nContent-Length: " + String(fb->len) + "\r\n\r\n" + String((char*)fb->buf) + "\r\n--boundary--");
+        esp_camera_fb_return(fb);
+    });
+
+    server.begin();
+}
+
+void loop() {
+    server.handleClient();
+}
+```
+For an ESP32-CAM to act as a client sending frames to a remote server, you’ll typically use HTTP POST requests to transmit each frame.  
+
+
+```
+#include <WiFi.h>
+#include <esp_camera.h>
+#include <HTTPClient.h>
+
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+const char* serverUrl = "http://yourserver.com/upload"; // Server endpoint for receiving frames
+
+void setup() {
+  Serial.begin(115200);
+  camera_config_t config;
+  // Camera configuration here
+  esp_camera_init(&config);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  camera_fb_t *fb = esp_camera_fb_get();
+  if (!fb) {
+    Serial.println("Failed to capture image");
+    return;
+  }
+
+  HTTPClient http;
+  http.begin(serverUrl);
+  http.addHeader("Content-Type", "image/jpeg");
+  
+  int httpResponseCode = http.POST(fb->buf, fb->len);
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    Serial.println("Server Response: " + response);
+  } else {
+    Serial.println("Error on HTTP request");
+  }
+
+  http.end();
+  esp_camera_fb_return(fb);
+
+  delay(1000); // Adjust delay as needed
+}
+
+```
+
+Configure your server to handle MJPEG streams. A simple HTTP server or a more robust media server can be used to receive and process the MJPEG stream.
+
+---
+
+Use FFmpeg to Stream to YouTube/Twitch
+
+FFmpeg can read images from a directory and convert them into a video stream. You can use a script to start FFmpeg and continuously convert the saved images into an H.264 stream.
+
+FFmpeg Command:
+
+```bash
+ffmpeg -framerate 30 -pattern_type glob -i '/path/to/upload/folder/*.jpg' -c:v libx264 -pix_fmt yuv420p -preset fast -f flv 'rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY'
+```
+
+```bash
+ffmpeg -re -loop 1 -i '/path/to/upload/folder/current_frame.jpg' -c:v libx264 -pix_fmt yuv420p -preset fast -f flv 'rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY'
+
+```
+- re: Read input at the native frame rate, useful for streaming.
+- loop 1: Loop the input file (in this case, the single JPEG) to continuously process the latest frame. 
+- framerate 30: Set the frame rate of the output video.
+- pattern_type glob -i '/path/to/upload/folder/*.jpg': Read all JPEG images from the specified directory.
+- c:v libx264: Use the H.264 codec.
+- pix_fmt yuv420p: Set the pixel format to yuv420p for compatibility.
+- preset fast: Choose a balance between encoding speed and compression efficiency.
+- f flv 'rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY': Stream the output to YouTube using RTMP.
+
+```shell
+#!/bin/bash
+
+IMAGE_PATH="/path/to/upload/folder/current_frame.jpg"
+YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY"
+
+while true; do
+  ffmpeg -re -loop 1 -i "$IMAGE_PATH" -c:v libx264 -pix_fmt yuv420p -preset fast -f flv "$YOUTUBE_URL"
+  sleep 1
+done
+
+```
+
+Handling file access and concurrent writing issues is crucial in such setups to ensure a smooth streaming experience.
+If FFmpeg attempts to read a file while it is being written and the file is partially written or corrupted, we
+need to handle concurrent file access and avoid issues.
+**Use Atomic File Operations**
+Ensure that the file is fully written before it’s accessible to FFmpeg. 
+This can be achieved using atomic file operations, where the server writes to a temporary file and then renames it to the target file name.
+
+```python
+import os
+import tempfile
+
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'image/jpeg' in request.content_type:
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+        temp_file.write(request.data)
+        temp_file.close()
+        
+        # Rename the temporary file to the target filename
+        final_path = os.path.join(UPLOAD_FOLDER, 'current_frame.jpg')
+        os.rename(temp_file.name, final_path)
+        return 'Image received', 200
+    return 'Unsupported Media Type', 415
+
+```
+
+
+
+
