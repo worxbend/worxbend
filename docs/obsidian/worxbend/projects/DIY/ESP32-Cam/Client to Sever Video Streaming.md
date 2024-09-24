@@ -171,7 +171,7 @@ This format compresses each frame as a separate JPEG image, which is straightfor
 
 ESP32-CAM Code Example (MJPEG Streaming):
 
-```
+```cpp
 #include <WiFi.h>
 #include <ESP32WebServer.h>
 #include <esp_camera.h>
@@ -215,7 +215,7 @@ void loop() {
 For an ESP32-CAM to act as a client sending frames to a remote server, you’ll typically use HTTP POST requests to transmit each frame.  
 
 
-```
+```cpp
 #include <WiFi.h>
 #include <esp_camera.h>
 #include <HTTPClient.h>
@@ -295,8 +295,8 @@ ffmpeg -re -loop 1 -i '/path/to/upload/folder/current_frame.jpg' -c:v libx264 -p
 ```shell
 #!/bin/bash
 
-IMAGE_PATH="/path/to/upload/folder/current_frame.jpg"
-YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/YOUR_STREAM_KEY"
+IMAGE_PATH="/home/worxbend/Pictures/Frames/current_frame.jpg"
+YOUTUBE_URL="rtmp://iad05.contribute.live-video.net/app/<>"
 
 while true; do
   ffmpeg -re -loop 1 -i "$IMAGE_PATH" -c:v libx264 -pix_fmt yuv420p -preset fast -f flv "$YOUTUBE_URL"
@@ -332,6 +332,9 @@ def upload_image():
 
 ```
 
+How to implement a server in Go:
+https://github.com/gorilla
+https://echo.labstack.com/docs/cookbook/websocket
 
-
+https://github.com/amitshekhariitbhu/go-backend-clean-architecture/blob/main/cmd/main.go
 
