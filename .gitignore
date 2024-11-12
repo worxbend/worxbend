@@ -484,7 +484,7 @@ project/plugins/project/
 docker/lenses/.env
 
 **/.obsidian/**
-**/obsidian/worxbend/.smart-connections
+docs/worxbend/.smart-connections
 !**/.obsidian/app.json
 !**/.obsidian/appearance.json
 !**/.obsidian/canvas.json
