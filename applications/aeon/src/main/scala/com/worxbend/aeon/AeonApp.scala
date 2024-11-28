@@ -65,7 +65,6 @@ object AeonApp {
           case e: io.kubernetes.client.openapi.ApiException => println(e.getMessage)
         }
 
-        Thread.sleep(5000)
         job
           .getSpec
           .getTemplate
