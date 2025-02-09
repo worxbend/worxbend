@@ -33,5 +33,5 @@ object CaseClassMacros {
     given Print[java.time.LocalTime] = _.toString
 
     given seq[T](using printT: Print[T]): Print[Seq[T]] =
-      _.map(printT.print).mkString("[", ",", "]")
+      _.map(printT.print).mkString("[", ", ", "]")
 }

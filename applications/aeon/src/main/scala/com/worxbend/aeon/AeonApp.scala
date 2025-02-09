@@ -2,8 +2,8 @@ package com.worxbend.aeon
 
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.Configuration
+import io.kubernetes.client.openapi.apis._
 import io.kubernetes.client.openapi.apis.BatchV1Api
-import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.V1EnvVar
 import io.kubernetes.client.openapi.models.V1Job
 import io.kubernetes.client.openapi.models.V1Pod
@@ -19,8 +19,12 @@ object AeonApp {
 
     Configuration.setDefaultApiClient(client)
 
-    val api                    = new CoreV1Api()
-    val batchV1Api: BatchV1Api = new BatchV1Api()
+    val api                    = new CoreV1Api(client)
+    val discoveryV1Api         = new DiscoveryV1Api(client)
+    val a                      = new AppsV1Api(client)
+    val batchV1Api: BatchV1Api = new BatchV1Api(client)
+
+    val deployments = a.listNamespacedDeployment("namespace")
 
     val podsListReq: CoreV1Api#APIlistPodForAllNamespacesRequest = api.listPodForAllNamespaces()
     val podList: V1PodList                                       = podsListReq.execute()

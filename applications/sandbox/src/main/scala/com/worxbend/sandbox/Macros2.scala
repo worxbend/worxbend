@@ -42,7 +42,7 @@ object Macros2 {
           }
           .mkString(s"${ configuration.elementsSeparator.toString } ")
         val (l, r)               = configuration.wrappingCharacters
-        s"${ product.productPrefix }$l $productLabeledValues $r"
+        s"${ product.productPrefix }$l$productLabeledValues$r"
       }
     string
 
@@ -58,7 +58,7 @@ object Macros2 {
   inline def toString[T <: Product](
       inline x: T
     )(using
-      inline configuration: Configuration = Configuration()
+      inline configuration: Configuration
     ): String = ${ toStringImpl[T]('x, 'configuration) }
 
 }

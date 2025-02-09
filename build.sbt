@@ -37,6 +37,8 @@ lazy val `worxbend` = (project in file("."))
     `sandbox`,
     /* >>----------<< */
     `worxflowr-core`,
+    `describo`,
+    `dscrbo`,
   )
 /* >>----- END: Root project -----<< */
 
@@ -66,6 +68,20 @@ lazy val `project-dependencies`  = ProjectRef(
 /* >>----- BEGIN: Libraries -----<< */
 
 /* >>-------------------------------<< */
+lazy val `describo` = ProjectRef(
+  base = file("libs/commons/describo"),
+  id = "describo",
+)
+/* >>-------------------------------<< */
+
+/* >>-------------------------------<< */
+lazy val `dscrbo` = ProjectRef(
+  base = file("libs/commons/dscrbo"),
+  id = "dscrbo",
+)
+/* >>-------------------------------<< */
+
+/* >>-------------------------------<< */
 lazy val `worxflowr-core` = ProjectRef(
   base = file("libs/worxflowr/worxflowr-core"),
   id = "worxflowr-core",
@@ -87,9 +103,6 @@ lazy val `worxflowr-server` = ProjectRef(
 /* >>-------------------------------<< */
 
 /* >>----- END: Libraries -----<< */
-
-
-
 
 /* >>----- BEGIN: Applications -----<< */
 
