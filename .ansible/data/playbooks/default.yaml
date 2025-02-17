@@ -1,4 +1,4 @@
-- hosts: rpi
+- hosts: all
   name: Network Getting Started First Playbook
   connection: ansible.builtin.ssh
   tasks:
@@ -17,13 +17,11 @@
         pkg:
           - apt-transport-https
           - ca-certificates
-          - curl
           - software-properties-common
-          - python3-pip
-          - virtualenv
-          - python3-setuptools
-          - vim
-          - neovim
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
         state: latest
         update_cache: true
 

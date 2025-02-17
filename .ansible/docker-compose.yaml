@@ -10,7 +10,6 @@ services:
     volumes:
       - ./data/etc/ansible:/etc/ansible
       - ./data/playbooks:/home/alpine/playbooks
-      - ./../deployments/docker-compose-files/prometheus-node-exporter:/home/alpine/prometheus-node-exporter
       - ./start.sh:/home/alpine/start.sh:rwx
     env_file:
       - .env

@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   unifi-network-application:
     image: lscr.io/linuxserver/unifi-network-application:latest
@@ -29,23 +28,22 @@ services:
       - 8880:8880 #optional
       - 6789:6789 #optional
       - 5514:5514/udp #optional
+    env_file:
+      - .env
 
   unifi-db:
-    image: mongo:7.0.7
+    image: docker.io/mongo:latest
     container_name: unifi-db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PASS}
+      - MONGO_USER=unifi
+      - MONGO_PASS=${MONGODB_PASS}
+      - MONGO_DBNAME=unifi
+      - MONGO_AUTHSOURCE=admin
     volumes:
       - ./mongodb/data:/data/db
-      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
     restart: always
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    depends_on:
-      - unifi-db
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: unifi
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGODB_PASS}
-      ME_CONFIG_MONGODB_URL: mongodb://unifi:${MONGODB_PASS}@unifi-db:27017/
+    env_file:
+      - .env
