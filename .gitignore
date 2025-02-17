@@ -495,3 +495,8 @@ docs/worxbend/.smart-connections
 !**/.obsidian/page-preview.json
 **/.volumes/
 /deployments/**/**/.volumes/
+
+# Python .venv
+
+.venv
+**/.venv

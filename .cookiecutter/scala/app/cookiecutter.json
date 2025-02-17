@@ -1,0 +1,17 @@
+{
+  "project_name": "My New Project",
+  "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
+  "main_class": "{{ cookiecutter.project_name|replace(' ', '') }}App",
+  "project_version": "0.1.0-SNAPSHOT",
+  "package_prefix": "io.worxbend",
+  "full_package": "{{ cookiecutter.package_prefix }}.{{ cookiecutter.project_slug }}",
+  "full_package_path": "{{ cookiecutter.full_package|replace('.', '/')}}",
+  "license": [
+    "MIT",
+    "BSD-3",
+    "GNU GPL v3.0",
+    "Apache Software License 2.0"
+  ],
+  "sbt_version": "1.10.7",
+  "scala_version": "3.6.3"
+}
