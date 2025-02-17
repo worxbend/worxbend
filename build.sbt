@@ -23,11 +23,17 @@ lazy val `worxbend` = (project in file("."))
   )
   .aggregate(
     /* >>----------<< */
-    /*`scalafix-rules` ,*/
+    /* > scalafix-rules < */
+    /* >>----------<< */
+
+    /* >>----------<< */
+    /* > plugins < */
     /* >>----------<< */
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
+    /* >>----------<< */
+    /* > applications < */
     /* >>----------<< */
     `aeon`,
     `felis`,
@@ -35,6 +41,9 @@ lazy val `worxbend` = (project in file("."))
     `meeter`,
     `reqflect`,
     `sandbox`,
+    `inaya`,
+    /* >>----------<< */
+    /* > libraries < */
     /* >>----------<< */
     `worxflowr-core`,
     `describo`,
@@ -138,13 +147,20 @@ lazy val `reqflect` = ProjectRef(
   base = file("applications/reqflect"),
   id = "reqflect",
 )
+/* >>-------------------------------<< */
 
+/* >>-------------------------------<< */
 lazy val `sandbox` = ProjectRef(
   base = file("applications/sandbox"),
   id = "sandbox",
 )
 /* >>-------------------------------<< */
 
+/* >>-------------------------------<< */
+lazy val `inaya` = ProjectRef(
+  base = file("applications/inaya"),
+  id = "inaya",
+)
+/* >>-------------------------------<< */
 /* >>----- END: Applications -----<< */
-
 /* >>-------------------------------<< */

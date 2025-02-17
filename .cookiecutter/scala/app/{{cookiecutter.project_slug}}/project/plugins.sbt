@@ -1,6 +1,6 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / sbtVersion      := { cookiecutter.sbt_version }
+ThisBuild / sbtVersion      := "{{ cookiecutter.sbt_version }}"
 ThisBuild / useSuperShell   := false
 ThisBuild / autoStartServer := false
 
