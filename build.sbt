@@ -1,5 +1,6 @@
 import BaseSettings.defaultSettings
 
+// region global
 /* >>----- BEGIN: Global Settings -----<< */
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / startYear            := Some(2018)
@@ -10,8 +11,9 @@ ThisBuild / scalaVersion := "3.4.2"
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
+// endregion global
 
-/* >>----- BEGIN: Root project -----<< */
+// region root
 lazy val `worxbend` = (project in file("."))
   .enablePlugins(
     CommonBuildSettings,
@@ -22,59 +24,70 @@ lazy val `worxbend` = (project in file("."))
     name := "worxbend"
   )
   .aggregate(
-    /* >>----------<< */
-    /* > scalafix-rules < */
-    /* >>----------<< */
-
-    /* >>----------<< */
-    /* > plugins < */
-    /* >>----------<< */
+    // region aggregate-plugins
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
-    /* >>----------<< */
-    /* > applications < */
-    /* >>----------<< */
+    // endregion aggregate-plugins
+
+    // region aggregate-apps
     `aeon`,
-    `felis`,
     `cetus`,
+    `felis`,
+    `inaya`,
     `meeter`,
+    `nimblox`,
     `reqflect`,
     `sandbox`,
-    `inaya`,
-    /* >>----------<< */
-    /* > libraries < */
-    /* >>----------<< */
+    `vex`,
+    // endregion aggregate-apps
+
+    // region aggregate-libs
     `worxflowr-core`,
     `describo`,
     `dscrbo`,
+    // endregion aggregate-libs
   )
 /* >>----- END: Root project -----<< */
+// endregion root
 
+// region scalafix
 /* >>----- BEGIN: Scalafix -----<< */
 
 /* ... */
 
 /* >>----- END: Scalafix -----<< */
+//endregion scalafix
 
-/* >>----- BEGIN: Plugins -----<< */
+// region plugins
+
+/* >>-------------------------------<< */
 lazy val `common-build-settings` = ProjectRef(
   base = file("plugins/common-build-settings"),
   id = "common-build-settings",
 )
+/* >>-------------------------------<< */
+
+
 /* >>-------------------------------<< */
 lazy val `project-builder`       = ProjectRef(
   base = file("plugins/project-builder"),
   id = "project-builder",
 )
 /* >>-------------------------------<< */
+
+
+/* >>-------------------------------<< */
 lazy val `project-dependencies`  = ProjectRef(
   base = file("plugins/project-dependencies"),
   id = "project-dependencies",
 )
-/* >>----- END: Plugins -----<< */
+/* >>-------------------------------<< */
 
-/* >>----- BEGIN: Libraries -----<< */
+
+//endregion plugins
+
+// region libs
 
 /* >>-------------------------------<< */
 lazy val `describo` = ProjectRef(
@@ -111,23 +124,18 @@ lazy val `worxflowr-server` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-/* >>----- END: Libraries -----<< */
+// endregion libs
 
-/* >>----- BEGIN: Applications -----<< */
+// region apps
 
 /* >>-------------------------------<< */
 lazy val `aeon` = ProjectRef(
   base = file("applications/aeon"),
   id = "aeon",
 )
-
 /* >>-------------------------------<< */
 
-/* >>-------------------------------<< */
-lazy val `felis` = ProjectRef(
-  base = file("applications/felis"),
-  id = "felis",
-)
+
 /* >>-------------------------------<< */
 lazy val `cetus` = ProjectRef(
   base = file("applications/cetus"),
@@ -135,12 +143,38 @@ lazy val `cetus` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
+
 /* >>-------------------------------<< */
-lazy val meeter = ProjectRef(
+lazy val `felis` = ProjectRef(
+  base = file("applications/felis"),
+  id = "felis",
+)
+/* >>-------------------------------<< */
+
+
+/* >>-------------------------------<< */
+lazy val `inaya` = ProjectRef(
+  base = file("applications/inaya"),
+  id = "inaya",
+)
+/* >>-------------------------------<< */
+
+
+/* >>-------------------------------<< */
+lazy val `meeter` = ProjectRef(
   base = file("applications/meeter"),
   id = "meeter",
 )
 /* >>-------------------------------<< */
+
+
+/* >>-------------------------------<< */
+lazy val `nimblox` = ProjectRef(
+  base = file("applications/nimblox"),
+  id = "nimblox",
+)
+/* >>-------------------------------<< */
+
 
 /* >>-------------------------------<< */
 lazy val `reqflect` = ProjectRef(
@@ -149,6 +183,7 @@ lazy val `reqflect` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
+
 /* >>-------------------------------<< */
 lazy val `sandbox` = ProjectRef(
   base = file("applications/sandbox"),
@@ -156,11 +191,12 @@ lazy val `sandbox` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
+
 /* >>-------------------------------<< */
-lazy val `inaya` = ProjectRef(
-  base = file("applications/inaya"),
-  id = "inaya",
+lazy val `vex` = ProjectRef(
+  base = file("applications/void/vex"),
+  id = "vex",
 )
 /* >>-------------------------------<< */
-/* >>----- END: Applications -----<< */
-/* >>-------------------------------<< */
+
+// endregion apps
