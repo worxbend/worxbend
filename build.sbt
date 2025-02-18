@@ -1,5 +1,6 @@
 import BaseSettings.defaultSettings
 
+//region global
 /* >>----- BEGIN: Global Settings -----<< */
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / startYear            := Some(2018)
@@ -10,8 +11,14 @@ ThisBuild / scalaVersion := "3.4.2"
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
+//endregion global
 
+
+//region root
+/* >>-------------------------------<< */
 /* >>----- BEGIN: Root project -----<< */
+/* >>-------------------------------<< */
+
 lazy val `worxbend` = (project in file("."))
   .enablePlugins(
     CommonBuildSettings,
@@ -50,14 +57,23 @@ lazy val `worxbend` = (project in file("."))
     `dscrbo`,
   )
 /* >>----- END: Root project -----<< */
+//endregion root
 
+
+//region scalafix
 /* >>----- BEGIN: Scalafix -----<< */
 
 /* ... */
 
 /* >>----- END: Scalafix -----<< */
+//endregion scalafix
 
+
+//region plugins
+/* >>--------------------------<< */
 /* >>----- BEGIN: Plugins -----<< */
+/* >>--------------------------<< */
+
 lazy val `common-build-settings` = ProjectRef(
   base = file("plugins/common-build-settings"),
   id = "common-build-settings",
@@ -72,9 +88,17 @@ lazy val `project-dependencies`  = ProjectRef(
   base = file("plugins/project-dependencies"),
   id = "project-dependencies",
 )
-/* >>----- END: Plugins -----<< */
 
-/* >>----- BEGIN: Libraries -----<< */
+/* >>------------------------<< */
+/* >>----- END: Plugins -----<< */
+/* >>------------------------<< */
+//endregion plugins
+
+
+//region libs
+/* >>-------------------------------<< */
+/* >>------- BEGIN: Libraries ------<< */
+/* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `describo` = ProjectRef(
@@ -111,16 +135,22 @@ lazy val `worxflowr-server` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-/* >>----- END: Libraries -----<< */
+/* >>-------------------------------<< */
+/* >>------- END: Libraries --------<< */
+/* >>-------------------------------<< */
+//endregion libs
 
+
+//region apps
+/* >>-------------------------------<< */
 /* >>----- BEGIN: Applications -----<< */
+/* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
 lazy val `aeon` = ProjectRef(
   base = file("applications/aeon"),
   id = "aeon",
 )
-
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
@@ -164,3 +194,4 @@ lazy val `inaya` = ProjectRef(
 /* >>-------------------------------<< */
 /* >>----- END: Applications -----<< */
 /* >>-------------------------------<< */
+//endregion apps
