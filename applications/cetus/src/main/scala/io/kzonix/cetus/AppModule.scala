@@ -30,24 +30,24 @@ object AppModule {
     Any,
     Nothing,
     MetricsRoutes,
-  ] = ZLayer.fromFunction(MetricsRoutes.apply _)
+  ] = ZLayer.fromFunction(() => MetricsRoutes.apply())
 
   val serverInfoRoutes: ZLayer[
     Server,
     Nothing,
     ServerInfoRoutes,
-  ] = ZLayer.fromFunction(ServerInfoRoutes.apply _)
+  ] = ZLayer.fromFunction(ServerInfoRoutes.apply)
 
   val httpApp: ZLayer[
     MetricsRoutes & ServerInfoRoutes & Server,
     Nothing,
     CetusHttpApp,
-  ] = ZLayer.fromFunction(CetusHttpApp.apply _)
+  ] = ZLayer.fromFunction(CetusHttpApp.apply)
 
   val daemonApp: ZLayer[
     Any,
     Nothing,
     CetusDaemonApp,
-  ] = ZLayer.fromFunction(CetusDaemonApp.apply _)
+  ] = ZLayer.fromFunction(() => CetusDaemonApp.apply())
 
 }

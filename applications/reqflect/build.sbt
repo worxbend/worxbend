@@ -25,7 +25,7 @@ lazy val `reqflect` = (project in file("."))
     JavaAppPackaging,
     GraalVMNativeImagePlugin,
   )
-  .settings(commonSettings)
+  .settings(commonSettings *)
   .settings(
     name                             := "reqflect",
     Compile / mainClass              := Some("io.kzonix.reqflect.ReqflectApp"),

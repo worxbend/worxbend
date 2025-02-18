@@ -48,34 +48,34 @@ object AppModule {
     Any,
     Nothing,
     MetricsRoutes,
-  ] = ZLayer.fromFunction(MetricsRoutes.make _)
+  ] = ZLayer.fromFunction(() => MetricsRoutes.make())
 
   val serverInfoRoutes: ZLayer[
     ServerConfig & ServerInfoProviderService,
     Nothing,
     MainRoutes,
   ] = ZLayer
-    .fromFunction(MainRoutes.make _)
+    .fromFunction(MainRoutes.make)
 
   val httpApp: ZLayer[
     App,
     Nothing,
     ReqflectHttpServerApp,
-  ] = ZLayer.fromFunction(ReqflectHttpServerApp.make _)
+  ] = ZLayer.fromFunction(ReqflectHttpServerApp.make)
 
   val daemonApp: ZLayer[
     ServerInfoProviderService,
     Nothing,
     ReqflectDaemonApp,
   ] = ZLayer
-    .fromFunction(ReqflectDaemonApp.make _)
+    .fromFunction(ReqflectDaemonApp.make)
 
   val defaultServerInfoProviderService: ZLayer[
     Any,
     Nothing,
     ServerInfoProviderService,
   ] = ZLayer
-    .fromFunction(DefaultServerInfoProviderService.make _)
+    .fromFunction(() => DefaultServerInfoProviderService.make())
 
   val serverInfoCache: ZLayer[
     Any,
@@ -92,6 +92,6 @@ object AppModule {
     Nothing,
     ServerInfoProviderService,
   ] = ZLayer
-    .fromFunction(CacheAwareServerInfoProviderService.make _)
+    .fromFunction(CacheAwareServerInfoProviderService.make)
 
 }

@@ -1,21 +1,22 @@
+import sbt.Def
 import sbtassembly.AssemblyPlugin.defaultShellScript
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
-ThisBuild / scalaVersion               := "3.4.2"
+ThisBuild / scalaVersion               := "3.6.3"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 
-lazy val commonSettings =
-  commonScalacOptions ++ Seq(
-    update / evictionWarningOptions := EvictionWarningOptions.empty
-  )
-
-lazy val commonScalacOptions = Seq(
+lazy val commonScalacOptions: Seq[Def.SettingsDefinition] = Seq(
   Compile / console / scalacOptions := ScalacOptions.Common,
   Test / console / scalacOptions    :=
     (Compile / console / scalacOptions).value,
 )
+
+lazy val commonSettings: Seq[Def.SettingsDefinition] =
+  commonScalacOptions ++ Seq(
+    update / evictionWarningOptions := EvictionWarningOptions.empty
+  )
 
 lazy val `meeter` = (project in file("."))
   .enablePlugins(
@@ -24,7 +25,7 @@ lazy val `meeter` = (project in file("."))
     AssemblyPlugin,
     NativeImagePlugin,
   )
-  .settings(commonSettings)
+  .settings(commonSettings *)
   .settings(
     name                             := "meeter",
     Compile / mainClass              := Some("com.worxbend.meeter.MeeterApp"),

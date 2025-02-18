@@ -1,8 +1,6 @@
 package com.worxbend.meeter
 
-import zio.UIO
-import zio.ZIO
-import zio.ZLayer
+import zio.{ UIO, ZIO, ZLayer }
 
 class JitsiMeetLinkGeneratorService extends MeetLinkGeneratorService:
   override def generateLink(): UIO[String] = ZIO.succeed("jitsi")
@@ -13,6 +11,6 @@ object JitsiMeetLinkGeneratorService:
     Any,
     Nothing,
     MeetLinkGeneratorService,
-  ] = ZLayer.fromFunction(apply _)
+  ] = ZLayer.fromFunction(() => apply())
 
-  def apply() = new JitsiMeetLinkGeneratorService()
+  def apply(): JitsiMeetLinkGeneratorService = new JitsiMeetLinkGeneratorService()

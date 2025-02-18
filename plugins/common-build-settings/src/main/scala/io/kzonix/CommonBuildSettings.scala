@@ -36,8 +36,8 @@ object CommonBuildSettings extends AutoPlugin {
     */
   override def trigger = allRequirements
 
-  /** The requires method returns a value of type Plugins, which is a DSL for constructing the dependency list. The
-    * requires method typically contains one of the following values:
+  /** The 'requires' method returns a value of type Plugins, which is a DSL for constructing the dependency list. The
+    * 'requires' method typically contains one of the following values:
     *
     *   - empty (No plugins)
     *   - other auto plugins

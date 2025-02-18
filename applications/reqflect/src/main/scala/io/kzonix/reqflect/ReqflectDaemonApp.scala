@@ -2,22 +2,9 @@ package io.kzonix.reqflect
 
 import zio.*
 import zio.http.*
-import zio.http.model.Method
-import zio.json.*
-import zio.logging.*
 import zio.metrics.*
-import zio.metrics.Metric.Counter
-import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.*
-import zio.metrics.jvm.DefaultJvmMetrics
 
-import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
-import io.kzonix.reqflect.routes.MetricsRoutes
 import io.kzonix.reqflect.services.ServerInfoProviderService
-
-import scala.util.Try
-
-import java.time.temporal.ChronoUnit
 
 class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
 

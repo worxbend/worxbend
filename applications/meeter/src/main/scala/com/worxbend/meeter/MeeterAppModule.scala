@@ -2,6 +2,8 @@ package com.worxbend.meeter
 
 import zio.ZLayer
 
+import scala.collection.immutable.Seq
+
 object MeeterAppModule {
 
   val all: ZLayer[
@@ -16,7 +18,7 @@ object MeeterAppModule {
     MeetLinkGeneratorService,
   ] = all >>> CompositeMeetLinkGeneratorService.layer
 
-  implicit final private lazy val y: 42 = 42
-  implicit final private lazy val x: 42 = 42
+  
+  
 
 }

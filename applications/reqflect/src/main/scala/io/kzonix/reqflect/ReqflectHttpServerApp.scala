@@ -3,17 +3,10 @@ package io.kzonix.reqflect
 import zio.*
 import zio.http.*
 import zio.metrics.Metric
-import zio.metrics.Metric.Counter
-import zio.metrics.MetricKeyType
-import zio.metrics.MetricLabel
-import zio.metrics.MetricState
 import zio.metrics.connectors.prometheus.*
 
-import io.kzonix.reqflect.routes.MainRoutes
+import io.kzonix.reqflect.routes.{ MainRoutes, MetricsRoutes }
 import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
-import io.kzonix.reqflect.routes.MetricsRoutes
-
-import java.time.temporal.ChronoUnit
 
 class ReqflectHttpServerApp(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes):
 

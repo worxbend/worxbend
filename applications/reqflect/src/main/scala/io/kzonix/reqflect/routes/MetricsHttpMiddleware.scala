@@ -4,7 +4,6 @@ import zio.*
 import zio.http.*
 import zio.metrics.*
 import zio.metrics.MetricKeyType.Counter
-import zio.metrics.connectors.prometheus.*
 
 import java.time.temporal.ChronoUnit
 

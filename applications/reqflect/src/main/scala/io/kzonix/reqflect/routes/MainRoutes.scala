@@ -4,22 +4,10 @@ import zio.*
 import zio.http.*
 import zio.http.model.Method
 import zio.json.*
-import zio.logging.*
-import zio.metrics.*
-import zio.metrics.Metric.Counter
-import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.PrometheusPublisher
-import zio.metrics.connectors.prometheus.prometheusLayer
-import zio.metrics.connectors.prometheus.publisherLayer
-import zio.metrics.jvm.DefaultJvmMetrics
 
 import io.kzonix.reqflect.routes.models.NetworkInterfaceResponse
 import io.kzonix.reqflect.routes.models.ServerInfoResponse
 import io.kzonix.reqflect.services.ServerInfoProviderService
-import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
-import io.kzonix.reqflect.services.exceptions.ReqflectServiceException.GeneralException
-
-import scala.util.Try
 
 class MainRoutes(serverConfig: ServerConfig, serverInfoProviderService: ServerInfoProviderService)
     extends AppRoutes[Client, Throwable] {

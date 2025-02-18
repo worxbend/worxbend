@@ -1,7 +1,6 @@
 package com.worxbend.meeter
 
-import zio.UIO
-import zio.ZIO
+import zio.{UIO, ZIO}
 
 trait MeetLinkGeneratorService:
   def generateLink(): UIO[String]

@@ -1,16 +1,11 @@
 package com.worxbend.meeter
 
-import com.worxbend.meeter.MeeterAppModule.res
-
-import zio.*
-import zio.ZLayer
-import zio.config.typesafe.TypesafeConfigProvider
-import zio.logging.consoleJsonLogger
-import zio.logging.logMetrics
-import zio.metrics.jvm.DefaultJvmMetrics
-import zio.prelude.NonEmptyList
-
 import com.typesafe.config.ConfigFactory
+import com.worxbend.meeter.MeeterAppModule.res
+import zio.config.typesafe.TypesafeConfigProvider
+import zio.logging.{consoleJsonLogger, logMetrics}
+import zio.metrics.jvm.DefaultJvmMetrics
+import zio.{ZLayer, _}
 
 object MeeterApp extends ZIOAppDefault:
 
