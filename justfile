@@ -1,7 +1,11 @@
-create-scala-app:
-    echo "scala app"
-create-scala-lib:
-    echo "scala lib"
+create-main-scala-app:
+    pipx run cookiecutter .cookiecutter/scala/app --output-dir ./applications
+create-scala-app GROUP_PREFIX:
+    pipx run cookiecutter .cookiecutter/scala/app --output-dir ./applications/{{GROUP_PREFIX}}
+create-main-scala-lib:
+    pipx run cookiecutter .cookiecutter/scala/app --output-dir ./libs
+create-scala-lib GROUP_PREFIX:
+    pipx run cookiecutter .cookiecutter/scala/app --output-dir ./libs/{{GROUP_PREFIX}}
 create-java-app:
     echo "java app"
 create-java-lib:
