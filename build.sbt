@@ -1,6 +1,6 @@
 import BaseSettings.defaultSettings
 
-//region global
+// region global
 /* >>----- BEGIN: Global Settings -----<< */
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / startYear            := Some(2018)
@@ -11,10 +11,9 @@ ThisBuild / scalaVersion := "3.4.2"
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
-//endregion global
+// endregion global
 
-
-//region root
+// region root
 /* >>-------------------------------<< */
 /* >>----- BEGIN: Root project -----<< */
 /* >>-------------------------------<< */
@@ -33,15 +32,16 @@ lazy val `worxbend` = (project in file("."))
     /* > scalafix-rules < */
     /* >>----------<< */
 
-    /* >>----------<< */
+    /* >>-------<< */
     /* > plugins < */
-    /* >>----------<< */
+    /* >>-------<< */
     `common-build-settings`,
     `project-builder`,
     `project-dependencies`,
-    /* >>----------<< */
+    // region aggregate-apps
+    /* >>------------<< */
     /* > applications < */
-    /* >>----------<< */
+    /* >>------------<< */
     `aeon`,
     `felis`,
     `cetus`,
@@ -49,18 +49,21 @@ lazy val `worxbend` = (project in file("."))
     `reqflect`,
     `sandbox`,
     `inaya`,
-    /* >>----------<< */
+    // endregion aggregate-apps
+
+    // region aggregate-libs
+    /* >>---------<< */
     /* > libraries < */
-    /* >>----------<< */
+    /* >>---------<< */
     `worxflowr-core`,
     `describo`,
     `dscrbo`,
+    // endregion aggregate-libs
   )
 /* >>----- END: Root project -----<< */
-//endregion root
+// endregion root
 
-
-//region scalafix
+// region scalafix
 /* >>----- BEGIN: Scalafix -----<< */
 
 /* ... */
@@ -68,8 +71,7 @@ lazy val `worxbend` = (project in file("."))
 /* >>----- END: Scalafix -----<< */
 //endregion scalafix
 
-
-//region plugins
+// region plugins
 /* >>--------------------------<< */
 /* >>----- BEGIN: Plugins -----<< */
 /* >>--------------------------<< */
@@ -94,8 +96,7 @@ lazy val `project-dependencies`  = ProjectRef(
 /* >>------------------------<< */
 //endregion plugins
 
-
-//region libs
+// region libs
 /* >>-------------------------------<< */
 /* >>------- BEGIN: Libraries ------<< */
 /* >>-------------------------------<< */
@@ -138,10 +139,9 @@ lazy val `worxflowr-server` = ProjectRef(
 /* >>-------------------------------<< */
 /* >>------- END: Libraries --------<< */
 /* >>-------------------------------<< */
-//endregion libs
+// endregion libs
 
-
-//region apps
+// region apps
 /* >>-------------------------------<< */
 /* >>----- BEGIN: Applications -----<< */
 /* >>-------------------------------<< */
@@ -166,7 +166,7 @@ lazy val `cetus` = ProjectRef(
 /* >>-------------------------------<< */
 
 /* >>-------------------------------<< */
-lazy val meeter = ProjectRef(
+lazy val `meeter` = ProjectRef(
   base = file("applications/meeter"),
   id = "meeter",
 )
@@ -194,4 +194,4 @@ lazy val `inaya` = ProjectRef(
 /* >>-------------------------------<< */
 /* >>----- END: Applications -----<< */
 /* >>-------------------------------<< */
-//endregion apps
+// endregion apps
