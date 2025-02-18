@@ -10,7 +10,8 @@ case class CreateUserRequest(
     username: String,
     password: String,
     email:    String,
-  ):
+):
   override def toString: String = s"CreateUserRequest(username=$username, email=$email, password=***)"
+
 object CreateUserRequest:
   implicit val encoder: JsonEncoder[CreateUserRequest] = DeriveJsonEncoder.gen[CreateUserRequest]

@@ -30,7 +30,7 @@ case class CetusDaemonApp() {
       _ <-
         (for {
           text <- makeReq().flatMap(resp => resp.body.asString)
-          _    <- ZIO.logInfo(s"${ text.fromJson[Json].map(_.toJsonPretty) }")
+          _    <- ZIO.logInfo(s"${text.fromJson[Json].map(_.toJsonPretty)}")
         } yield ()).repeat(Schedule.spaced(60.seconds))
     } yield ()
 

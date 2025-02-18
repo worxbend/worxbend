@@ -13,14 +13,15 @@ import distage.Roots
 
 class FelisApp(
     appDependencies: FelisDependencies
-  ):
+):
 
   def start(): IO[Unit] =
     IO {
       println(appDependencies.appConfig.name)
       ()
     }.delayBy(1.seconds).foreverM
-  def stop(): IO[Unit]  =
+
+  def stop(): IO[Unit] =
     IO {
       println("stopping")
       ()

@@ -6,9 +6,7 @@ object Macros {
 
   def inspectCode(
       x: Expr[Any]
-    )(using
-      Quotes
-    ): Expr[Any] =
+  )(using Quotes): Expr[Any] =
     println("inspection of " + x.show)
     x
 
@@ -18,16 +16,13 @@ object Macros {
   def testCode(
       ignore: Expr[Boolean],
       computation: Expr[Unit],
-    )(using
-      quotes: Quotes
-    ) =
+  )(using quotes: Quotes) =
     if ignore.valueOrAbort then Expr(false)
     else Expr.block(List(computation), Expr(true))
 
   def printSymbolsImpl(
-      using
-      q: Quotes
-    ): Expr[Function0[Unit]] = {
+      using q: Quotes
+  ): Expr[Function0[Unit]] = {
     import quotes.reflect._
 
     val owner       = Expr(Symbol.spliceOwner.name)
@@ -47,7 +42,7 @@ object Macros {
       "printSymbolsGenerated", // The name of the function
       MethodType(Nil)(         // Argument names - in this case empty list
         _ => Nil,              // Argument definitions - in this case empty list
-        _ => TypeRepr.of[Unit],// Return type
+        _ => TypeRepr.of[Unit], // Return type
       ),
     )
 
@@ -61,7 +56,8 @@ object Macros {
 
   inline def printSymbols(): () => Unit = ${ printSymbolsImpl }
 
-  inline def natConst(inline x: Int): Int = ${natConstImpl('{x})}
+  inline def natConst(inline x: Int): Int = ${ natConstImpl('{ x }) }
+
   def natConstImpl[T <: Product](x: Expr[Int])(using Quotes): Expr[Int] =
     import quotes.reflect.*
     val tree: Term = x.asTerm
@@ -72,7 +68,8 @@ object Macros {
           '{ 0 }
         else
           tree.asExprOf[Int]
-      case _ =>
+      case _                                      =>
         report.error("Parameter must be a known constant")
         '{ 0 }
+
 }

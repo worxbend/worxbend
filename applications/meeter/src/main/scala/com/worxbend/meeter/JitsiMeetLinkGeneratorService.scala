@@ -6,6 +6,7 @@ import zio.ZLayer
 
 class JitsiMeetLinkGeneratorService extends MeetLinkGeneratorService:
   override def generateLink(): UIO[String] = ZIO.succeed("jitsi")
+
 object JitsiMeetLinkGeneratorService:
 
   val layer: ZLayer[

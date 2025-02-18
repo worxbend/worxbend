@@ -1,7 +1,5 @@
 package io.kzonix.cetus
 
-import io.kzonix.cetus.AppModule.*
-
 import zio.*
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.*
@@ -15,6 +13,8 @@ import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import io.kzonix.cetus.AppModule.*
 
 import izumi.distage.model.definition.ModuleDef
 

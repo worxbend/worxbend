@@ -16,6 +16,7 @@ object MeeterApp extends ZIOAppDefault:
 
   private val config         = ConfigFactory.load()
   private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
+
   override val bootstrap: ZLayer[
     Any,
     Any,

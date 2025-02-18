@@ -9,7 +9,6 @@ object CommonBuildSettings extends AutoPlugin {
 
   object autoImport {
 
-
     val buildEnv   = settingKey[BuildOptions.Environment]("The build environment (`production`, `develop`)")
     val buildStage = settingKey[BuildOptions.BuildStage]("The build environment (`ci`, `gh-ci`, `other`)")
 
@@ -48,7 +47,7 @@ object CommonBuildSettings extends AutoPlugin {
 
   override val label: String = "CommonBuildSettings"
 
-  override def toString(): String = s"[${ super.toString() }:KzonixPlugin]"
+  override def toString(): String = s"[${super.toString()}:KzonixPlugin]"
 
   override def projectConfigurations: Seq[Configuration] = super.projectConfigurations
 

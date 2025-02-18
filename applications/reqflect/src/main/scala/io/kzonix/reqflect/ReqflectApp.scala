@@ -1,8 +1,5 @@
 package io.kzonix.reqflect
 
-import io.kzonix.reqflect.AppModule.*
-import io.kzonix.reqflect.routes.*
-
 import zio.*
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.*
@@ -16,6 +13,9 @@ import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import io.kzonix.reqflect.AppModule.*
+import io.kzonix.reqflect.routes.*
 
 import scala.util.Try
 
@@ -34,6 +34,7 @@ object ReqflectApp extends ZIOAppDefault {
       >>> logMetrics
       >>> DefaultJvmMetrics.live
       >>> startupVerificationLayer
+
   private val config         = ConfigFactory.load()
   private val configProvider = TypesafeConfigProvider.fromTypesafeConfig(config)
 

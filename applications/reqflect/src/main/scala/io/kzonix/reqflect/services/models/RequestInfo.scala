@@ -8,4 +8,4 @@ case class RequestInfo(
     host:          String,
     method:        String,
     headers:       Map[String, String],
-  )
+)

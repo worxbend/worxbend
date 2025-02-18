@@ -9,6 +9,7 @@ object MeeterAppModule {
     Nothing,
     Seq[MeetLinkGeneratorService],
   ] = ZLayer.collectAll(Seq(GoogleMeetLinkGeneratorService.layer, JitsiMeetLinkGeneratorService.layer))
+
   val res: ZLayer[
     Any,
     Nothing,

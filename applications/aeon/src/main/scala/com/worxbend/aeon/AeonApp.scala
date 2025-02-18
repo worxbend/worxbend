@@ -14,6 +14,7 @@ import io.kubernetes.client.util.Yaml
 import scala.jdk.CollectionConverters.*
 
 object AeonApp {
+
   @main def run(): Unit = {
     val client: ApiClient = Config.defaultClient()
 
@@ -31,7 +32,7 @@ object AeonApp {
 
     val pods: List[V1Pod] = podList.getItems.asScala.toList
 
-    println(s"Found ${ pods.size } pods")
+    println(s"Found ${pods.size} pods")
     pods.foreach(pod => println(pod.getMetadata.getName))
     println("Done")
 
@@ -64,8 +65,7 @@ object AeonApp {
           val pi   = batchV1Api.deleteNamespacedJob("pi", "default")
           pi.orphanDependents(true)
           pi.execute()
-        }
-        catch {
+        } catch {
           case e: io.kubernetes.client.openapi.ApiException => println(e.getMessage)
         }
 
@@ -85,10 +85,11 @@ object AeonApp {
 
         val existingJob = batchV1Api.readNamespacedJob("pi", "default").execute()
         println(
-          s"Job ${ existingJob.getMetadata.getName } created at ${ existingJob.getMetadata.getCreationTimestamp }")
+          s"Job ${existingJob.getMetadata.getName} created at ${existingJob.getMetadata.getCreationTimestamp}"
+        )
         println(existingJob.getStatus.getReady)
         println(existingJob.getStatus.getActive)
-        println(s"${ existingJob.getStatus.getSucceeded } succeeded")
+        println(s"${existingJob.getStatus.getSucceeded} succeeded")
         println(existingJob.getStatus.getFailed)
         println(existingJob.getStatus.getStartTime)
         println(existingJob.getStatus.getCompletionTime)
@@ -96,4 +97,5 @@ object AeonApp {
 
       case _ => println("Loaded definition is not a job")
   }
+
 }

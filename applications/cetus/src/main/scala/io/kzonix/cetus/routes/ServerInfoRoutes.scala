@@ -1,7 +1,5 @@
 package io.kzonix.cetus.routes
 
-import io.kzonix.cetus.routes.models.ServerInfoResponse
-
 import zio.*
 import zio.ExitCode
 import zio.Runtime
@@ -20,6 +18,8 @@ import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import io.kzonix.cetus.routes.models.ServerInfoResponse
 
 import scala.util.Try
 

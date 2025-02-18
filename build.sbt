@@ -7,7 +7,8 @@ Global / startYear            := Some(2018)
 /* >>----- END:   Global Settings  -----<< */
 
 /* >>----- BEGIN: inThisBuild -----<< */
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion      := "3.4.2"
+ThisBuild / semanticdbEnabled := true
 /* >>----- END:   inThisBuild -----<< */
 
 lazy val commonSettings = defaultSettings
@@ -68,22 +69,19 @@ lazy val `common-build-settings` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
-lazy val `project-builder`       = ProjectRef(
+lazy val `project-builder` = ProjectRef(
   base = file("plugins/project-builder"),
   id = "project-builder",
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
-lazy val `project-dependencies`  = ProjectRef(
+lazy val `project-dependencies` = ProjectRef(
   base = file("plugins/project-dependencies"),
   id = "project-dependencies",
 )
 /* >>-------------------------------<< */
-
 
 //endregion plugins
 
@@ -135,14 +133,12 @@ lazy val `aeon` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
 lazy val `cetus` = ProjectRef(
   base = file("applications/cetus"),
   id = "cetus",
 )
 /* >>-------------------------------<< */
-
 
 /* >>-------------------------------<< */
 lazy val `felis` = ProjectRef(
@@ -151,14 +147,12 @@ lazy val `felis` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
 lazy val `inaya` = ProjectRef(
   base = file("applications/inaya"),
   id = "inaya",
 )
 /* >>-------------------------------<< */
-
 
 /* >>-------------------------------<< */
 lazy val `meeter` = ProjectRef(
@@ -167,14 +161,12 @@ lazy val `meeter` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
 lazy val `nimblox` = ProjectRef(
   base = file("applications/nimblox"),
   id = "nimblox",
 )
 /* >>-------------------------------<< */
-
 
 /* >>-------------------------------<< */
 lazy val `reqflect` = ProjectRef(
@@ -183,14 +175,12 @@ lazy val `reqflect` = ProjectRef(
 )
 /* >>-------------------------------<< */
 
-
 /* >>-------------------------------<< */
 lazy val `sandbox` = ProjectRef(
   base = file("applications/sandbox"),
   id = "sandbox",
 )
 /* >>-------------------------------<< */
-
 
 /* >>-------------------------------<< */
 lazy val `vex` = ProjectRef(

@@ -7,11 +7,7 @@ object Macros2 {
   def toStringImpl[T <: Product](
       x: Expr[T],
       cfg: Expr[Configuration],
-    )(using
-      Type[T]
-    )(using
-      quotes: Quotes
-    ): Expr[String] = {
+  )(using Type[T])(using quotes: Quotes): Expr[String] = {
     import quotes.reflect.*
 
     val printValue: Expr[Any => String] =
@@ -37,12 +33,12 @@ object Macros2 {
           .map {
             case (name, i) =>
               val valueStr = f(input.productElement(i))
-              val labelStr = s"${ configuration.labelWrappingCharacter }$name${ configuration.labelWrappingCharacter }"
-              s"$labelStr${ configuration.labelCharacter } $valueStr"
+              val labelStr = s"${configuration.labelWrappingCharacter}$name${configuration.labelWrappingCharacter}"
+              s"$labelStr${configuration.labelCharacter} $valueStr"
           }
-          .mkString(s"${ configuration.elementsSeparator.toString } ")
+          .mkString(s"${configuration.elementsSeparator.toString} ")
         val (l, r)               = configuration.wrappingCharacters
-        s"${ product.productPrefix }$l$productLabeledValues$r"
+        s"${product.productPrefix}$l$productLabeledValues$r"
       }
     string
 
@@ -53,12 +49,10 @@ object Macros2 {
       labelWrappingCharacter: Char = '\"',
       wrappingCharacters:     (Char, Char) = ('(', ')'),
       elementsSeparator:      Char = ',',
-    )
+  )
 
   inline def toString[T <: Product](
       inline x: T
-    )(using
-      inline configuration: Configuration
-    ): String = ${ toStringImpl[T]('x, 'configuration) }
+  )(using inline configuration: Configuration): String = ${ toStringImpl[T]('x, 'configuration) }
 
 }

@@ -11,13 +11,14 @@ case class SystemInfo(
     operatingSystemArchitecture: String,
     networkInterfaces:           List[NetworkInterface],
     javaVersion:                 String,
-  )
+)
 
 object SystemInfo:
+
   case class NetworkInterface(
       name:            String,
       displayName:     String,
       hardwareAddress: String,
       inetAddresses:   List[String],
       mtu:             Int,
-    )
+  )

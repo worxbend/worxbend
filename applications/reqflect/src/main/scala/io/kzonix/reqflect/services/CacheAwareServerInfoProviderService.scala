@@ -1,13 +1,13 @@
 package io.kzonix.reqflect.services
 
+import zio.*
+import zio.cache.Cache
+import zio.cache.Lookup
+
 import io.kzonix.reqflect.services.CacheAwareServerInfoProviderService.DefaultCacheKey
 import io.kzonix.reqflect.services.CacheAwareServerInfoProviderService.makeCache
 import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
 import io.kzonix.reqflect.services.models.SystemInfo
-
-import zio.*
-import zio.cache.Cache
-import zio.cache.Lookup
 
 class CacheAwareServerInfoProviderService(
     cache: Cache[
@@ -15,7 +15,8 @@ class CacheAwareServerInfoProviderService(
       ReqflectServiceException,
       SystemInfo,
     ]
-  ) extends ServerInfoProviderService:
+) extends ServerInfoProviderService:
+
   override def getSystemInfo(): ZIO[
     Any,
     ReqflectServiceException,
@@ -25,6 +26,7 @@ class CacheAwareServerInfoProviderService(
       _       <- ZIO.logInfo("Loading from cache...")
       sysInfo <- cache.get(DefaultCacheKey)
     } yield sysInfo
+
 object CacheAwareServerInfoProviderService:
 
   private val DefaultCacheKey = "DEFAULT_SYSTEM_INFO"
@@ -35,7 +37,7 @@ object CacheAwareServerInfoProviderService:
         ReqflectServiceException,
         SystemInfo,
       ]
-    ) = new CacheAwareServerInfoProviderService(cache)
+  ) = new CacheAwareServerInfoProviderService(cache)
 
   def makeCache(): URIO[
     ServerInfoProviderService,
@@ -43,7 +45,8 @@ object CacheAwareServerInfoProviderService:
       String,
       ReqflectServiceException,
       SystemInfo,
-    ]] =
+    ],
+  ] =
     for {
       service <- ZIO.service[ServerInfoProviderService]
       cache   <- Cache.make(
@@ -53,6 +56,7 @@ object CacheAwareServerInfoProviderService:
                      for {
                        _   <- ZIO.logInfo("Cache miss...")
                        res <- service.getSystemInfo()
-                     } yield res),
+                     } yield res
+                   ),
                  )
     } yield cache

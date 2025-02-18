@@ -15,7 +15,7 @@ case class ServerInfoResponse(
     headers:    Map[String, String],
     host:       String,
     remoteAddr: String,
-  )
+)
 
 object ServerInfoResponse:
   implicit val encoder: JsonEncoder[ServerInfoResponse] = DeriveJsonEncoder.gen[ServerInfoResponse]

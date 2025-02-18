@@ -17,6 +17,7 @@ import zio.logging.*
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 
 class MetricsRoutes extends AppRoutes[PrometheusPublisher, Throwable] {
+
   override def routes: HttpApp[PrometheusPublisher, Throwable] =
     Http.collectZIO {
       case _ @Method.GET -> !! / "metrics" =>
@@ -26,6 +27,7 @@ class MetricsRoutes extends AppRoutes[PrometheusPublisher, Throwable] {
           response  <- ZIO.succeed(Response.text(metrics))
         } yield response
     }
+
 }
 
 object MetricsRoutes {

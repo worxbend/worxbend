@@ -1,9 +1,5 @@
 package io.kzonix.reqflect
 
-import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
-import io.kzonix.reqflect.routes.MetricsRoutes
-import io.kzonix.reqflect.services.ServerInfoProviderService
-
 import zio.*
 import zio.http.*
 import zio.http.model.Method
@@ -14,6 +10,10 @@ import zio.metrics.Metric.Counter
 import zio.metrics.connectors.MetricsConfig
 import zio.metrics.connectors.prometheus.*
 import zio.metrics.jvm.DefaultJvmMetrics
+
+import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
+import io.kzonix.reqflect.routes.MetricsRoutes
+import io.kzonix.reqflect.services.ServerInfoProviderService
 
 import scala.util.Try
 
@@ -49,13 +49,15 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
       .map(resp => resp.server.getOrElse("unknown"))
       .onError(e =>
         ZIO.logErrorCause(
-          s"ClientException:${ e.prettyPrint }",
+          s"ClientException:${e.prettyPrint}",
           e,
-        ) &> ZIO.succeed("unknown"))
+        ) &> ZIO.succeed("unknown")
+      )
   }
 
 }
 
 object ReqflectDaemonApp:
+
   def make(serverInfoProviderService: ServerInfoProviderService) =
     new ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService)

@@ -32,7 +32,7 @@ object MetricsHttpMiddleware {
   private def requestHistogram(
       method: String,
       handler: String,
-    ): Metric[
+  ): Metric[
     MetricKeyType.Histogram,
     zio.Duration,
     MetricState.Histogram,
@@ -68,9 +68,7 @@ object MetricsHttpMiddleware {
             Request,
             Response,
           ]
-        )(implicit
-          trace: Trace
-        ): Handler[
+      )(implicit trace: Trace): Handler[
         R1,
         Err1,
         Request,
@@ -80,9 +78,10 @@ object MetricsHttpMiddleware {
           for {
             _                   <- ZIO.logInfo(
                                      "Request handling: " +
-                                       s"method=${ request.method } " +
-                                       s"headers=${ request.method } " +
-                                       s"path=${ request.url.encode } ")
+                                       s"method=${request.method} " +
+                                       s"headers=${request.method} " +
+                                       s"path=${request.url.encode} "
+                                   )
             result              <- wrapWithMetrics(
                                      handler,
                                      request,
@@ -90,10 +89,10 @@ object MetricsHttpMiddleware {
             (duration, response) = result
             _                   <- ZIO.logInfo(
                                      "Request handled: " +
-                                       s"method=${ request.method } " +
-                                       s"path=${ request.url.encode } " +
-                                       s"status=${ response.status.code } " +
-                                       s"duration=${ duration.toMillis }ms"
+                                       s"method=${request.method} " +
+                                       s"path=${request.url.encode} " +
+                                       s"status=${response.status.code} " +
+                                       s"duration=${duration.toMillis}ms"
                                    )
           } yield response
         }
@@ -107,7 +106,7 @@ object MetricsHttpMiddleware {
         Response,
       ],
       request: Request,
-    ) =
+  ) =
     handler.runZIO(request).timed
       @@ requestHistogram(
         request.method.toString,

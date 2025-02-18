@@ -1,13 +1,13 @@
 package io.kzonix.reqflect.services
 
-import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
-import io.kzonix.reqflect.services.exceptions.ReqflectServiceException.GeneralException
-import io.kzonix.reqflect.services.models.SystemInfo
-
 import zio.Cause
 import zio.IO
 import zio.Task
 import zio.ZIO
+
+import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
+import io.kzonix.reqflect.services.exceptions.ReqflectServiceException.GeneralException
+import io.kzonix.reqflect.services.models.SystemInfo
 
 import scala.jdk.CollectionConverters.*
 
@@ -62,7 +62,7 @@ class DefaultServerInfoProviderService extends ServerInfoProviderService {
         Option[V],
       ],
       default: V,
-    ) =
+  ) =
     f.mapBoth(
       e => GeneralException(e.getMessage),
       _.getOrElse(default),

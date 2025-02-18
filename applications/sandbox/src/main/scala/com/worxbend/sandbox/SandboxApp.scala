@@ -29,6 +29,7 @@ object SandboxApp extends App:
   println(Macros.natConst(4))
 
   sealed trait Person2
+
   case class Alive(time: LocalTime, child: Person2) extends Person2 derives CaseClassMacros.Print {
     override val toString: String = this.print
   }
@@ -36,6 +37,7 @@ object SandboxApp extends App:
   case class Dead(time: LocalTime) extends Person2 derives CaseClassMacros.Print
 
   println(Alive(LocalTime.now(), child = Alive(LocalTime.now(), child = Dead(LocalTime.now()))))
+
   val seq = Seq(
     Alive(LocalTime.now(), child = Alive(LocalTime.now(), child = Dead(LocalTime.now()))),
     Alive(LocalTime.now(), child = Alive(LocalTime.now(), child = Dead(LocalTime.now()))),
@@ -48,12 +50,13 @@ object SandboxApp extends App:
       a:    Int,
       b:    Boolean = false,
       name: String = "default",
-    ) {
+  ) {
 
     import A.configuration
     override val toString: String = Macros2.toString(this)
 
   }
+
   object A {
     given configuration: Configuration = Configuration()
   }

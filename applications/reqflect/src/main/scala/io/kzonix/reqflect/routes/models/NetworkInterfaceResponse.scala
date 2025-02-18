@@ -14,7 +14,7 @@ case class NetworkInterfaceResponse(
     hardwareAddress: String,
     inetAddresses:   List[String],
     mtu:             Int,
-  )
+)
 
 object NetworkInterfaceResponse:
   implicit val encoder: JsonCodec[NetworkInterfaceResponse] = DeriveJsonCodec.gen[NetworkInterfaceResponse]

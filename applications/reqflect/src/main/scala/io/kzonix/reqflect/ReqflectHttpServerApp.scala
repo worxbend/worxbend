@@ -1,9 +1,5 @@
 package io.kzonix.reqflect
 
-import io.kzonix.reqflect.routes.MainRoutes
-import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
-import io.kzonix.reqflect.routes.MetricsRoutes
-
 import zio.*
 import zio.http.*
 import zio.metrics.Metric
@@ -12,6 +8,10 @@ import zio.metrics.MetricKeyType
 import zio.metrics.MetricLabel
 import zio.metrics.MetricState
 import zio.metrics.connectors.prometheus.*
+
+import io.kzonix.reqflect.routes.MainRoutes
+import io.kzonix.reqflect.routes.MetricsHttpMiddleware.metricsMiddleware
+import io.kzonix.reqflect.routes.MetricsRoutes
 
 import java.time.temporal.ChronoUnit
 
@@ -26,6 +26,7 @@ class ReqflectHttpServerApp(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes
       @@ (HttpAppMiddleware.timeout(5.seconds) ++ metricsMiddleware)
 
 object ReqflectHttpServerApp:
+
   def make(demoRoutes: MainRoutes, metricsRoutes: MetricsRoutes) =
     new ReqflectHttpServerApp(
       demoRoutes,

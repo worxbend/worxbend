@@ -32,7 +32,7 @@ object MetricsHttpMiddleware {
   private def requestHistogram(
       method: String,
       handler: String,
-    ): Metric[
+  ): Metric[
     MetricKeyType.Histogram,
     zio.Duration,
     MetricState.Histogram,
@@ -68,9 +68,7 @@ object MetricsHttpMiddleware {
             Request,
             Response,
           ]
-        )(implicit
-          trace: Trace
-        ): Handler[
+      )(implicit trace: Trace): Handler[
         R1,
         Err1,
         Request,
@@ -92,10 +90,10 @@ object MetricsHttpMiddleware {
             (duration, response) = result
             _                   <- ZIO.logInfo(
                                      "Request handled: " +
-                                       s"method=${ request.method } " +
-                                       s"path=${ request.url.encode } " +
-                                       s"status=${ response.status.code } " +
-                                       s"duration=${ duration.toMillis }ms"
+                                       s"method=${request.method} " +
+                                       s"path=${request.url.encode} " +
+                                       s"status=${response.status.code} " +
+                                       s"duration=${duration.toMillis}ms"
                                    )
           } yield response
         }

@@ -27,7 +27,7 @@ object Main:
       metadata:           Map[String, String],
       isVerified:         Option[Boolean],
       optionalComment:    Option[String],
-    ) extends AutoToString
+  ) extends AutoToString
       derives Printable
 
   case class Bar(
@@ -38,10 +38,11 @@ object Main:
       long:     Long,
       password: String,
       username: String,
-    )
+  )
 
   object Foo:
     given configuration: Configuration = Configuration(useTypeNames = true)
+
   def main(args: Array[String]): Unit =
     println(
       Foo(
@@ -71,4 +72,5 @@ object Main:
         metadata = Map("key1" -> "value1", "key2" -> "value2"),
         isVerified = Some(true),
         optionalComment = Some("This is a test comment"),
-      ))
+      )
+    )

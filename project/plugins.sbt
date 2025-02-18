@@ -16,9 +16,8 @@ dependsOn(
   )
 )
 
-addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"        % "0.11.0")
-addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.4.3")
-addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter"  % "0.6.1")
+addSbtPlugin("ch.epfl.scala"     % "sbt-scalafix"        % "0.14.0")
+addSbtPlugin("org.scalameta"     % "sbt-scalafmt"        % "2.5.4")
 addSbtPlugin("io.gatling"        % "gatling-sbt"         % "3.2.2")
 addSbtPlugin("com.dwijnand"      % "sbt-dynver"          % "4.1.1")
 addSbtPlugin("com.eed3si9n"      % "sbt-buildinfo"       % "0.10.0")

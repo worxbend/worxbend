@@ -1,8 +1,8 @@
 package io.worxbend.describo
 
-import io.worxbend.describo.ToString.annotations.Redacted
 import io.worxbend.describo.Main.Foo.given
 import io.worxbend.describo.ToString.Configuration
+import io.worxbend.describo.ToString.annotations.Redacted
 
 object Main:
 
@@ -18,7 +18,8 @@ object Main:
         1,
         1.0,
         1.0f,
-      ))
+      )
+    )
 
   case class Foo(
       @transient name:                                String,
@@ -30,15 +31,13 @@ object Main:
       height:                                         Double,
       weight:                                         Float,
       @Redacted(replacement = "<redacted>") password: String = "<PASSWORD>",
-    ) {
-
+  ) {
     override def toString: String = ToString.derived(this)
-
   }
 
   object Foo:
-      given configuration: ToString.Configuration =
-        ToString.Configuration(
-          multilineIfFieldsAreGreaterOrEqual = -1
-        )
 
+    given configuration: ToString.Configuration =
+      ToString.Configuration(
+        multilineIfFieldsAreGreaterOrEqual = -1
+      )

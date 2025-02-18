@@ -26,7 +26,7 @@ class ToStringSuite extends AnyFunSuite:
         metadata:            Map[String, String],
         isVerified:          Option[Boolean],
         optionalComment:     Option[String],
-      ) {
+    ) {
       override def toString: String = ToString.derived(this)
     }
 
@@ -69,7 +69,8 @@ class ToStringSuite extends AnyFunSuite:
     assert(actual == expected)
 
   test(
-    "should generate multiline string with redacted password and skipped username fields with custom configuration and annotation arguments"):
+    "should generate multiline string with redacted password and skipped username fields with custom configuration and annotation arguments"
+  ):
 
     given configuration: Configuration =
       Configuration(
@@ -99,7 +100,7 @@ class ToStringSuite extends AnyFunSuite:
         metadata:                                Map[String, String],
         isVerified:                              Option[Boolean],
         optionalComment:                         Option[String],
-      ) {
+    ) {
       override def toString: String = ToString.derived(this)
     }
 
@@ -160,7 +161,7 @@ class ToStringSuite extends AnyFunSuite:
         metadata:            Map[String, String],
         isVerified:          Option[Boolean],
         optionalComment:     Option[String],
-      ) {
+    ) {
       override def toString: String = ToString.derived(this)
     }
 

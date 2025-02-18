@@ -1,13 +1,13 @@
 package io.kzonix.reqflect.routes.models
 
-import io.kzonix.reqflect.services.models.SystemInfo
-
 import zio.json.DeriveJsonCodec
 import zio.json.DeriveJsonEncoder
 import zio.json.JsonCodec
 import zio.json.JsonEncoder
 import zio.json.SnakeCase
 import zio.json.jsonMemberNames
+
+import io.kzonix.reqflect.services.models.SystemInfo
 
 @jsonMemberNames(SnakeCase)
 case class ServerInfoResponse(
@@ -25,7 +25,7 @@ case class ServerInfoResponse(
     remoteAddress:               String,
     headers:                     Map[String, String],
     host:                        String,
-  )
+)
 
 object ServerInfoResponse:
   implicit val encoder: JsonCodec[ServerInfoResponse] = DeriveJsonCodec.gen[ServerInfoResponse]
