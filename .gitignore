@@ -500,3 +500,8 @@ docs/worxbend/.smart-connections
 
 .venv
 **/.venv
+
+
+# Ansible 
+**/.ansible
+.ansible

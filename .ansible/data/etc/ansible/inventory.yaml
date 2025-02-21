@@ -36,3 +36,39 @@ all:
       ansible_connection: ssh
       ansible_user: dietpi
       ansible_host: 192.168.1.173
+managers:
+  hosts:
+    rpi0:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.150
+    rpi3:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.153
+    rpi4:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.154
+workers:
+  hosts:
+    rpi1:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.151
+    rpi2:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.152
+    rock1:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.171
+    rock2:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.172
+    rock3:
+      ansible_connection: ssh
+      ansible_user: dietpi
+      ansible_host: 192.168.1.173

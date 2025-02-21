@@ -1,4 +1,4 @@
-- hosts: rpi
+- hosts: all
   name: Network Getting Started First Playbook
   connection: ansible.builtin.ssh
   tasks:

@@ -5,7 +5,7 @@
 
 ## Intro
 
-...
+This is the monorepo
 
 ## Prerequisites:
 
@@ -15,18 +15,19 @@ This project utilizes `just` to automate various routines. Ensure that you have 
 proceeding:
 
 1. Install `just` using your distribution's package manager:
-    - **Debian/Ubuntu**:
-      ```bash
-      sudo apt install just
-      ```
-    - **Fedora**:
-      ```bash
-      sudo dnf install just
-      ```
-    - **Arch Linux**:
-      ```bash
-      sudo pacman -S just
-      ```
+
+   - **Debian/Ubuntu**:
+     ```bash
+     sudo apt install just
+     ```
+   - **Fedora**:
+     ```bash
+     sudo dnf install just
+     ```
+   - **Arch Linux**:
+     ```bash
+     sudo pacman -S just
+     ```
 
 2. Alternatively, you can download the latest release from the [official
    `just` GitHub releases page](https://github.com/casey/just/releases) and add it to your system.
@@ -51,8 +52,6 @@ With `just` installed, you're ready to proceed with the project.
 > The sole functionality provided by `just` is creating new sbt modules. If you prefer to handle the boilerplate tasks
 > manually when adding a new project (whether it's an application or a library), you can skip this step.
 
-
 ### Setting python venv up:
 
 ---
-

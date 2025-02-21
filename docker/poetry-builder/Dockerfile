@@ -17,8 +17,8 @@ ENV PIP_NO_CACHE_DIR=off \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1
 
-RUN apt update && \
-    apt -y install --no-install-recommends curl
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends curl
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
@@ -26,9 +26,9 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="${PATH}:$POETRY_HOME/bin"
 
 # Remove unused packages
-RUN apt purge curl -y && \
-    apt autoremove -y && \
-    apt autoclean -y
+RUN apt-cache purge curl -y && \
+    apt-cache autoremove -y && \
+    apt-cache autoclean -y
 
 # Validate installation
 RUN poetry --version
