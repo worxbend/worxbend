@@ -1,7 +1,7 @@
 - https://www.redditinc.com/blog/topic/technology/
 - https://discord.com/category/engineering
 - https://cloud.google.com/blog
-    - https://cloud.google.com/blog/topics/developers-practitioners
+  - https://cloud.google.com/blog/topics/developers-practitioners
 - https://developers.googleblog.com/
 - https://engineering.fb.com/
 - https://blog.palantir.com/tech/home
@@ -33,3 +33,9 @@
 - https://martinfowler.com/
 - https://microservices.io/
 - https://thepracticaldeveloper.com/home/
+
+- https://lexp.lt/
+- https://thisweekinscala.substack.com/
+- https://thisweekinjavascript.com/
+- https://substack.thisweekinreact.com/?utm_source=discover_search
+- https://blog.pierre-ricadat.com
