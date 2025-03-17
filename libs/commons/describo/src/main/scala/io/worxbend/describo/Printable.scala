@@ -1,9 +1,11 @@
 package io.worxbend.describo
 
 import io.worxbend.describo.Printable.Configuration
+import io.worxbend.describo.Printable.TypeAliases.deriveTypeAlias
 import io.worxbend.describo.Printable.annotations.Excluded
 import io.worxbend.describo.Printable.annotations.Redacted
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.*
 
 import java.time.LocalDate
@@ -105,8 +107,8 @@ trait GenericPrint extends AutoDerivation[Printable]:
   )(using conf: Configuration) =
     if (conf.useTypeNames)
       conf.fieldNameAndTypeNameSeparator +
-        conf.typeNamePrefix + (if conf.fullyQualifiedClassName then param.deref(value).getClass.getName
-                               else param.deref(value).getClass.getSimpleName) + conf.typeNameSuffix
+        conf.typeNamePrefix + deriveTypeAlias(if conf.fullyQualifiedClassName then param.deref(value).getClass.getName
+        else param.deref(value).getClass.getSimpleName) + conf.typeNameSuffix
     else
       ""
 
@@ -132,6 +134,30 @@ trait AutoToString:
   override def toString: String = summon[Printable[this.type]].asString(this)
 
 object Printable extends GenericPrint:
+
+  object TypeAliases:
+
+    private val aliases = Map(
+      "$colon$colon" -> "List",
+      "Nil$"     -> "List",
+      "Map1"     -> "Map",
+      "Map2"     -> "Map",
+      "Map3"     -> "Map",
+      "Map4"     -> "Map",
+      "EmptyMap$" -> "Map",
+      "HashMap" -> "Map",
+    )
+
+    def deriveTypeAlias(
+        typeName: String
+    ): String =
+      if typeName.contains(".") then
+        val shortTypeName = typeName.split('.').last
+        if typeName.startsWith("scala.collection.") then aliases.getOrElse(shortTypeName, shortTypeName)
+        else typeName
+      else aliases.getOrElse(typeName, typeName)
+
+  end TypeAliases
 
   object annotations:
 

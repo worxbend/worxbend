@@ -44,14 +44,14 @@ object Main:
     given configuration: Configuration = Configuration(useTypeNames = true)
 
   def main(args: Array[String]): Unit =
-    println(
+    val v = 
       Foo(
         string = "bar",
         boolean = true,
         char = 'c',
         short = 1,
         long = 1L,
-        password = "<PASSWORD>",
+        password = "sensitive information",
         username = "foo",
         fullName = "Test User",
         age = 30,
@@ -68,9 +68,29 @@ object Main:
           ),
         lastLogin = java.time.Instant.now(),
         accountBalance = BigDecimal(1000.50),
-        roles = List("USER", "TEST"),
-        metadata = Map("key1" -> "value1", "key2" -> "value2"),
+        roles = List.empty,
+        metadata = Map.apply(
+          "key1" -> "value1",
+          "key2" -> "value2",
+          "key3" -> "value3",
+          "key4" -> "value4",
+          "key5" -> "value5",
+          "key6" -> "value6",
+          ),
         isVerified = Some(true),
         optionalComment = Some("This is a test comment"),
       )
+    println(v)
+
+    println(
+      Bar(
+        string = "bar",
+        boolean = true,
+        char = 'c',
+        short = 1,
+        long = 1L,
+        password = "sensitive information",
+        username = "foo",
+      )
     )
+
