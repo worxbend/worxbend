@@ -10,7 +10,7 @@ object BaseSettings {
     versionScheme := Some("semver-spec"),
     startYear     := Some(2020),
     version       := "0.0.1.0-SNAPSHOT",
-    scalaVersion  := "3.4.2",
+    scalaVersion  := "3.6.4",
     resolvers ++= Seq(
       Resolver.mavenLocal,
       Resolver.mavenCentral,

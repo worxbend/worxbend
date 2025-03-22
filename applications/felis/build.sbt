@@ -4,7 +4,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 val CirceVersion = "0.14.4"
 
-ThisBuild / scalaVersion               := "3.4.2"
+ThisBuild / scalaVersion               := "3.6.4"
 ThisBuild / assemblyPrependShellScript := Some(defaultShellScript)
 ThisBuild / scalacOptions ++= ScalacOptions.Common
 

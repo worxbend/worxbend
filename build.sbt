@@ -7,7 +7,7 @@ Global / startYear            := Some(2018)
 /* >>----- END:   Global Settings  -----<< */
 
 /* >>----- BEGIN: inThisBuild -----<< */
-ThisBuild / scalaVersion      := "3.4.2"
+ThisBuild / scalaVersion      := "3.6.4"
 ThisBuild / semanticdbEnabled := true
 /* >>----- END:   inThisBuild -----<< */
 

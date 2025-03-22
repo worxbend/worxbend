@@ -1,6 +1,6 @@
 logLevel                 := util.Level.Debug
-ThisBuild / scalaVersion := "2.12.18"
-ThisBuild / sbtVersion   := "1.10.1"
+ThisBuild / scalaVersion := "2.12.20"
+ThisBuild / sbtVersion   := "1.10.11"
 
 dependsOn(
   ProjectRef(

@@ -2,7 +2,7 @@ ThisBuild / version := "0.1.0-SNAPSHOT"
 
 val CirceVersion = "0.14.5"
 
-ThisBuild / scalaVersion := "3.4.2"
+ThisBuild / scalaVersion := "3.6.4"
 
 lazy val `worxflowr-core` = (project in file("."))
   .settings(

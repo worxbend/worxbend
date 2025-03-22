@@ -6,7 +6,7 @@ val ScalaTestVersion = "3.2.19"
 
 /* >>-------------------<< */
 
-ThisBuild / scalaVersion := "3.6.3"
+ThisBuild / scalaVersion := "3.6.4"
 
 /* >>-------------------<< */
 
