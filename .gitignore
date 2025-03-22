@@ -1,3 +1,4 @@
+
 **/project/project
 **/project/target
 **/target
@@ -465,8 +466,17 @@ project/plugins/project/
 .lib/
 /build/
 **/build/
+.cache
+.history
 
+# Scala Metals
 .metals/
+.ammonite/
+metals.sbt
+metals/project/
+project/metals.sbt
+coursier
+.scala-build/
 .bloop/
 .bsp/
 
@@ -480,6 +490,13 @@ project/plugins/project/
 **/.envrc
 **/.direnv
 
+## vscode and other editor files
+.vscode/
+local.*
+.DS_Store
+
+# Node
+node_modules
 
 docker/lenses/.env
 
