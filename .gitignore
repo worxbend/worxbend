@@ -470,15 +470,15 @@ project/plugins/project/
 .history
 
 # Scala Metals
-.metals/
-.ammonite/
-metals.sbt
-metals/project/
-project/metals.sbt
+**/.metals/
+**/.ammonite/
+**/metals.sbt
+**/metals/project/
+**/project/metals.sbt
 coursier
 .scala-build/
-.bloop/
-.bsp/
+**/.bloop/
+**./.bsp/
 
 
 ### dotenv
