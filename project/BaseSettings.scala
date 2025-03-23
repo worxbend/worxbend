@@ -1,8 +1,7 @@
 import scala.language.postfixOps
 
-import sbt.Keys._
-import sbt.Resolver
-import sbt.Setting
+import sbt.Keys.*
+import sbt.*
 
 object BaseSettings {
 

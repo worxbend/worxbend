@@ -2,5 +2,3 @@
 -Xmx4G
 -Xms1024m
 -Xmx1024m
--XX:ReservedCodeCacheSize=128m
--Xss8m

@@ -11,10 +11,15 @@ create-java-app:
 create-java-lib:
     echo "java lib"
 clean:
-    rm -rf out/ .bloop target/
+    rm -rf out/ .bloop .bsp target/
     rm -rf $(fd -H -I 'target' -t d -E 'project')
-    rm -rf $(fd -H -I -t d 'project' | rg 'project/project')
-    rm -rf $(fd -H -I -t d 'project' | rg 'project/target')
+
+metals-clean:
+    rm -rf $(fd -H -I 'metals.sbt' -t f)
+    rm -rf $(fd -H -I '.bloop' -t d)
+    rm -rf $(fd -H -I '.metals' -t d)
+
+
 
 test-all:
     echo "test all"

@@ -1,4 +1,4 @@
-import BaseSettings.defaultSettings
+//import BaseSettings.defaultSettings
 
 // region global
 /* >>----- BEGIN: Global Settings -----<< */
@@ -11,16 +11,12 @@ ThisBuild / scalaVersion      := "3.6.4"
 ThisBuild / semanticdbEnabled := true
 /* >>----- END:   inThisBuild -----<< */
 
-lazy val commonSettings = defaultSettings
+//lazy val commonSettings = defaultSettings
 // endregion global
 
 // region root
 lazy val `worxbend` = (project in file("."))
-  .enablePlugins(
-    CommonBuildSettings,
-    ProjectBuilder,
-  )
-  .settings(defaultSettings *)
+//  .settings(defaultSettings *)
   .settings(
     name := "worxbend"
   )

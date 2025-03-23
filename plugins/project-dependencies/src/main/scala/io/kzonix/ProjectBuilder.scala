@@ -2,8 +2,8 @@ package io.kzonix
 
 import ProjectDefaults.OrganizationSettings
 import ProjectDefaults.ProjectSettings
-import sbt._
-import sbt.Keys._
+import sbt.*
+import sbt.Keys.*
 
 object ProjectBuilder extends AutoPlugin {
 

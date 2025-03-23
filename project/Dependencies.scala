@@ -1,16 +1,16 @@
-import scala.language.postfixOps
+import sbt.Keys.*
+import sbt.*
 
-import sbt._
-import sbt.Keys._
-import sbt.ModuleID
-import sbt.Setting
+import scala.language.postfixOps
+import Dependencies.Versions.*
+import Dependencies.Test.*
 
 object Dependencies {
 
-  import Test._
-  import Versions._
+  import Test.*
+  import Versions.*
 
-  def commonDependencies: Seq[Setting[_]] =
+  def commonDependencies: Seq[Setting[?]] =
     Seq(
       libraryDependencies ++= Seq(
         scalaGuice,
@@ -18,7 +18,7 @@ object Dependencies {
       )
     )
 
-  def testDependencies: Seq[Setting[_]] =
+  def testDependencies: Seq[Setting[?]] =
     Seq(
       libraryDependencies ++=
         (Seq(
@@ -114,7 +114,7 @@ object Dependencies {
 
   }
 
-  private[Dependencies] object Versions {
+  object Versions {
 
     val TypesafeConfig       = "1.4.1"
     val ScalaGuice           = "5.0.2"

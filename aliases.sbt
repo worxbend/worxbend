@@ -1,5 +1,3 @@
-import Util.*
-
 addCommandAlias(
   "l",
   "projects",
