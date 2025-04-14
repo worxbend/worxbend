@@ -1,0 +1,47 @@
+package build.applications.void.vex
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule with PublishModule {
+
+  def scalaVersion = "3.6.4"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-print-lines",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xmigration:3.6",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted"
+  )
+
+  def pomSettings = PomSettings(
+    "vex",
+    "vex",
+    "",
+    Seq(),
+    VersionControl(None, None, None, None),
+    Seq()
+  )
+
+  def publishVersion = "0.1.0-SNAPSHOT"
+
+  trait test extends SbtTests {
+
+    def testSandboxWorkingDir = false
+    def testEnableWorkStealing = false
+  }
+}

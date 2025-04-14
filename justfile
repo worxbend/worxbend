@@ -12,14 +12,15 @@ create-java-lib:
     echo "java lib"
 clean:
     rm -rf out/ .bloop .bsp target/
-    rm -rf $(fd -H -I 'target' -t d -E 'project')
-
+    fd -H -I -p 'target' -t d -E 'project' | xargs rm -rf
+deep-clean:
+    fd -H -I -p '.*/project/target/*' -t d | xargs rm -rf
+    fd -H -I -p '.*/project/target/*' -t d | xargs rm -rf
 metals-clean:
-    rm -rf $(fd -H -I 'metals.sbt' -t f)
-    rm -rf $(fd -H -I '.bloop' -t d)
-    rm -rf $(fd -H -I '.metals' -t d)
-
-
-
+    fd -p -H -I '.*/metals.sbt$' -t f | xargs rm -rf
+    fd -p -H -I '.*/\.bloop$' -t d | xargs rm -rf
+    fd -p -H -I '.*/\.metals$' -t d | xargs rm -rf
+sbt-clean:
+    fd -p -H -I '.*\.sbt$' -t f | xargs rm -rf
 test-all:
     echo "test all"

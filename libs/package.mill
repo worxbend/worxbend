@@ -1,0 +1,5 @@
+package build.libs
+
+import mill._
+
+object `package` extends RootModule with Module {}

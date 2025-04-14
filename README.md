@@ -33,8 +33,7 @@ proceeding:
      sudo pacman -S just
      ```
 
-2. Alternatively, you can download the latest release from the [official
-   `just` GitHub releases page](https://github.com/casey/just/releases) and add it to your system.
+2. Alternatively, you can download the latest release from the [official GitHub releases page](https://github.com/casey/just/releases) and add it to your system.
 
 #### Verifying the Installation:
 

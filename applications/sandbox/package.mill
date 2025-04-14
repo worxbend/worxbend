@@ -1,0 +1,50 @@
+package build.applications.sandbox
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule with PublishModule {
+
+  def scalaVersion = "3.6.4"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-print-lines",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xmigration:3.6",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted"
+  )
+
+  def ivyDeps = super.ivyDeps() ++
+    Agg(ivy"com.softwaremill.magnolia1_3::magnolia:1.3.3")
+
+  def pomSettings = PomSettings(
+    "sandbox",
+    "sandbox",
+    "",
+    Seq(),
+    VersionControl(
+      Some("https://github.com/worxbend/worxbend"),
+      Some("scm:git:https://github.com/worxbend/worxbend.git"),
+      Some("scm:git:git@github.com:worxbend/worxbend.git"),
+      None
+    ),
+    Seq()
+  )
+
+  def publishVersion = "0.1.0-SNAPSHOT"
+
+}

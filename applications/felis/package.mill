@@ -1,0 +1,53 @@
+package build.applications.felis
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule with PublishModule {
+
+  def scalaVersion = "3.6.4"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-print-lines",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xmigration:3.6",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted"
+  )
+
+  def ivyDeps = super.ivyDeps() ++ Agg(
+    ivy"io.7mind.izumi::distage-core:1.1.0-M21",
+    ivy"org.typelevel::cats-core:2.9.0",
+    ivy"org.typelevel::cats-effect:3.4.10"
+  )
+
+  def pomSettings = PomSettings(
+    "felis",
+    "felis",
+    "",
+    Seq(),
+    VersionControl(
+      Some("https://github.com/worxbend/worxbend"),
+      Some("scm:git:https://github.com/worxbend/worxbend.git"),
+      Some("scm:git:git@github.com:worxbend/worxbend.git"),
+      None
+    ),
+    Seq()
+  )
+
+  def publishVersion = "0.1.0-SNAPSHOT"
+
+}

@@ -1,0 +1,26 @@
+package build
+
+import $packages._
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule with PublishModule {
+
+  def artifactName = "worxbend"
+
+  def scalaVersion = "3.6.4"
+
+  def pomSettings = PomSettings(
+    "worxbend",
+    "worxbend",
+    "",
+    Seq(),
+    VersionControl(None, None, None, None),
+    Seq()
+  )
+
+  def publishVersion = "0.1.0-SNAPSHOT"
+
+}

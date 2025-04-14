@@ -1,0 +1,61 @@
+package build.applications.cetus
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule with PublishModule {
+
+  def scalaVersion = "3.6.4"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-print-lines",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xmigration:3.6",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted"
+  )
+
+  def ivyDeps = super.ivyDeps() ++ Agg(
+    ivy"dev.zio::zio-config-magnolia:4.0.0-RC14",
+    ivy"dev.zio::zio-config-refined:4.0.0-RC14",
+    ivy"dev.zio::zio-config-typesafe:4.0.0-RC14",
+    ivy"dev.zio::zio-config:4.0.0-RC14",
+    ivy"dev.zio::zio-http:3.0.0-RC1",
+    ivy"dev.zio::zio-json:0.5.0",
+    ivy"dev.zio::zio-logging:2.1.12",
+    ivy"dev.zio::zio-metrics-connectors:2.0.8",
+    ivy"dev.zio::zio-streams:2.0.13",
+    ivy"dev.zio::zio:2.0.13",
+    ivy"io.7mind.izumi::distage-core:1.1.0-M21"
+  )
+
+  def pomSettings = PomSettings(
+    "cetus",
+    "cetus",
+    "",
+    Seq(),
+    VersionControl(
+      Some("https://github.com/worxbend/worxbend"),
+      Some("scm:git:https://github.com/worxbend/worxbend.git"),
+      Some("scm:git:git@github.com:worxbend/worxbend.git"),
+      None
+    ),
+    Seq()
+  )
+
+  def publishVersion = "0.1.0-SNAPSHOT"
+
+}
