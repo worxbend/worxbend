@@ -5,7 +5,7 @@ import mill.javalib._
 import mill.javalib.publish._
 import mill.scalalib.SbtModule
 
-object `package` extends RootModule with SbtModule with PublishModule {
+object `package` extends RootModule with SbtModule {
 
   def scalaVersion = "3.6.4"
 
@@ -44,21 +44,5 @@ object `package` extends RootModule with SbtModule with PublishModule {
     ivy"dev.zio::zio:2.0.12",
     ivy"io.github.arainko::ducktape:0.1.4"
   )
-
-  def pomSettings = PomSettings(
-    "reqflect",
-    "reqflect",
-    "",
-    Seq(),
-    VersionControl(
-      Some("https://github.com/worxbend/worxbend"),
-      Some("scm:git:https://github.com/worxbend/worxbend.git"),
-      Some("scm:git:git@github.com:worxbend/worxbend.git"),
-      None
-    ),
-    Seq()
-  )
-
-  def publishVersion = "0.1.0-SNAPSHOT"
 
 }

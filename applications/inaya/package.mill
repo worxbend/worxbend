@@ -2,10 +2,9 @@ package build.applications.inaya
 
 import mill._
 import mill.javalib._
-import mill.javalib.publish._
 import mill.scalalib.SbtModule
 
-object `package` extends RootModule with SbtModule with PublishModule {
+object `package` extends RootModule with SbtModule {
 
   def scalaVersion = "3.6.4"
 
@@ -27,17 +26,6 @@ object `package` extends RootModule with SbtModule with PublishModule {
     "-Wunused:unsafe-warn-patvars",
     "-Wunused:linted"
   )
-
-  def pomSettings = PomSettings(
-    "inaya",
-    "inaya",
-    "",
-    Seq(),
-    VersionControl(None, None, None, None),
-    Seq()
-  )
-
-  def publishVersion = "0.1.0-SNAPSHOT"
 
   trait test extends SbtTests {
 

@@ -1,0 +1,10 @@
+package build.applications.aeon
+
+import mill._
+import mill.javalib._
+import mill.scalalib.SbtModule
+
+object `package` extends RootModule with SbtModule {
+
+  def scalaVersion = "3.6.4"
+}

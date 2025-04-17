@@ -1,0 +1,41 @@
+package build.applications
+
+import mill._
+import mill.scalalib._
+
+trait WxModule extends ScalaModule {
+
+  def scalaVersion = "3.6.4"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-unchecked",
+    "-Xsemanticdb",
+    "-Xfatal-warnings",
+    "-Xmigration",
+    "-Xmixin-force-forwarders",
+    "-Xno-forwarders",
+    "-Wconf",
+    "-Werror",
+    "-Wnonunit-statement",
+    "-Wconf",
+    "-Wvalue-discard",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted",
+    "-Ycheck",
+    "-Yno-generic-signatures",
+    "-Yno-imports",
+    "-Yno-predef",
+    "-Ykind-projector"
+  )
+
+}

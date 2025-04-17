@@ -2,10 +2,9 @@ package build.applications.meeter
 
 import mill._
 import mill.javalib._
-import mill.javalib.publish._
 import mill.scalalib.SbtModule
 
-object `package` extends RootModule with SbtModule with PublishModule {
+object `package` extends RootModule with SbtModule {
 
   def scalaVersion = "3.6.4"
 
@@ -43,21 +42,4 @@ object `package` extends RootModule with SbtModule with PublishModule {
     ivy"io.7mind.izumi::distage-core:1.1.0-M23",
     ivy"org.scalameta:svm-subs:101.0.0"
   )
-
-  def pomSettings = PomSettings(
-    "meeter",
-    "meeter",
-    "",
-    Seq(),
-    VersionControl(
-      Some("https://github.com/worxbend/worxbend"),
-      Some("scm:git:https://github.com/worxbend/worxbend.git"),
-      Some("scm:git:git@github.com:worxbend/worxbend.git"),
-      None
-    ),
-    Seq()
-  )
-
-  def publishVersion = "0.1.0-SNAPSHOT"
-
 }

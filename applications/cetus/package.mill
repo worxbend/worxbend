@@ -2,10 +2,9 @@ package build.applications.cetus
 
 import mill._
 import mill.javalib._
-import mill.javalib.publish._
 import mill.scalalib.SbtModule
 
-object `package` extends RootModule with SbtModule with PublishModule {
+object `package` extends RootModule with SbtModule {
 
   def scalaVersion = "3.6.4"
 
@@ -41,21 +40,5 @@ object `package` extends RootModule with SbtModule with PublishModule {
     ivy"dev.zio::zio:2.0.13",
     ivy"io.7mind.izumi::distage-core:1.1.0-M21"
   )
-
-  def pomSettings = PomSettings(
-    "cetus",
-    "cetus",
-    "",
-    Seq(),
-    VersionControl(
-      Some("https://github.com/worxbend/worxbend"),
-      Some("scm:git:https://github.com/worxbend/worxbend.git"),
-      Some("scm:git:git@github.com:worxbend/worxbend.git"),
-      None
-    ),
-    Seq()
-  )
-
-  def publishVersion = "0.1.0-SNAPSHOT"
 
 }
