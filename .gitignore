@@ -479,7 +479,7 @@ coursier
 .scala-build/
 **/.bloop/
 **./.bsp/
-
+.bsp/
 
 ### dotenv
 **/.env
