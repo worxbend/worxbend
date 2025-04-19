@@ -2,7 +2,6 @@ package build.applications.aeon
 
 import build_.applications.util.WxModule
 import mill._
-import mill.javalib._
 import mill.scalalib._
 
 object `package` extends RootModule with WxModule {

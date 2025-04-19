@@ -1,8 +1,7 @@
 package build.applications.cetus
 
 import mill._
-import mill.javalib._
-import mill.scalalib.SbtModule
+import mill.scalalib._
 
 object `package` extends RootModule with SbtModule {
 

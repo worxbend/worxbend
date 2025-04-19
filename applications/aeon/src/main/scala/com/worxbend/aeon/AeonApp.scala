@@ -20,9 +20,9 @@ object AeonApp {
 
     Configuration.setDefaultApiClient(client)
 
-    val api                    = new CoreV1Api(client)
+    lazy val api               = new CoreV1Api(client)
     val discoveryV1Api         = new DiscoveryV1Api(client)
-    val a                      = new AppsV1Api(client)
+    val appsV1Api              = new AppsV1Api(client)
     val batchV1Api: BatchV1Api = new BatchV1Api(client)
 
     val deployments = a.listNamespacedDeployment("namespace")
