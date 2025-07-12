@@ -1,10 +1,11 @@
 package build.applications.inaya
 
-import mill._
-import mill.javalib._
+import build.applications.WxModule
+import mill.*
+import mill.javalib.*
 import mill.scalalib.SbtModule
 
-object `package` extends SbtModule {
+object `package` extends WxModule {
 
   def scalaVersion = "3.7.1"
 
@@ -27,9 +28,4 @@ object `package` extends SbtModule {
     "-Wunused:linted"
   )
 
-  trait test extends SbtTests {
-
-    def testSandboxWorkingDir = false
-    def testEnableWorkStealing = false
-  }
 }
