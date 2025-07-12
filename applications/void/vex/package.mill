@@ -5,7 +5,7 @@ import mill.javalib._
 import mill.javalib.publish._
 import mill.scalalib.SbtModule
 
-object `package` extends RootModule with SbtModule {
+object `package` extends SbtModule {
 
   def scalaVersion = "3.6.4"
 

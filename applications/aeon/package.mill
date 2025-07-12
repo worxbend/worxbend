@@ -1,14 +1,15 @@
 package build.applications.aeon
 
-import build_.applications.util.WxModule
-import mill._
-import mill.scalalib._
+import build.applications.WxModule
 
-object `package` extends RootModule with WxModule {
+import mill._
+import scalalib._
+
+object `package` extends WxModule {
 
   def scalaVersion = "3.6.4"
 
-  def mainClass: T[Option[String]] = Some("com.worxbend.aeon.AeonApp")
+  def mainClass = Some("com.worxbend.aeon.AeonApp")
 
-  def ivyDeps: T[Agg[Dep]] = super.ivyDeps() ++ Agg(ivy"io.kubernetes:client-java:20.0.1")
+  def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.kubernetes:client-java:20.0.1")
 }
