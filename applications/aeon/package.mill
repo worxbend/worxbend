@@ -8,5 +8,7 @@ object `package` extends RootModule with WxModule {
 
   def scalaVersion = "3.6.4"
 
-  def ivyDeps = super.ivyDeps() ++ Agg(ivy"io.kubernetes:client-java:20.0.1")
+  def mainClass: T[Option[String]] = Some("com.worxbend.aeon.AeonApp")
+
+  def ivyDeps: T[Agg[Dep]] = super.ivyDeps() ++ Agg(ivy"io.kubernetes:client-java:20.0.1")
 }

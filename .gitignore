@@ -480,6 +480,7 @@ coursier
 **/.bloop/
 **./.bsp/
 .bsp/
+**/*.semanticdb
 
 ### dotenv
 **/.env

@@ -2,7 +2,7 @@ package com.worxbend.aeon
 
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.Configuration
-import io.kubernetes.client.openapi.apis._
+import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.apis.BatchV1Api
 import io.kubernetes.client.openapi.models.V1EnvVar
 import io.kubernetes.client.openapi.models.V1Job
@@ -11,7 +11,11 @@ import io.kubernetes.client.openapi.models.V1PodList
 import io.kubernetes.client.util.Config
 import io.kubernetes.client.util.Yaml
 
+import scala.{ main, Unit }
+import scala.Console.println
 import scala.jdk.CollectionConverters.*
+
+import scala.collection.immutable.List
 
 object AeonApp {
 
@@ -21,11 +25,7 @@ object AeonApp {
     Configuration.setDefaultApiClient(client)
 
     lazy val api               = new CoreV1Api(client)
-    val discoveryV1Api         = new DiscoveryV1Api(client)
-    val appsV1Api              = new AppsV1Api(client)
     val batchV1Api: BatchV1Api = new BatchV1Api(client)
-
-    val deployments = a.listNamespacedDeployment("namespace")
 
     val podsListReq: CoreV1Api#APIlistPodForAllNamespacesRequest = api.listPodForAllNamespaces()
     val podList: V1PodList                                       = podsListReq.execute()
@@ -38,7 +38,6 @@ object AeonApp {
 
     println("Creating a job")
 
-    val job = new V1Job()
 
     val template = Yaml.load("""
         |apiVersion: batch/v1
@@ -61,7 +60,6 @@ object AeonApp {
     template match
       case job: V1Job =>
         try {
-          val job1 = batchV1Api.readNamespacedJob("pi", "default").execute()
           val pi   = batchV1Api.deleteNamespacedJob("pi", "default")
           pi.orphanDependents(true)
           pi.execute()

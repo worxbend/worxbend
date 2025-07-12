@@ -18,24 +18,16 @@ trait WxModule extends ScalaModule {
     "-Xsemanticdb",
     "-Xfatal-warnings",
     "-Xmigration",
-    "-Xmixin-force-forwarders",
-    "-Xno-forwarders",
-    "-Wconf",
-    "-Werror",
+    "-Xkind-projector",
     "-Wnonunit-statement",
-    "-Wconf",
+    "-Wconf:any:error",
     "-Wvalue-discard",
     "-Wunused:imports",
     "-Wunused:locals",
     "-Wunused:privates",
     "-Wunused:params",
     "-Wunused:unsafe-warn-patvars",
-    "-Wunused:linted",
-    "-Ycheck",
-    "-Yno-generic-signatures",
-    "-Yno-imports",
-    "-Yno-predef",
-    "-Ykind-projector"
+    "-Wunused:linted"
   )
 
 }
