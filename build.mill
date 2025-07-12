@@ -1,12 +1,12 @@
 package build
 
-import mill._
-import mill.scalalib._
+import mill.*
+import mill.scalalib.*
 
 object `package` extends ScalaModule {
 
   def artifactName = "worxbend"
 
-  def scalaVersion = "3.6.4"
+  def scalaVersion = "3.7.1"
 
 }

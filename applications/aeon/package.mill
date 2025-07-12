@@ -7,7 +7,7 @@ import scalalib._
 
 object `package` extends WxModule {
 
-  def scalaVersion = "3.6.4"
+  def scalaVersion = "3.7.1"
 
   def mainClass = Some("com.worxbend.aeon.AeonApp")
 

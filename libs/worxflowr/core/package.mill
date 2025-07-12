@@ -1,13 +1,13 @@
-package build.libs.worxflowr.`worxflowr-core`
+package build.libs.worxflowr.core
 
-import mill._
-import mill.javalib._
-import mill.javalib.publish._
-import mill.scalalib.SbtModule
+import mill.*
+import mill.javalib.{ DepSyntax, * }
+import mill.javalib.publish.*
+import mill.scalalib.*
 
 object `package` extends SbtModule with PublishModule {
 
-  def scalaVersion = "3.6.4"
+  def scalaVersion = "3.7.1"
 
   def mvnDeps = super.mvnDeps() ++ Seq(
     mvn"dev.zio::zio-cache:0.2.3",
@@ -22,21 +22,21 @@ object `package` extends SbtModule with PublishModule {
     mvn"dev.zio::zio-streams:2.0.13",
     mvn"dev.zio::zio:2.0.13",
     mvn"io.github.arainko::ducktape:0.1.4",
-    mvn"io.lettuce:lettuce-core:6.2.3.RELEASE"
+    mvn"io.lettuce:lettuce-core:6.2.3.RELEASE",
   )
 
   def pomSettings = PomSettings(
-    "worxflowr-core",
-    "worxflowr-core",
-    "",
-    Seq(),
+    description = "Worxflowr Core",
+    organization = "worxbend",
+    "https://worxbend.com",
+    Seq(License.MIT),
     VersionControl(
       Some("https://github.com/worxbend/worxbend"),
       Some("scm:git:https://github.com/worxbend/worxbend.git"),
       Some("scm:git:git@github.com:worxbend/worxbend.git"),
-      None
+      None,
     ),
-    Seq()
+    Seq(),
   )
 
   def publishVersion = "0.1.0-SNAPSHOT"
