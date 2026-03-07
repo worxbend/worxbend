@@ -6,7 +6,7 @@ import mill.scalalib.SbtModule
 
 object `package` extends SbtModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.8.2"
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-deprecation",

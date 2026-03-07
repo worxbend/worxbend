@@ -7,7 +7,7 @@ import mill.scalalib.*
 
 object `package` extends SbtModule with PublishModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.8.2"
 
   def mvnDeps = super.mvnDeps() ++ Seq(
     mvn"dev.zio::zio-cache:0.2.3",
