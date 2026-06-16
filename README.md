@@ -52,8 +52,8 @@ just --version
 With `just` installed, you're ready to proceed with the project.
 
 > ![NOTE]
-> The sole functionality provided by `just` is creating new sbt modules. If you prefer to handle the boilerplate tasks
-> manually when adding a new project (whether it's an application or a library), you can skip this step.
+> The sole functionality provided by `just` is scaffolding new Mill modules via cookiecutter. If you prefer to handle
+> the boilerplate manually when adding a new project (whether it's an application or a library), you can skip this step.
 
 ### Setting python venv up:
 

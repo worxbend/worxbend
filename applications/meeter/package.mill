@@ -1,45 +1,25 @@
 package build.applications.meeter
 
+import build.applications.WxSbtModule
+
 import mill._
-import mill.javalib._
-import mill.scalalib.SbtModule
+import mill.scalalib._
 
-object `package` extends SbtModule {
-
-  def scalaVersion = "3.7.1"
-
-  def scalacOptions = super.scalacOptions() ++ Seq(
-    "-deprecation",
-    "-explain",
-    "-explain-types",
-    "-feature",
-    "-indent",
-    "-new-syntax",
-    "-print-lines",
-    "-unchecked",
-    "-Xfatal-warnings",
-    "-Xmigration:3.6",
-    "-Wunused:imports",
-    "-Wunused:locals",
-    "-Wunused:privates",
-    "-Wunused:params",
-    "-Wunused:unsafe-warn-patvars",
-    "-Wunused:linted"
-  )
+object `package` extends WxSbtModule {
 
   def mvnDeps = super.mvnDeps() ++ Seq(
-    mvn"dev.zio::zio-config-magnolia:4.0.0-RC16",
-    mvn"dev.zio::zio-config-refined:4.0.0-RC16",
-    mvn"dev.zio::zio-config-typesafe:4.0.0-RC16",
-    mvn"dev.zio::zio-config:4.0.0-RC16",
-    mvn"dev.zio::zio-http:3.0.0-RC2",
-    mvn"dev.zio::zio-json:0.5.0",
-    mvn"dev.zio::zio-logging:2.1.13",
-    mvn"dev.zio::zio-metrics-connectors:2.0.8",
-    mvn"dev.zio::zio-prelude:1.0.0-RC19",
-    mvn"dev.zio::zio-streams:2.0.15",
-    mvn"dev.zio::zio:2.0.15",
-    mvn"io.7mind.izumi::distage-core:1.1.0-M23",
-    mvn"org.scalameta:svm-subs:101.0.0"
+    mvn"dev.zio::zio-config-magnolia:4.0.4",
+    mvn"dev.zio::zio-config-refined:4.0.4",
+    mvn"dev.zio::zio-config-typesafe:4.0.4",
+    mvn"dev.zio::zio-config:4.0.4",
+    mvn"dev.zio::zio-http:3.3.3",
+    mvn"dev.zio::zio-json:0.7.43",
+    mvn"dev.zio::zio-logging:2.5.0",
+    mvn"dev.zio::zio-metrics-connectors:2.3.1",
+    mvn"dev.zio::zio-prelude:1.0.0-RC40",
+    mvn"dev.zio::zio-streams:2.1.19",
+    mvn"dev.zio::zio:2.1.19",
+    mvn"io.7mind.izumi::distage-core:1.2.17",
+    mvn"org.scalameta:svm-subs:101.0.0",
   )
 }

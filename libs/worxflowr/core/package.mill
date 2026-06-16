@@ -10,33 +10,28 @@ object `package` extends SbtModule with PublishModule {
   def scalaVersion = "3.7.1"
 
   def mvnDeps = super.mvnDeps() ++ Seq(
-    mvn"dev.zio::zio-cache:0.2.3",
-    mvn"dev.zio::zio-config-magnolia:4.0.0-RC14",
-    mvn"dev.zio::zio-config-refined:4.0.0-RC14",
-    mvn"dev.zio::zio-config-typesafe:4.0.0-RC14",
-    mvn"dev.zio::zio-config:4.0.0-RC14",
-    mvn"dev.zio::zio-http:0.0.5",
-    mvn"dev.zio::zio-json:0.5.0",
-    mvn"dev.zio::zio-logging:2.1.12",
-    mvn"dev.zio::zio-metrics-connectors:2.0.8",
-    mvn"dev.zio::zio-streams:2.0.13",
-    mvn"dev.zio::zio:2.0.13",
-    mvn"io.github.arainko::ducktape:0.1.4",
-    mvn"io.lettuce:lettuce-core:6.2.3.RELEASE",
+    mvn"dev.zio::zio-cache:0.2.4",
+    mvn"dev.zio::zio-config-magnolia:4.0.4",
+    mvn"dev.zio::zio-config-refined:4.0.4",
+    mvn"dev.zio::zio-config-typesafe:4.0.4",
+    mvn"dev.zio::zio-config:4.0.4",
+    mvn"dev.zio::zio-http:3.3.3",
+    mvn"dev.zio::zio-json:0.7.43",
+    mvn"dev.zio::zio-logging:2.5.0",
+    mvn"dev.zio::zio-metrics-connectors:2.3.1",
+    mvn"dev.zio::zio-streams:2.1.19",
+    mvn"dev.zio::zio:2.1.19",
+    mvn"io.github.arainko::ducktape:0.2.8",
+    mvn"io.lettuce:lettuce-core:6.7.1.RELEASE",
   )
 
   def pomSettings = PomSettings(
-    description = "Worxflowr Core",
-    organization = "worxbend",
-    "https://worxbend.com",
-    Seq(License.MIT),
-    VersionControl(
-      Some("https://github.com/worxbend/worxbend"),
-      Some("scm:git:https://github.com/worxbend/worxbend.git"),
-      Some("scm:git:git@github.com:worxbend/worxbend.git"),
-      None,
-    ),
-    Seq(),
+    description = "Worxflowr Core — ZIO-based workflow scheduling and execution primitives.",
+    organization = "io.worxbend",
+    url = "https://github.com/worxbend/worxbend",
+    licenses = Seq(License.MIT),
+    versionControl = VersionControl.github("worxbend", "worxbend"),
+    developers = Seq(Developer("limpid-kzonix", "limpid-kzonix", "https://github.com/limpid-kzonix")),
   )
 
   def publishVersion = "0.1.0-SNAPSHOT"

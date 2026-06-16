@@ -122,7 +122,6 @@ class ToStringSuite extends AnyFunSuite:
     )
 
     val actual   = testedInstance.toString
-    println(actual)
     val expected =
       """|TestedType(
          |  password:::<String> -- [***],

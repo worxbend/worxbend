@@ -34,7 +34,7 @@ object ToString {
     val transientAnnotation = TypeRepr.of[transient].typeSymbol
 
     // Extract field names and annotations
-    val intructions: Seq[Expr[Option[(String, Boolean, String)]]] = tpe
+    val instructions: Seq[Expr[Option[(String, Boolean, String)]]] = tpe
       .typeSymbol
       .caseFields
       .collect:
@@ -61,8 +61,8 @@ object ToString {
             )
           }
 
-    val intructionsExpr: Expr[Seq[Option[(String, Boolean, String)]]] = Expr.ofSeq(intructions)
-    val skipOrReplaceInstructExpr                                     = '{ $intructionsExpr.toVector }
+    val instructionsExpr: Expr[Seq[Option[(String, Boolean, String)]]] = Expr.ofSeq(instructions)
+    val skipOrReplaceInstructionsExpr                                  = '{ $instructionsExpr.toVector }
 
     lazy val toStringExpr: Expr[String] =
       '{
@@ -73,7 +73,7 @@ object ToString {
         val input: T = $x
 
         val skipOrReplaceInstructionsMap: Map[String, (Boolean, String)] =
-          ($skipOrReplaceInstructExpr)
+          ($skipOrReplaceInstructionsExpr)
             .view
             .flatten
             .map {

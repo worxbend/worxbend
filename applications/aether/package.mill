@@ -1,0 +1,32 @@
+package build.applications.aether
+
+import build.applications.WxSbtModule
+
+import mill._
+import mill.scalalib._
+
+object `package` extends WxSbtModule {
+
+  def mainClass = Some("io.worxbend.aether.AetherApp")
+
+  def mvnDeps = super.mvnDeps() ++ Seq(
+    // Tapir + Netty sync — Java 21 virtual threads, direct style
+    mvn"com.softwaremill.sttp.tapir::tapir-netty-server-sync:1.13.21",
+    mvn"com.softwaremill.sttp.tapir::tapir-json-circe:1.13.21",
+    mvn"com.softwaremill.sttp.tapir::tapir-swagger-ui-bundle:1.13.21",
+    // Structured concurrency
+    mvn"com.softwaremill.ox::ox:1.0.5",
+    // JSON
+    mvn"io.circe::circe-core:0.14.13",
+    mvn"io.circe::circe-generic:0.14.13",
+    mvn"io.circe::circe-parser:0.14.13",
+    // HTTP client (outbound requests to AirGradient device)
+    mvn"com.softwaremill.sttp.client4::core:4.0.3",
+    mvn"com.softwaremill.sttp.client4::circe:4.0.3",
+    // Configuration
+    mvn"com.github.pureconfig::pureconfig-core:0.17.9",
+    mvn"com.github.pureconfig::pureconfig-generic-scala3:0.17.9",
+    // Logging
+    mvn"ch.qos.logback:logback-classic:1.5.18",
+  )
+}

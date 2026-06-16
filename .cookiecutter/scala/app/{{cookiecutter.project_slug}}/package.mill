@@ -1,10 +1,7 @@
-package build.applications.aeon
+package build.applications.`{{ cookiecutter.project_slug }}`
+
+import build.applications.WxSbtModule
 
 import mill._
-import mill.javalib._
-import mill.scalalib.SbtModule
 
-object `package` extends SbtModule {
-
-  def scalaVersion = "3.7.1"
-}
+object `package` extends WxSbtModule

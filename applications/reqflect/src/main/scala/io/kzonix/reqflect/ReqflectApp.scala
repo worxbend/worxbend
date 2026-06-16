@@ -1,14 +1,15 @@
 package io.kzonix.reqflect
 
-import zio.*
+import zio.Runtime
+import zio.ZIO
+import zio.ZIOAppDefault
+import zio.ZLayer
 import zio.config.typesafe.TypesafeConfigProvider
-import zio.http.*
-import zio.http.model.Method
-import zio.json.*
-import zio.logging.*
-import zio.metrics.*
-import zio.metrics.Metric.Counter
-import zio.metrics.connectors.MetricsConfig
+import zio.http.Client
+import zio.http.Server
+import zio.http.ServerConfig
+import zio.logging.consoleJsonLogger
+import zio.logging.logMetrics
 import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer

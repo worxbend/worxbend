@@ -1,18 +1,12 @@
+import shutil
 import sys
-import subprocess
 
 
-def is_docker_installed() -> bool:
-    try:
-        subprocess.run(["docker", "--version"], capture_output=True, check=True)
-        return True
-    except Exception:
-        return False
+def is_mill_installed() -> bool:
+    return shutil.which("mill") is not None
 
 
 if __name__ == "__main__":
-    if not is_docker_installed():
-        print("ERROR: Docker is not installed.")
-        sys.exit(1)
-    else:
-        print("Docker is installed.")
+    if not is_mill_installed():
+        print("WARNING: 'mill' binary not found on PATH. The generated module will still be created,")
+        print("         but you will need Mill installed to build it.")

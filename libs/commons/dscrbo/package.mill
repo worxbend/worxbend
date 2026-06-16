@@ -10,12 +10,12 @@ object `package` extends SbtModule with PublishModule {
   def scalaVersion = "3.7.1"
 
   def pomSettings = PomSettings(
-    "dscrbo",
-    "dscrbo",
-    "",
-    Seq(),
-    VersionControl(None, None, None, None),
-    Seq()
+    description = "Scala 3 configurable toString via inline macros with zero external dependencies. Supports @Redacted, @Excluded annotations and rich formatting configuration.",
+    organization = "io.worxbend",
+    url = "https://github.com/worxbend/worxbend",
+    licenses = Seq(License.MIT),
+    versionControl = VersionControl.github("worxbend", "worxbend"),
+    developers = Seq(Developer("limpid-kzonix", "limpid-kzonix", "https://github.com/limpid-kzonix")),
   )
 
   def publishVersion = "0.1.0-SNAPSHOT"

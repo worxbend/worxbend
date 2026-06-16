@@ -1,8 +1,14 @@
 package io.kzonix.reqflect.routes
 
-import zio.*
-import zio.http.*
+import zio.ZIO
+
+import zio.http.Client
+import zio.http.Http
+import zio.http.Request
+import zio.http.Response
+import zio.http.ServerConfig
 import zio.http.model.Method
+
 import zio.json.*
 
 import io.kzonix.reqflect.routes.models.NetworkInterfaceResponse

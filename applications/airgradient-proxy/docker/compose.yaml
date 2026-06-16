@@ -1,0 +1,18 @@
+services:
+  airgradient-proxy:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+    environment:
+      - JAVA_OPTS=-Xmx256m -Xms64m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/_proxy/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

@@ -1,0 +1,72 @@
+package build.applications.`airgradient-proxy`
+
+import build.applications.WxSbtModule
+
+import mill._
+import mill.scalalib._
+import mill.scalalib.scalafmt.ScalafmtModule
+
+object `package` extends WxSbtModule with ScalafmtModule {
+
+  override def scalacOptions = super.scalacOptions().filter(_ != "-Xmigration") ++ Seq(
+    "-release:21",
+  )
+
+  override def javacOptions = Seq(
+    "--release",
+    "21",
+  )
+
+  def mvnDeps = super.mvnDeps() ++ Seq(
+    // Tapir Netty sync server (direct-style, virtual-thread friendly)
+    mvn"com.softwaremill.sttp.tapir::tapir-netty-server-sync:1.13.21",
+    mvn"com.softwaremill.sttp.tapir::tapir-core:1.13.21",
+    mvn"com.softwaremill.sttp.tapir::tapir-jsoniter-scala:1.13.21",
+
+    // ox structured concurrency for lifecycle and polling
+    mvn"com.softwaremill.ox::core:1.0.5",
+
+    // sttp4 client: Tapir endpoint → typed HTTP call, OkHttp 5 as the sync transport
+    mvn"com.softwaremill.sttp.tapir::tapir-sttp-client4:1.13.21",
+    mvn"com.softwaremill.sttp.client4::okhttp-backend:4.0.25",
+
+    // jsoniter-scala JSON validation + internal status codecs
+    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.34.0",
+    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.34.0",
+
+    // pureconfig configuration loading
+    mvn"com.github.pureconfig::pureconfig-core:0.17.8",
+
+    // distage dependency injection
+    mvn"io.7mind.izumi::distage-core:1.2.17",
+
+    // logstage structured logging
+    mvn"io.7mind.izumi::logstage-core:1.2.17",
+    mvn"io.7mind.izumi::logstage-sink-slf4j:1.2.17",
+
+    // slf4j + logback for logstage sink
+    mvn"org.slf4j:slf4j-api:2.0.17",
+    mvn"ch.qos.logback:logback-classic:1.5.18",
+
+    // Tapir observability + docs
+    mvn"com.softwaremill.sttp.tapir::tapir-apispec-docs:1.13.21",
+    // JSON serialization for sttp.apispec.Schema (test-scoped in tapir-apispec-docs, so explicit here)
+    mvn"com.softwaremill.sttp.apispec::jsonschema-circe:0.11.10",
+    mvn"com.softwaremill.sttp.tapir::tapir-prometheus-metrics:1.13.21",
+    mvn"com.softwaremill.sttp.tapir::tapir-opentelemetry-tracing:1.13.21",
+    // OpenTelemetry SDK autoconfigure reads OTEL_* env vars at startup
+    mvn"io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.49.0",
+  )
+
+  object test extends SbtTests with ScalafmtModule {
+
+    def mvnDeps = super.mvnDeps() ++ Seq(
+      mvn"org.scalameta::munit:1.1.1",
+      mvn"com.github.tomakehurst:wiremock-standalone:3.0.1",
+    )
+
+    def testFramework = "munit.Framework"
+
+  }
+
+}

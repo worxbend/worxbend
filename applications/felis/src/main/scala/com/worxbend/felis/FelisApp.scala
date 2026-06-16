@@ -40,7 +40,7 @@ object FelisApp extends IOApp.Simple:
       Roots.target[FelisApp],
     )
 
-  var run: IO[Unit] =
+  val run: IO[Unit] =
     injector
       .use(locator => IO(locator.get[FelisApp]))
       .bracket(_.start())(_.stop())

@@ -28,12 +28,12 @@
     "gradle-wrapper",
     "kubernetes",
     "maven",
+    "mill",
     "npm",
     "pip_requirements",
     "pip_setup",
     "pipenv",
     "poetry",
-    "sbt",
     "terraform",
     "travis"
   ],

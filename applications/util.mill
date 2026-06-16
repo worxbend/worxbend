@@ -1,7 +1,8 @@
 package build.applications
 
 import mill.*
-import scalalib.*
+import mill.scalalib.*
+import mill.scalalib.SbtModule
 
 trait WxModule extends ScalaModule {
 
@@ -27,7 +28,36 @@ trait WxModule extends ScalaModule {
     "-Wunused:privates",
     "-Wunused:params",
     "-Wunused:unsafe-warn-patvars",
-    "-Wunused:linted"
+    "-Wunused:linted",
+  )
+
+}
+
+trait WxSbtModule extends SbtModule {
+
+  def scalaVersion = "3.7.1"
+
+  def scalacOptions = super.scalacOptions() ++ Seq(
+    "-deprecation",
+    "-explain",
+    "-explain-types",
+    "-feature",
+    "-indent",
+    "-new-syntax",
+    "-unchecked",
+    "-Xsemanticdb",
+    "-Xfatal-warnings",
+    "-Xmigration",
+    "-Xkind-projector",
+    "-Wnonunit-statement",
+    "-Wconf:any:error",
+    "-Wvalue-discard",
+    "-Wunused:imports",
+    "-Wunused:locals",
+    "-Wunused:privates",
+    "-Wunused:params",
+    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:linted",
   )
 
 }

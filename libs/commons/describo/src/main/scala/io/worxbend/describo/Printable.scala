@@ -82,7 +82,7 @@ trait GenericPrint extends AutoDerivation[Printable]:
       if conf.shortPackagePrefix then
         val parts     = fullName.split('.')
         val untouched = parts.last
-        val shortened = parts.tail.map(_.head).mkString(".")
+        val shortened = parts.init.map(_.head).mkString(".")
         shortened + "." + untouched
       else fullName
     else ctx.typeInfo.short
