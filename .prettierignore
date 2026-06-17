@@ -1,0 +1,7 @@
+out/
+.bloop/
+.bsp/
+.metals/
+.idea/
+node_modules/
+**/*.class

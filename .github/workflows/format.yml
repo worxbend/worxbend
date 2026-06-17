@@ -1,0 +1,73 @@
+name: Format
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Auto-format & Commit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          # Check out the actual PR head branch so we can push back to it.
+          ref: ${{ github.head_ref }}
+          # A PAT is required if you want the auto-commit to trigger further
+          # CI runs. With the default GITHUB_TOKEN the commit is still pushed
+          # but will not re-trigger workflows (avoids infinite loops).
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Scala: scalafmt ──────────────────────────────────────────────────
+      # coursier/cache-action also installs the `cs` binary on PATH.
+      - name: Cache Coursier
+        uses: coursier/cache-action@v6
+
+      - name: Run scalafmt
+        run: |
+          cs launch org.scalameta:scalafmt-cli_2.13:3.9.0 -- \
+            --non-interactive \
+            --mode diff \
+            --diff-branch origin/${{ github.base_ref }}
+
+      # ── YAML / JSON: prettier ────────────────────────────────────────────
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run prettier (YAML + JSON)
+        run: |
+          npx --yes prettier@3 --write \
+            "**/*.{yml,yaml}" \
+            "**/*.json"
+
+      # ── TOML: taplo ──────────────────────────────────────────────────────
+      - name: Run taplo (TOML)
+        run: npx --yes @taplo/cli@0.7 format "**/*.toml"
+
+      # ── Justfile ─────────────────────────────────────────────────────────
+      - name: Setup just
+        uses: extractions/setup-just@v2
+
+      - name: Run just --fmt
+        run: just --fmt --unstable justfile
+
+      # ── Commit any formatting changes back to the PR branch ──────────────
+      - name: Commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-format (scalafmt, prettier, taplo, just)"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"

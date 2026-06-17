@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'applications/**'
+      - 'libs/**'
+      - 'extras/**'
+      - '**/*.mill'
+      - 'build.mill'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'applications/**'
+      - 'libs/**'
+      - 'extras/**'
+      - '**/*.mill'
+      - 'build.mill'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Override the local .mill-jvm-opts (-Xmx10G) with CI-safe values.
+# MILL_JVM_OPTS takes precedence over the file.
+env:
+  MILL_JVM_OPTS: "-Xss10m -Xmx6g -Dfile.encoding=UTF-8"
+
+jobs:
+  compile-and-test:
+    name: Compile & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history is required so we can checkout the base SHA
+          # for selective.prepare during PR runs.
+          fetch-depth: 0
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      # Caches ~/.cache/coursier and ~/.ivy2/cache keyed by dependency
+      # declarations across all *.mill files.
+      - name: Cache Coursier / Ivy
+        uses: coursier/cache-action@v6
+
+      # Restore Mill's incremental build outputs (zinc, task results).
+      # Primary key includes the commit SHA so pushes to main always write
+      # a new entry. Restore keys fall back to the same mill-files hash so
+      # PR jobs reuse the most-recent main build and only recompile deltas.
+      - name: Restore Mill out cache
+        uses: actions/cache/restore@v4
+        id: mill-out-cache
+        with:
+          path: out/
+          key: mill-out-${{ runner.os }}-${{ hashFiles('**/*.mill', 'build.mill', '!out/**') }}-${{ github.sha }}
+          restore-keys: |
+            mill-out-${{ runner.os }}-${{ hashFiles('**/*.mill', 'build.mill', '!out/**') }}-
+            mill-out-${{ runner.os }}-
+
+      # For PRs: capture the task-input fingerprints at the base commit so
+      # selective.run can later skip tasks whose inputs have not changed.
+      # We switch to the base SHA, run selective.prepare (no compilation —
+      # it only hashes inputs), then return to the PR merge commit.
+      - name: Selective prepare — capture base branch state (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          MERGE_SHA=$(git rev-parse HEAD)
+          BASE_SHA=$(git merge-base HEAD origin/${{ github.base_ref }})
+          git checkout "$BASE_SHA"
+          ./mill selective.prepare __.compile __.test
+          git checkout "$MERGE_SHA"
+
+      # Full build on every push to main. Zinc handles incremental compilation
+      # within the restored out/ cache.
+      - name: Compile & Test — full (push to main)
+        if: github.event_name == 'push'
+        run: ./mill __.compile __.test
+
+      # On PRs, only run tasks whose source inputs changed relative to base.
+      # Unchanged modules reuse cached outputs; only the delta is compiled/tested.
+      - name: Compile & Test — selective (PR)
+        if: github.event_name == 'pull_request'
+        run: ./mill selective.run __.compile __.test
+
+      # Persist the updated out/ so future PRs start from a warm cache.
+      # Only written on successful main pushes to keep the cache stable.
+      - name: Save Mill out cache (main only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
+        uses: actions/cache/save@v4
+        with:
+          path: out/
+          key: mill-out-${{ runner.os }}-${{ hashFiles('**/*.mill', 'build.mill', '!out/**') }}-${{ github.sha }}
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_id }}
+          path: |
+            out/**/test.dest/
+            out/**/testCached.dest/
+          if-no-files-found: ignore
+          retention-days: 7
