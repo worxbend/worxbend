@@ -15,7 +15,7 @@ object `package` extends WxSbtModule {
     mvn"com.softwaremill.sttp.tapir::tapir-json-circe:1.13.21",
     mvn"com.softwaremill.sttp.tapir::tapir-swagger-ui-bundle:1.13.21",
     // Structured concurrency
-    mvn"com.softwaremill.ox::ox:1.0.5",
+    mvn"com.softwaremill.ox::core:1.0.5",
     // JSON
     mvn"io.circe::circe-core:0.14.13",
     mvn"io.circe::circe-generic:0.14.13",
