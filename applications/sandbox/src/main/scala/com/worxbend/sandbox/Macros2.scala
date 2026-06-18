@@ -8,8 +8,6 @@ object Macros2 {
       x: Expr[T],
       cfg: Expr[Configuration],
   )(using Type[T])(using quotes: Quotes): Expr[String] = {
-    import quotes.reflect.*
-
     val printValue: Expr[Any => String] =
       '{ (v: Any) =>
         v match {

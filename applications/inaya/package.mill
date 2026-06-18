@@ -9,23 +9,10 @@ object `package` extends WxModule {
 
   def scalaVersion = "3.7.1"
 
+  // WxModule already supplies the shared flag set; only add what's unique here.
+  // Re-listing the shared flags trips "Flag set repeatedly" under -Wconf:any:error.
   def scalacOptions = super.scalacOptions() ++ Seq(
-    "-deprecation",
-    "-explain",
-    "-explain-types",
-    "-feature",
-    "-indent",
-    "-new-syntax",
     "-print-lines",
-    "-unchecked",
-    "-Xfatal-warnings",
-    "-Xmigration:3.6",
-    "-Wunused:imports",
-    "-Wunused:locals",
-    "-Wunused:privates",
-    "-Wunused:params",
-    "-Wunused:unsafe-warn-patvars",
-    "-Wunused:linted"
   )
 
 }

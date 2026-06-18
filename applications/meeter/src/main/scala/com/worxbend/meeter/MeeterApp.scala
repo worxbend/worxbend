@@ -21,7 +21,7 @@ object MeeterApp extends ZIOAppDefault:
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
       >>> logMetrics
-      >>> DefaultJvmMetrics.live
+      >>> DefaultJvmMetrics.liveV2
 
   override def run: ZIO[
     Any,

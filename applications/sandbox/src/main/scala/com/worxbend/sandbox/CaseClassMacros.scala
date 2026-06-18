@@ -1,7 +1,5 @@
 package com.worxbend.sandbox
 
-import java.time.LocalTime
-
 import magnolia1.*
 
 object CaseClassMacros {
