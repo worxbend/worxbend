@@ -2,7 +2,6 @@ package io.worxbend.aether
 
 import pureconfig.ConfigReader
 import pureconfig.ConfigSource
-import pureconfig.generic.derivation.default.*
 
 case class ServerConfig(
     host: String = "0.0.0.0",

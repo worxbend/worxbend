@@ -9,9 +9,9 @@ import cats.Id
 
 import sttp.model.StatusCode
 import sttp.tapir.*
+import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
-import sttp.tapir.server.netty.sync.NettySyncServerInterpreter
-import sttp.tapir.server.netty.sync.NettySyncServerInterpreter.Route
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 class ProxyEndpoints(cache: MeasuresCache, config: AetherConfig):
@@ -45,13 +45,11 @@ class ProxyEndpoints(cache: MeasuresCache, config: AetherConfig):
       )
     }
 
-  private val serverEndpoints =
+  private val serverEndpoints: List[ServerEndpoint[Any, Id]] =
     List(measuresServerEndpoint, healthServerEndpoint)
 
-  private val swaggerRoutes: List[Route[Any]] =
-    NettySyncServerInterpreter().toRoutes(
-      SwaggerInterpreter().fromServerEndpoints[Id](serverEndpoints, "Aether — AirGradient Proxy", "1.0.0")
-    )
+  private val swaggerEndpoints: List[ServerEndpoint[Any, Id]] =
+    SwaggerInterpreter().fromServerEndpoints[Id](serverEndpoints, "Aether — AirGradient Proxy", "1.0.0")
 
-  val allRoutes: List[Route[Any]] =
-    NettySyncServerInterpreter().toRoutes(serverEndpoints) ++ swaggerRoutes
+  val allEndpoints: List[ServerEndpoint[Any, Id]] =
+    serverEndpoints ++ swaggerEndpoints

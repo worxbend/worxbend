@@ -28,7 +28,7 @@ object AetherApp:
       NettySyncServer()
         .host(config.server.host)
         .port(config.server.port)
-        .addRoutes(endpoints.allRoutes)
+        .addEndpoints(endpoints.allEndpoints)
         .startAndWait()
 
       logger.info("Server stopped")
