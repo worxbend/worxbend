@@ -4,7 +4,6 @@ import zio.*
 import zio.http.*
 import zio.metrics.*
 import zio.metrics.MetricKeyType.Counter
-import zio.metrics.connectors.prometheus.*
 
 import java.time.temporal.ChronoUnit
 
@@ -54,48 +53,37 @@ object MetricsHttpMiddleware {
         ),
       )
 
-  def metricsMiddleware: RequestHandlerMiddleware[
-    Nothing,
-    Any,
-    Nothing,
-    Any,
-  ] =
-    new RequestHandlerMiddleware.Simple[Any, Nothing] {
-      override def apply[R1 <: Any, Err1 >: Nothing](
-          handler: Handler[
-            R1,
-            Err1,
-            Request,
-            Response,
-          ]
-      )(implicit trace: Trace): Handler[
-        R1,
-        Err1,
-        Request,
-        Response,
-      ] =
-        Handler.fromFunctionZIO { request =>
-          for {
-            _                   <- ZIO.logInfo(">>>")
-            result              <-
-              handler.runZIO(request).timed
-                @@ requestHistogram(
-                  request.method.toString,
-                  request.url.encode,
-                ).trackDuration
-                @@ requestCounter(
-                  request.method.toString,
-                  request.url.encode,
-                )
-            (duration, response) = result
-            _                   <- ZIO.logInfo(
-                                     "Request handled: " +
-                                       s"method=${request.method} " +
-                                       s"path=${request.url.encode} " +
-                                       s"status=${response.status.code} " +
-                                       s"duration=${duration.toMillis}ms"
-                                   )
-          } yield response
+  // zio-http 3.x replaces RequestHandlerMiddleware with Middleware; wrap each
+  // route handler via Routes#transform to time/count/log requests.
+  val metricsMiddleware: Middleware[Any] =
+    new Middleware[Any] {
+      override def apply[Env1 <: Any, Err1](routes: Routes[Env1, Err1]): Routes[Env1, Err1] =
+        routes.transform[Env1] { next =>
+          Handler.fromFunctionZIO[Request] { request =>
+            ZIO.scoped {
+              for {
+                _      <- ZIO.logInfo(">>>")
+                result <-
+                  next.runZIO(request).timed
+                    @@ requestHistogram(
+                      request.method.toString,
+                      request.url.encode,
+                    ).trackDuration
+                    @@ requestCounter(
+                      request.method.toString,
+                      request.url.encode,
+                    )
+                (duration, response) = result
+                _      <- ZIO.logInfo(
+                            "Request handled: " +
+                              s"method=${request.method} " +
+                              s"path=${request.url.encode} " +
+                              s"status=${response.status.code} " +
+                              s"duration=${duration.toMillis}ms"
+                          )
+              } yield response
+            }
+          }
         }
     }
 

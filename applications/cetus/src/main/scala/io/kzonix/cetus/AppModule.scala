@@ -2,7 +2,6 @@ package io.kzonix.cetus
 
 import zio.ZIO
 import zio.ZLayer
-import zio.ZLayer.*
 import zio.durationInt
 import zio.http.Server
 import zio.metrics.connectors.MetricsConfig

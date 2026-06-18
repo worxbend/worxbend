@@ -4,19 +4,6 @@ import zio.*
 import zio.http.*
 import zio.json.*
 import zio.json.ast.Json
-import zio.logging.*
-import zio.metrics.*
-import zio.metrics.Metric.Counter
-import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.*
-import zio.metrics.connectors.prometheus.PrometheusPublisher
-import zio.metrics.connectors.prometheus.prometheusLayer
-import zio.metrics.connectors.prometheus.publisherLayer
-import zio.metrics.jvm.DefaultJvmMetrics
-
-import scala.util.Try
-
-import java.time.temporal.ChronoUnit
 
 case class CetusDaemonApp() {
 
@@ -37,9 +24,7 @@ case class CetusDaemonApp() {
   private def makeReq() = {
     val url = "https://httpbin.org/anything"
     Client
-      .request(
-        url
-      )
+      .batched(Request.get(url))
       .onError(e => ZIO.succeed(Response.text(e.prettyPrint)))
   }
 

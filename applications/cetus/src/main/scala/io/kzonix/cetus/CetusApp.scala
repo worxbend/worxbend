@@ -2,23 +2,15 @@ package io.kzonix.cetus
 
 import zio.*
 import zio.config.typesafe.TypesafeConfigProvider
-import zio.http.*
-import zio.http.Server.Config
-import zio.json.*
+import zio.http.Client
+import zio.http.DnsResolver
+import zio.http.Server
 import zio.logging.*
-import zio.metrics.*
-import zio.metrics.Metric.Counter
-import zio.metrics.connectors.MetricsConfig
-import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
 import io.kzonix.cetus.AppModule.*
-
-import izumi.distage.model.definition.ModuleDef
-
-import scala.util.Try
 
 import com.typesafe.config.ConfigFactory
 
@@ -35,7 +27,7 @@ object CetusApp extends ZIOAppDefault {
     Runtime.removeDefaultLoggers
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
-      >>> DefaultJvmMetrics.live
+      >>> DefaultJvmMetrics.liveV2
       >>> startupVerificationLayer
 
   override def run: ZIO[
