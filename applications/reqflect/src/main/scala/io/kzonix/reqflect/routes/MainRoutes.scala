@@ -1,31 +1,22 @@
 package io.kzonix.reqflect.routes
 
 import zio.ZIO
-
-import zio.http.Client
-import zio.http.Http
-import zio.http.Request
-import zio.http.Response
-import zio.http.ServerConfig
-import zio.http.model.Method
-
+import zio.http.*
 import zio.json.*
 
 import io.kzonix.reqflect.routes.models.NetworkInterfaceResponse
 import io.kzonix.reqflect.routes.models.ServerInfoResponse
 import io.kzonix.reqflect.services.ServerInfoProviderService
 
-class MainRoutes(serverConfig: ServerConfig, serverInfoProviderService: ServerInfoProviderService)
+class MainRoutes(serverConfig: Server.Config, serverInfoProviderService: ServerInfoProviderService)
     extends AppRoutes[Client, Throwable] {
 
-  override def routes: HttpApp[Client, Throwable] =
-    Http.collectZIO {
-      case req @ Method.GET -> !! / "info" =>
-        for {
-          payload  <- getServerInfo(req)
-          response <- ZIO.succeed(Response.json(payload.toJson))
-        } yield response
-    }
+  override def routes: Routes[Client, Throwable] =
+    Routes(
+      Method.GET / "info" -> handler { (req: Request) =>
+        getServerInfo(req).map(payload => Response.json(payload.toJson))
+      }
+    )
 
   private def getServerInfo(req: Request): ZIO[
     Any,
@@ -34,9 +25,9 @@ class MainRoutes(serverConfig: ServerConfig, serverInfoProviderService: ServerIn
   ] = {
     val remoteAddress                = req.remoteAddress.map(_.toString).getOrElse("unknown")
     val path                         = req.path.encode
-    val host                         = req.host.map(_.toString).getOrElse("unknown")
+    val host                         = req.url.host.getOrElse("unknown")
     val method                       = req.method.toString
-    val headers: Map[String, String] = req.headers.map(h => (h.key.toString, h.value.toString)).toMap
+    val headers: Map[String, String] = req.headers.map(h => (h.headerName, h.renderedValue)).toMap
 
     import io.github.arainko.ducktape.*
 
@@ -83,7 +74,7 @@ class MainRoutes(serverConfig: ServerConfig, serverInfoProviderService: ServerIn
 
 object MainRoutes {
 
-  def make(serverConfig: ServerConfig, serverInfoProviderService: ServerInfoProviderService) =
+  def make(serverConfig: Server.Config, serverInfoProviderService: ServerInfoProviderService) =
     new MainRoutes(
       serverConfig,
       serverInfoProviderService,

@@ -2,7 +2,6 @@ package io.kzonix.reqflect
 
 import zio.*
 import zio.http.*
-import zio.metrics.*
 
 import io.kzonix.reqflect.services.ServerInfoProviderService
 
@@ -29,11 +28,8 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
     val url = "https://distrowatch.com/news/dw.xml"
 
     Client
-      .request(
-        url,
-        addZioUserAgentHeader = true,
-      )
-      .map(resp => resp.server.getOrElse("unknown"))
+      .batched(Request.get(url))
+      .map(resp => resp.rawHeaders("Server").headOption.getOrElse("unknown"))
       .onError(e =>
         ZIO.logErrorCause(
           s"ClientException:${e.prettyPrint}",
@@ -47,4 +43,4 @@ class ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService) {
 object ReqflectDaemonApp:
 
   def make(serverInfoProviderService: ServerInfoProviderService) =
-    new ReqflectDaemonApp(serverInfoProviderService: ServerInfoProviderService)
+    new ReqflectDaemonApp(serverInfoProviderService)

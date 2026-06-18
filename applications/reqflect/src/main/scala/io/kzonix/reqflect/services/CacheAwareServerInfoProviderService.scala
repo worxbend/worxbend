@@ -5,7 +5,6 @@ import zio.cache.Cache
 import zio.cache.Lookup
 
 import io.kzonix.reqflect.services.CacheAwareServerInfoProviderService.DefaultCacheKey
-import io.kzonix.reqflect.services.CacheAwareServerInfoProviderService.makeCache
 import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
 import io.kzonix.reqflect.services.models.SystemInfo
 

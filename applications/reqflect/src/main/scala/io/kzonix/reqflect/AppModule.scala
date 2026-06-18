@@ -1,15 +1,10 @@
 package io.kzonix.reqflect
 
-import zio.Duration
-import zio.UIO
-import zio.URIO
 import zio.ZIO
 import zio.ZLayer
-import zio.ZLayer.*
 import zio.cache.Cache
-import zio.cache.Lookup
 import zio.durationInt
-import zio.http.ServerConfig
+import zio.http.Server
 import zio.metrics.connectors.MetricsConfig
 
 import io.kzonix.reqflect.routes.MainRoutes
@@ -22,7 +17,7 @@ import io.kzonix.reqflect.services.models.SystemInfo
 
 object AppModule {
 
-  private type App = MetricsRoutes & MainRoutes & ServerConfig & ServerInfoProviderService
+  private type App = MetricsRoutes & MainRoutes & Server.Config & ServerInfoProviderService
 
   private type ServerInfoCache = Cache[
     String,
@@ -51,7 +46,7 @@ object AppModule {
   ] = ZLayer.fromFunction(() => MetricsRoutes.make())
 
   val serverInfoRoutes: ZLayer[
-    ServerConfig & ServerInfoProviderService,
+    Server.Config & ServerInfoProviderService,
     Nothing,
     MainRoutes,
   ] = ZLayer

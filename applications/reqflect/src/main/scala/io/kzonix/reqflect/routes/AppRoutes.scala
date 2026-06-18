@@ -1,7 +1,7 @@
 package io.kzonix.reqflect.routes
 
-import zio.http.HttpApp
+import zio.http.Routes
 
 trait AppRoutes[Env, Err] {
-  def routes: HttpApp[Env, Err]
+  def routes: Routes[Env, Err]
 }

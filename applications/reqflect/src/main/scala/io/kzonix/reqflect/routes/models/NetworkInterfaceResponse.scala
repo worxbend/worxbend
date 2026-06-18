@@ -1,7 +1,6 @@
 package io.kzonix.reqflect.routes.models
 
 import zio.json.DeriveJsonCodec
-import zio.json.DeriveJsonEncoder
 import zio.json.JsonCodec
 import zio.json.JsonEncoder
 import zio.json.SnakeCase

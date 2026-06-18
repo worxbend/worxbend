@@ -53,53 +53,39 @@ object MetricsHttpMiddleware {
         ),
       )
 
-  def metricsMiddleware: RequestHandlerMiddleware[
-    Nothing,
-    Any,
-    Nothing,
-    Any,
-  ] =
-    new RequestHandlerMiddleware.Simple[Any, Nothing] {
-      override def apply[R1 <: Any, Err1 >: Nothing](
-          handler: Handler[
-            R1,
-            Err1,
-            Request,
-            Response,
-          ]
-      )(implicit trace: Trace): Handler[
-        R1,
-        Err1,
-        Request,
-        Response,
-      ] =
-        Handler.fromFunctionZIO { request =>
-          for {
-            _                   <- ZIO.logInfo(
-                                     "Request handling: " +
-                                       s"method=${request.method} " +
-                                       s"headers=${request.method} " +
-                                       s"path=${request.url.encode} "
-                                   )
-            result              <- wrapWithMetrics(
-                                     handler,
-                                     request,
-                                   )
-            (duration, response) = result
-            _                   <- ZIO.logInfo(
-                                     "Request handled: " +
-                                       s"method=${request.method} " +
-                                       s"path=${request.url.encode} " +
-                                       s"status=${response.status.code} " +
-                                       s"duration=${duration.toMillis}ms"
-                                   )
-          } yield response
+  // zio-http 3.x replaces RequestHandlerMiddleware with Middleware; wrap each
+  // route handler via Routes#transform to log/time/count requests.
+  val metricsMiddleware: Middleware[Any] =
+    new Middleware[Any] {
+      override def apply[Env1 <: Any, Err1](routes: Routes[Env1, Err1]): Routes[Env1, Err1] =
+        routes.transform[Env1] { next =>
+          Handler.fromFunctionZIO[Request] { request =>
+            ZIO.scoped {
+              for {
+                _      <- ZIO.logInfo(
+                            "Request handling: " +
+                              s"method=${request.method} " +
+                              s"headers=${request.method} " +
+                              s"path=${request.url.encode} "
+                          )
+                result <- wrapWithMetrics(next, request)
+                (duration, response) = result
+                _      <- ZIO.logInfo(
+                            "Request handled: " +
+                              s"method=${request.method} " +
+                              s"path=${request.url.encode} " +
+                              s"status=${response.status.code} " +
+                              s"duration=${duration.toMillis}ms"
+                          )
+              } yield response
+            }
+          }
         }
     }
 
-  private def wrapWithMetrics[Err1 >: Nothing, R1 <: Any](
+  private def wrapWithMetrics[Env1, Err1](
       handler: Handler[
-        R1,
+        Env1,
         Err1,
         Request,
         Response,

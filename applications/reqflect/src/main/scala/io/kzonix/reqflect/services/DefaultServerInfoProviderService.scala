@@ -1,8 +1,6 @@
 package io.kzonix.reqflect.services
 
 import zio.Cause
-import zio.IO
-import zio.Task
 import zio.ZIO
 
 import io.kzonix.reqflect.services.exceptions.ReqflectServiceException
@@ -11,9 +9,6 @@ import io.kzonix.reqflect.services.models.SystemInfo
 
 import scala.jdk.CollectionConverters.*
 
-import java.lang.management.ManagementFactory
-import java.lang.management.MemoryMXBean
-import java.lang.management.OperatingSystemMXBean
 import java.net.NetworkInterface
 
 class DefaultServerInfoProviderService extends ServerInfoProviderService {

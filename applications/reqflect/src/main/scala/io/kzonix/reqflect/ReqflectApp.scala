@@ -7,18 +7,13 @@ import zio.ZLayer
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.Client
 import zio.http.Server
-import zio.http.ServerConfig
 import zio.logging.consoleJsonLogger
 import zio.logging.logMetrics
-import zio.metrics.connectors.prometheus.PrometheusPublisher
 import zio.metrics.connectors.prometheus.prometheusLayer
 import zio.metrics.connectors.prometheus.publisherLayer
 import zio.metrics.jvm.DefaultJvmMetrics
 
 import io.kzonix.reqflect.AppModule.*
-import io.kzonix.reqflect.routes.*
-
-import scala.util.Try
 
 import com.typesafe.config.ConfigFactory
 
@@ -33,7 +28,7 @@ object ReqflectApp extends ZIOAppDefault {
       >>> Runtime.setConfigProvider(configProvider)
       >>> consoleJsonLogger()
       >>> logMetrics
-      >>> DefaultJvmMetrics.live
+      >>> DefaultJvmMetrics.liveV2
       >>> startupVerificationLayer
 
   private val config         = ConfigFactory.load()
@@ -58,7 +53,7 @@ object ReqflectApp extends ZIOAppDefault {
       publisherLayer,
       serverInfoCache,
       cacheAwareServerInfoProviderService,
-      ServerConfig.live,
+      ZLayer.succeed(Server.Config.default),
       Server.live,
       Client.default,
     )
