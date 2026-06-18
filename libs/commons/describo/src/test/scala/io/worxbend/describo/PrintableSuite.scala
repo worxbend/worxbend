@@ -130,8 +130,8 @@ class PrintableSuite extends AnyFunSuite:
          |  createdDate:::<LocalDate> -- [2023-01-01],
          |  lastLogin:::<Instant> -- [2023-01-01T00:00:00Z],
          |  accountBalance:::<BigDecimal> -- [1000.50],
-         |  roles:::<$colon$colon> -- [["Admin", "User"]],
-         |  metadata:::<Map2> -- [["key1" -> "value1", "key2" -> "value2"]],
+         |  roles:::<List> -- [["Admin", "User"]],
+         |  metadata:::<Map> -- [["key1" -> "value1", "key2" -> "value2"]],
          |  isVerified:::<Some> -- [Some(true)],
          |  optionalComment:::<Some> -- [Some("This is a test comment")]
          |)""".stripMargin
