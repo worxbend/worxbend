@@ -4,656 +4,699 @@ title: API Design Guidelines
 
 ## Overview
 
-This page is a practical guide for designing HTTP JSON APIs that feel consistent, boring, and easy to consume. It combines the useful parts of canonical REST, HTTP semantics, and Google's API Improvement Proposals, especially [AIP-121 Resource-oriented design](https://google.aip.dev/121) and [AIP-136 Custom methods](https://google.aip.dev/136).
+This guide describes how we design HTTP JSON APIs for Worxbend services written on the JVM. It is written for Scala and Java engineers who build routes, DTOs, domain services, persistence adapters, and client SDKs. The goal is a stable API surface that is easy to document, generate clients for, test, monitor, and evolve.
 
-Use this as the default rule: model the API around resources, give every important thing a stable name, use standard HTTP methods for standard actions, and reserve custom actions for cases where the standard methods do not fit.
+The reference material behind this guide includes REST, HTTP semantics, and resource-oriented API guidance. We use those sources as design input, not as text or examples to copy. The examples here use JVM-service domains such as workspaces, projects, build runs, artifacts, deployments, and jobs.
 
-## Short Version
+Use this default rule: expose user-visible resources, operate on them with standard HTTP methods, make every request self-contained, and keep implementation details behind DTO and domain boundaries.
 
-If we only remember one section, remember this one.
+## One-Page Rules
 
-| Rule             | Good default                                                                 | Avoid                                                              |
-| ---------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Model            | Resources and collections.                                                   | Endpoint names that describe implementation functions.             |
-| URLs             | `/v1/projects/{project}/books/{book}`.                                       | `/v1/getBook`, `/v1/bookService/delete`, `/v1/books/delete/{id}`.  |
-| Methods          | `GET`, `POST`, `PATCH`, `DELETE`.                                            | Inventing HTTP verbs or using `POST` for every operation.          |
-| Create           | `POST /v1/{parent}/books` with the resource in the body.                     | `POST /v1/books/create`.                                           |
-| Read one         | `GET /v1/{name}`.                                                            | `POST /v1/books/get`.                                              |
-| Read many        | `GET /v1/{parent}/books?page_size=50&page_token=...`.                        | Unbounded list responses.                                          |
-| Update           | `PATCH /v1/{book.name}` with `update_mask`.                                  | Full replacement unless the API can truly support it forever.      |
-| Delete           | `DELETE /v1/{name}` with no body.                                            | DELETE requests with complex JSON bodies.                          |
-| Custom action    | `POST /v1/{name}:archive` only when the action is not create/update/delete.  | Custom verbs that duplicate standard methods.                      |
-| Errors           | Stable status, actionable message, machine-readable details.                 | Messages that expose internals or require string parsing.          |
-| Versioning       | Major version only: `/v1`, `/v1beta`, `/v2`.                                 | `/v1.1`, `/v1.2.3`, date versions for every release.               |
-| Compatibility    | Add optional fields and new resources.                                       | Removing fields, renaming fields, or adding new required fields.   |
+Start here when designing or reviewing an endpoint.
 
-## Mental Model
+| Area             | Good default                                                                    | Avoid                                                            |
+| ---------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Resource model   | Model nouns that users recognize: projects, builds, artifacts, deployments.     | Modeling controllers, tables, jobs, or service classes directly. |
+| URL shape        | `/v1/workspaces/{workspaceId}/projects/{projectId}`.                            | `/v1/projectService/getProject` or `/v1/projects/get`.           |
+| Create           | `POST /v1/workspaces/{workspaceId}/projects` with a JSON body.                  | `POST /v1/projects/create`.                                      |
+| Read one         | `GET /v1/workspaces/{workspaceId}/projects/{projectId}`.                        | `POST /v1/projects/get`.                                         |
+| Read many        | `GET /v1/workspaces/{workspaceId}/projects?pageSize=50&pageToken=...`.          | Returning an unbounded collection.                               |
+| Update           | `PATCH /v1/workspaces/{workspaceId}/projects/{projectId}` with changed fields.  | `PUT` by habit or a custom `updateName` endpoint.                |
+| Delete           | `DELETE /v1/workspaces/{workspaceId}/projects/{projectId}`.                     | Delete endpoints with complex JSON bodies.                       |
+| Custom action    | `POST /v1/projects/{projectId}/build-runs/{runId}:cancel`.                      | Custom actions that duplicate create, update, or delete.         |
+| Errors           | Stable status code, stable error code, human message, optional details.         | Parsing English text or leaking stack traces.                    |
+| Idempotency      | Use idempotency keys for retry-sensitive mutating calls.                        | Letting client retries create duplicate resources.               |
+| Compatibility    | Add optional fields and endpoints.                                              | Rename fields, change meanings, or add required request fields.  |
+| JVM boundary     | Convert JSON DTOs to domain commands before running business logic.             | Letting wire DTOs become the domain model by accident.           |
 
-REST is an architectural style, not just "JSON over HTTP." Strict REST emphasizes a uniform interface, stateless requests, cacheable responses, layered systems, and hypermedia-driven state transitions. Roy Fielding's reminder is important: a true REST API is driven by representations and links, not by clients hard-coding every URI and workflow from external documentation.
+## Design Mindset
 
-Google's AIPs are more pragmatic. They define resource-oriented APIs that look like RESTful HTTP APIs and are also easy to express as RPCs. That means we can use stable resource paths and predictable method patterns while still respecting the best REST ideas: resources are addressable, request semantics come from standard HTTP methods, server implementation details stay hidden, and every request carries enough information to be processed independently.
+A good API is a product contract, not a database dump and not a remote method table. The URL, method, request body, response body, status code, headers, and documentation together form one interface. JVM implementation details such as Tapir endpoints, Spring controllers, repository classes, SQL schemas, queues, and workers should not shape the public contract directly.
 
-Use this decision rule:
+REST contributes the most important constraints: identify resources, use standard method semantics, keep requests stateless, return representations, and make caching and intermediaries possible where appropriate. Resource-oriented API guidance contributes a practical discipline: design resources first, apply standard methods consistently, and use custom actions sparingly when lifecycle methods do not express the operation.
 
-- If the operation is about a resource lifecycle, use a standard method.
-- If the operation changes application workflow but is not create, update, or delete, use a custom method.
-- If clients need to discover possible next actions dynamically, include links or action metadata in the representation.
-- If clients are generated from an OpenAPI or protobuf contract, keep the contract resource-oriented and stable.
+For Scala and Java services, this means we should design in this order:
+
+1. Define the user-visible resources.
+2. Define ownership and hierarchy.
+3. Define JSON DTOs and validation rules.
+4. Define standard operations.
+5. Add custom actions only after standard operations fail to fit.
+6. Define errors, idempotency, authorization, pagination, and compatibility rules before implementation.
 
 ## Resource Modeling
 
-Resource modeling is the highest-leverage API design step. A clean resource model makes URLs, methods, permissions, documentation, and client libraries easier.
+Resource modeling is the highest-leverage part of API design. If resources are wrong, route names, permissions, persistence, events, and clients all become harder.
 
-### Identify Resources
+### Choose Resources
 
-Start by listing the things users think about, not the tables or services we happen to run.
+Start with the concepts a caller manages. Use the database schema only as supporting evidence.
 
-| Question                                      | Example answer       | API shape                                      |
-| --------------------------------------------- | -------------------- | ---------------------------------------------- |
-| What nouns do users manage?                   | Project, book, task  | `projects`, `books`, `tasks`                   |
-| What owns what?                               | A project owns tasks | `/v1/projects/{project}/tasks/{task}`          |
-| What can exist independently?                 | User                 | `/v1/users/{user}`                             |
-| What is just an attribute of another thing?   | Book title           | Field on `Book`, not `/books/{book}/title`.    |
-| What relationship needs its own metadata?     | Book membership      | A sub-resource such as `bookAuthors`.          |
+| Question                                    | Example answer          | API shape                                                     |
+| ------------------------------------------- | ----------------------- | ------------------------------------------------------------- |
+| What does the caller manage?                | Workspace, project      | `/v1/workspaces`, `/v1/workspaces/{workspaceId}/projects`     |
+| What is created repeatedly under a parent?  | Build runs              | `/v1/projects/{projectId}/build-runs`                         |
+| What is downloaded or inspected later?      | Artifacts               | `/v1/build-runs/{runId}/artifacts/{artifactId}`               |
+| What represents an environment state?       | Deployment              | `/v1/environments/{environmentId}/deployments/{deploymentId}` |
+| What is just an attribute?                  | Project display name    | Field on `Project`, not `/projects/{id}/display-name`.        |
+| What relationship needs its own metadata?   | Project membership role | `/v1/projects/{projectId}/memberships/{membershipId}`         |
 
-AIP-121 recommends planning in this order: resources, relationships, resource schemas, and then methods. Do not mirror the database by default. The API is a product contract; the database is an implementation detail.
+Do not mirror tables. A `project_members` join table might become a `Membership` resource because callers manage roles and audit changes. A table column such as `last_seen_at` usually remains a field.
 
-### Name Resources
+### Choose Ownership
 
-Google AIPs use resource names, which are stable string identifiers such as:
+Every resource should have one canonical parent. A canonical parent defines route shape, permission checks, lifecycle, and audit context.
+
+Use this resource tree for a build service:
 
 ```text
-projects/acme/books/les-miserables
-publishers/123/books/456
-users/me
+workspaces/{workspaceId}
+workspaces/{workspaceId}/projects/{projectId}
+projects/{projectId}/build-runs/{runId}
+build-runs/{runId}/artifacts/{artifactId}
+environments/{environmentId}/deployments/{deploymentId}
 ```
 
-Use these naming rules:
+Rules:
 
-- Collection segments are plural nouns: `books`, `projects`, `users`.
-- Resource names usually alternate collection and ID: `projects/{project}/books/{book}`.
-- IDs are strings. For user-provided IDs, prefer lowercase ASCII letters, numbers, and hyphens.
-- Every resource has a `name` field containing its full resource name.
-- Requests that act on one existing resource use a `name` field.
-- Requests that create or list inside a collection use a `parent` field.
-- References to other resources are strings containing resource names, not embedded copies of the referenced resource.
+- Use one canonical path for a resource.
+- Use links or fields for secondary relationships.
+- Do not put the same resource under multiple parent paths unless one path is a read-only alias with clear semantics.
+- Keep parent-child relationships acyclic.
+- Use flat paths when a deeply nested path adds no authorization or lifecycle value.
 
-Use a single canonical parent. If a book belongs to a publisher and has an author, pick one as the parent and model the other as a field or filter:
+### Name Paths
 
-```json
-{
-  "name": "publishers/123/books/456",
-  "author": "authors/789",
-  "title": "Les Miserables"
-}
+Use plural collection names and stable path parameters.
+
+| Resource      | Path segment       | Parameter         |
+| ------------- | ------------------ | ----------------- |
+| Workspace     | `workspaces`       | `{workspaceId}`   |
+| Project       | `projects`         | `{projectId}`     |
+| Build run     | `build-runs`       | `{runId}`         |
+| Artifact      | `artifacts`        | `{artifactId}`    |
+| Deployment    | `deployments`      | `{deploymentId}`  |
+| Membership    | `memberships`      | `{membershipId}`  |
+
+Use kebab-case for URL path segments. Use lower camel case for JSON fields if the Java and Scala stack serializes that shape by default. Pick one JSON field style per service family and keep it stable.
+
+Good path examples:
+
+```http
+GET /v1/workspaces/ws-123/projects/prj-456
+GET /v1/projects/prj-456/build-runs/run-789
+GET /v1/build-runs/run-789/artifacts/artifact-logs
 ```
 
-If a relationship has its own attributes, model it as its own resource:
+Bad path examples:
 
-```json
-{
-  "name": "publishers/123/books/456/authors/primary",
-  "author": "authors/789",
-  "role": "PRIMARY_AUTHOR"
-}
+```http
+GET /v1/project/get?id=prj-456
+POST /v1/buildRunService/startBuildRun
+GET /v1/db/project_rows/456
 ```
 
-### Design Fields
+### Design DTO Fields
 
-Keep fields predictable and self-explanatory.
+Fields should make ownership, identity, timestamps, concurrency, and lifecycle visible.
 
-| Field pattern       | Meaning                                                             |
-| ------------------- | ------------------------------------------------------------------- |
-| `name`              | Full resource name and canonical identifier.                        |
-| `{resource}_id`     | User-provided ID during create, such as `book_id`.                  |
-| `display_name`      | Human-readable label.                                               |
-| `create_time`       | Server-set creation timestamp.                                      |
-| `update_time`       | Server-set last update timestamp.                                   |
-| `delete_time`       | Server-set deletion timestamp for soft-deleted resources.           |
-| `etag`              | Concurrency token for conditional updates or deletes.               |
-| `state`             | Output-only lifecycle state such as `CREATING`, `ACTIVE`, `FAILED`. |
-| `request_id`        | Optional idempotency key for retry-safe mutating requests.          |
-| `update_mask`       | Field mask for partial updates.                                     |
-| `page_size`         | Maximum number of list results.                                     |
-| `page_token`        | Token for the next list page request.                               |
-| `next_page_token`   | Token returned when another page exists.                            |
-| `filter`            | String filter expression for lists.                                 |
-| `order_by`          | Sort expression for lists.                                          |
+| Field              | Use                                                                 |
+| ------------------ | ------------------------------------------------------------------- |
+| `id`               | Local resource identifier within its collection.                    |
+| `uri`              | Canonical API path when clients benefit from storing it.            |
+| `displayName`      | Human-readable name.                                                |
+| `createdAt`        | Server-set creation timestamp.                                      |
+| `updatedAt`        | Server-set last update timestamp.                                   |
+| `deletedAt`        | Server-set soft delete timestamp.                                   |
+| `version`          | Optimistic concurrency token when `ETag` is not enough.             |
+| `etag`             | HTTP concurrency token for conditional update or delete.            |
+| `state`            | Output lifecycle state such as `QUEUED`, `RUNNING`, `SUCCEEDED`.   |
+| `idempotencyKey`   | Client-supplied retry key for mutating requests.                    |
+| `pageSize`         | Maximum number of items requested by a list call.                   |
+| `pageToken`        | Opaque token for list continuation.                                 |
+| `nextPageToken`    | Opaque token returned when another page exists.                     |
+| `filter`           | Documented filter expression.                                       |
+| `orderBy`          | Documented sort expression.                                         |
 
-Mark field behavior in schema docs: required, optional, output-only, input-only, immutable, and identifier. Client tools use this information to generate better SDKs, CLIs, and validation.
+Separate request DTOs from response DTOs when fields differ. A `CreateProjectRequest` should not accept `createdAt`, `updatedAt`, `state`, `etag`, or server-owned IDs unless the API explicitly supports caller-chosen IDs.
 
 ## Standard Methods
 
-Most APIs should be made from five standard methods: get, list, create, update, and delete. This is the core of AIP-121 and AIPs 131 through 135.
+Most resources need the same small set of operations. Standard operations are boring by design; they make client code predictable.
 
-| Operation       | HTTP shape                                      | Body                     | Typical success result                   | Notes                                                   |
-| --------------- | ----------------------------------------------- | ------------------------ | ---------------------------------------- | ------------------------------------------------------- |
-| Get             | `GET /v1/{name=publishers/*/books/*}`           | None                     | `200 OK` with the resource.              | Every resource should support Get.                      |
-| List            | `GET /v1/{parent=publishers/*}/books`           | None                     | `200 OK` with resources and page token.  | List should exist unless the resource is a singleton.   |
-| Create          | `POST /v1/{parent=publishers/*}/books`          | Resource field.          | Created resource.                        | Include `{resource}_id` when users choose IDs.          |
-| Update          | `PATCH /v1/{book.name=publishers/*/books/*}`    | Resource field.          | Updated resource.                        | Use `update_mask`; prefer `PATCH` over `PUT`.           |
-| Delete          | `DELETE /v1/{name=publishers/*/books/*}`        | None                     | Empty response or deleted resource.      | Fail if child resources exist unless force is designed. |
-
-For a simple HTTP JSON API, these routes are a good default:
-
-```http
-GET    /v1/publishers/{publisher}/books/{book}
-GET    /v1/publishers/{publisher}/books?page_size=50&page_token=...
-POST   /v1/publishers/{publisher}/books?book_id=les-miserables
-PATCH  /v1/publishers/{publisher}/books/{book}?update_mask=title,rating
-DELETE /v1/publishers/{publisher}/books/{book}
-```
+| Operation | HTTP shape                                             | Body              | Success response                             |
+| --------- | ------------------------------------------------------ | ----------------- | -------------------------------------------- |
+| Get       | `GET /v1/workspaces/{workspaceId}/projects/{projectId}` | None              | `200 OK` with a `ProjectResponse`.           |
+| List      | `GET /v1/workspaces/{workspaceId}/projects`             | None              | `200 OK` with items and `nextPageToken`.     |
+| Create    | `POST /v1/workspaces/{workspaceId}/projects`            | Create request    | `201 Created` with a `ProjectResponse`.      |
+| Update    | `PATCH /v1/workspaces/{workspaceId}/projects/{projectId}` | Patch request   | `200 OK` with the updated `ProjectResponse`. |
+| Delete    | `DELETE /v1/workspaces/{workspaceId}/projects/{projectId}` | None           | `204 No Content` or `200 OK` with status.    |
 
 ### Get
 
-Use Get to return one resource by resource name:
+Use Get for one resource by canonical path:
 
 ```http
-GET /v1/publishers/123/books/456
+GET /v1/workspaces/ws-123/projects/prj-456
 Accept: application/json
 ```
 
-The response returns the resource:
+Return the representation the client can use immediately:
 
 ```json
 {
-  "name": "publishers/123/books/456",
-  "title": "Les Miserables",
-  "rating": 5,
-  "create_time": "2026-07-05T10:30:00Z",
-  "update_time": "2026-07-05T10:30:00Z"
+  "id": "prj-456",
+  "uri": "/v1/workspaces/ws-123/projects/prj-456",
+  "displayName": "Billing API",
+  "state": "ACTIVE",
+  "createdAt": "2026-07-05T10:30:00Z",
+  "updatedAt": "2026-07-05T10:30:00Z",
+  "etag": "\"project-7\""
 }
 ```
 
 Rules:
 
-- Do not use a request body with Get.
-- Use `404 Not Found` when the resource does not exist and the caller is allowed to know that.
-- Use `403 Forbidden` when the caller lacks permission, regardless of whether the resource exists.
-- Make successful Get responses cacheable when the data and authorization model allow it.
+- Do not use a request body.
+- Return `404 Not Found` when the resource is absent and the caller may know that.
+- Return `403 Forbidden` when the caller lacks access.
+- Use `ETag` and `Cache-Control` when the resource is safe to cache.
+- Avoid optional response fields whose absence changes the meaning of the resource.
 
 ### List
 
-Use List to return a finite collection:
+Use List for a finite, paginated collection:
 
 ```http
-GET /v1/publishers/123/books?page_size=50&page_token=abc&filter=rating%20%3E%3D%204&order_by=title
+GET /v1/workspaces/ws-123/projects?pageSize=50&pageToken=opaque-token&filter=state%20%3D%20ACTIVE&orderBy=displayName
 Accept: application/json
 ```
 
-The response contains a repeated resource field and a `next_page_token`:
+Return items and an opaque continuation token:
 
 ```json
 {
-  "books": [
+  "items": [
     {
-      "name": "publishers/123/books/456",
-      "title": "Les Miserables",
-      "rating": 5
+      "id": "prj-456",
+      "uri": "/v1/workspaces/ws-123/projects/prj-456",
+      "displayName": "Billing API",
+      "state": "ACTIVE"
     }
   ],
-  "next_page_token": "def"
+  "nextPageToken": "next-opaque-token"
 }
 ```
 
 Rules:
 
-- Add pagination from the first version of every collection-returning method.
-- `page_size` is optional. If it is missing or zero, the server picks a documented default.
-- If `page_size` is too large, coerce it to the documented maximum.
-- If `page_size` is negative, return an invalid argument error.
-- `page_token` is opaque. Clients must not parse it.
-- The only reliable signal for the end of a collection is an empty `next_page_token`.
-- Keep all request arguments the same when requesting the next page, except `page_size`.
-- Use `filter` only when there is a real user need. It is easy to add later and hard to remove.
-- Use `order_by` only when there is a real user need. Document the default order.
+- Add pagination from the first release of every collection endpoint.
+- Treat `pageToken` as opaque; clients must never parse it.
+- Let the server choose a default `pageSize`.
+- Enforce a documented maximum `pageSize`.
+- Keep all query parameters the same when using `nextPageToken`, except `pageSize` if the service supports changing it.
+- Document default ordering.
+- Add filtering only for fields that have clear indexes or performance bounds.
 
 ### Create
 
-Use Create to add a new resource to an existing collection:
+Use Create to add a resource to a collection:
 
 ```http
-POST /v1/publishers/123/books?book_id=les-miserables&request_id=8a0d1c4b-31af-4d5f-92e0-bc3b42f88f21
+POST /v1/workspaces/ws-123/projects
 Content-Type: application/json
 Accept: application/json
+Idempotency-Key: 7d9b3c1c-42db-44ef-8f64-e4ad9baf8221
 
 {
-  "title": "Les Miserables",
-  "rating": 5
+  "id": "billing-api",
+  "displayName": "Billing API",
+  "repositoryUri": "https://github.com/worxbend/billing-api"
 }
 ```
 
-The response returns the created resource:
+Return the created resource:
 
 ```json
 {
-  "name": "publishers/123/books/les-miserables",
-  "title": "Les Miserables",
-  "rating": 5,
-  "create_time": "2026-07-05T10:30:00Z",
-  "update_time": "2026-07-05T10:30:00Z"
+  "id": "billing-api",
+  "uri": "/v1/workspaces/ws-123/projects/billing-api",
+  "displayName": "Billing API",
+  "repositoryUri": "https://github.com/worxbend/billing-api",
+  "state": "ACTIVE",
+  "createdAt": "2026-07-05T10:30:00Z",
+  "updatedAt": "2026-07-05T10:30:00Z",
+  "etag": "\"project-1\""
 }
 ```
 
 Rules:
 
 - Use `POST` on the parent collection.
-- Put the resource data in the body.
-- Put user-chosen IDs in a separate `{resource}_id` parameter, not inside `name`.
-- Return the fully populated resource, including server-set fields.
-- Use `request_id` for retry-safe creates when duplicate creates would be harmful.
-- If creation takes more than roughly 10 seconds, return a long-running operation.
+- Return `201 Created` when the resource is created synchronously.
+- Include a `Location` header with the canonical URI.
+- Support an idempotency key when retries could create duplicates.
+- Validate IDs at the boundary and return a structured validation error.
+- If creation starts long-running work, return `202 Accepted` with an operation resource or job resource.
 
 ### Update
 
-Use Update to change an existing resource without unintended side effects:
+Use `PATCH` for partial updates:
 
 ```http
-PATCH /v1/publishers/123/books/456?update_mask=title,rating
+PATCH /v1/workspaces/ws-123/projects/billing-api
 Content-Type: application/json
 Accept: application/json
-If-Match: "etag-value"
+If-Match: "project-1"
 
 {
-  "title": "Les Miserables: Revised Edition",
-  "rating": 5
+  "displayName": "Billing Platform API",
+  "repositoryUri": "https://github.com/worxbend/billing-platform"
 }
 ```
 
-The response returns the updated resource:
+Return the updated resource:
 
 ```json
 {
-  "name": "publishers/123/books/456",
-  "title": "Les Miserables: Revised Edition",
-  "rating": 5,
-  "etag": "\"new-etag-value\"",
-  "update_time": "2026-07-05T11:00:00Z"
+  "id": "billing-api",
+  "uri": "/v1/workspaces/ws-123/projects/billing-api",
+  "displayName": "Billing Platform API",
+  "repositoryUri": "https://github.com/worxbend/billing-platform",
+  "state": "ACTIVE",
+  "updatedAt": "2026-07-05T11:00:00Z",
+  "etag": "\"project-2\""
 }
 ```
 
 Rules:
 
-- Prefer `PATCH` with `update_mask`.
-- Use `PUT` only for full resource replacement when that behavior is stable forever.
-- Field masks are relative to the resource: `title,rating`, not `book.title,book.rating`.
-- Updates should not create unrelated side effects. Use a custom method for workflow actions.
-- Use `etag` or `If-Match` when concurrent updates can overwrite each other.
-- Ignore immutable fields when their value is unchanged; reject attempted changes.
+- Prefer `PATCH` for API evolution because clients can send only intended changes.
+- Use `If-Match` or an explicit version when lost updates matter.
+- Reject immutable field changes with a clear validation error.
+- Treat omitted fields as unchanged.
+- Treat explicit `null` carefully; prefer dedicated clear operations or nullable fields only where absence is a real domain concept.
+- Use `PUT` only when full replacement semantics are truly required and documented.
 
 ### Delete
 
-Use Delete to remove one resource:
+Use Delete for one resource:
 
 ```http
-DELETE /v1/publishers/123/books/456
+DELETE /v1/workspaces/ws-123/projects/billing-api
 Accept: application/json
-If-Match: "etag-value"
+If-Match: "project-2"
 ```
 
 Rules:
 
-- Do not use a request body with Delete.
-- Return empty success for hard delete, or the resource when using soft delete.
-- If the resource does not exist, return `404 Not Found`.
-- If child resources exist, return a failed precondition unless the API explicitly supports cascading delete.
-- Use a `force` option only when users understand the cascade.
-- If deletion takes a long time, return a long-running operation.
+- Do not require a request body.
+- Return `204 No Content` for successful hard deletion.
+- Return `200 OK` with a final representation when soft deletion is visible to clients.
+- Return `409 Conflict` or `412 Precondition Failed` when state or concurrency prevents deletion.
+- Do not cascade by surprise. If children are deleted, document the cascade and consider a `force=true` query parameter.
 
-## Custom Methods
+## Custom Actions
 
-AIP-136 exists for operations that do not fit the standard methods. Custom methods are useful, but they are also the easiest way to accidentally turn a resource API into an RPC API.
+Custom actions are for workflow operations that do not naturally fit create, read, update, or delete. They are useful for APIs such as build systems, deployment platforms, schedulers, and document processors, but they should stay rare.
 
-Use a custom method only when the operation is not naturally Get, List, Create, Update, or Delete.
+Use custom actions for these cases:
 
-| User intent              | Good design                                  | Why                                            |
-| ------------------------ | -------------------------------------------- | ---------------------------------------------- |
-| Archive a book.          | `POST /v1/publishers/123/books/456:archive`  | State transition, not a normal field update.   |
-| Undelete a book.         | `POST /v1/publishers/123/books/456:undelete` | Reverses soft delete lifecycle.                |
-| Validate a config.       | `POST /v1/projects/123/configs:validate`     | Validation is not creation.                    |
-| Search across parents.   | `GET /v1/books:search?query=...`             | Query action over a collection-like surface.   |
-| Export many resources.   | `POST /v1/publishers/123/books:export`       | Long-running action, not list.                 |
+| User intent             | HTTP shape                                             | Why it is not standard CRUD                  |
+| ----------------------- | ------------------------------------------------------ | -------------------------------------------- |
+| Cancel a running build. | `POST /v1/projects/prj-456/build-runs/run-789:cancel`  | State transition with operational semantics. |
+| Retry a failed job.     | `POST /v1/jobs/job-123:retry`                          | Creates a controlled retry attempt.          |
+| Promote a deployment.   | `POST /v1/environments/prod/deployments/dep-7:promote` | Domain workflow, not a field patch.          |
+| Validate a config.      | `POST /v1/projects/prj-456/config:validate`            | No durable resource is created.              |
+| Export artifacts.       | `POST /v1/build-runs/run-789/artifacts:export`         | Starts work that may outlive the request.    |
 
 Rules:
 
-- Prefer standard methods first.
-- Use `POST` for mutating custom methods.
-- Use `GET` only for custom methods that retrieve data and have no side effects.
-- Put the custom verb after a colon: `:archive`, `:undelete`, `:validate`.
-- Use lower camel case for multiword custom verbs: `:batchApprove`.
-- Make the RPC or operation name `VerbNoun`, such as `ArchiveBook`.
-- Do not include standard verbs inside custom method names. Avoid `CreateBookFromTemplate`; prefer `CreateBook` with a `template` field if it is still creation.
-- Do not include prepositions such as `For` or `With` in method names.
-- Do not include `Async`; use a long-running operation when the work is asynchronous.
-- Keep the method stateless. The request includes everything needed to process it.
+- Prefer standard operations first.
+- Use `POST` for mutating or workflow actions.
+- Use `GET` only for custom reads with no side effects and modest query parameters.
+- Put the action after a colon at the end of the resource or collection path.
+- Name the action as a verb: `:cancel`, `:retry`, `:promote`, `:validate`, `:export`.
+- Avoid action names that duplicate CRUD: `:create`, `:update`, `:delete`, `:get`, `:list`.
+- Keep actions stateless from the protocol perspective: every request contains the data needed to process it.
+- Return the affected resource, an operation resource, or a clear action result DTO.
 
-Bad custom methods usually reveal that the resource model is wrong:
+Bad custom actions:
 
-```text
-POST /v1/books/get
-POST /v1/books/delete
-POST /v1/books/updateTitle
-POST /v1/books/createFromAuthorWithPublisher
+```http
+POST /v1/projects/get
+POST /v1/projects/updateDisplayName
+POST /v1/build-runs/delete
+POST /v1/jobs/retryFailedJobsForProjectWithReason
 ```
 
-Better resource-oriented alternatives are:
+Better alternatives:
 
-```text
-GET    /v1/publishers/123/books/456
-DELETE /v1/publishers/123/books/456
-PATCH  /v1/publishers/123/books/456?update_mask=title
-POST   /v1/publishers/123/books?author=authors/789
+```http
+GET    /v1/workspaces/ws-123/projects/prj-456
+PATCH  /v1/workspaces/ws-123/projects/prj-456
+DELETE /v1/projects/prj-456/build-runs/run-789
+POST   /v1/projects/prj-456/jobs:retry
 ```
 
-## HTTP Semantics
+## JVM Implementation Guidance
 
-HTTP methods already carry meaning. Respecting that meaning makes APIs safer for clients, caches, gateways, observability, and automated tooling.
+The public API and the JVM implementation should be aligned, but not identical. A good Scala or Java service keeps transport DTOs, domain commands, services, repositories, and external adapters separate enough that one layer can evolve without dragging the others.
 
-| Method    | Use for                                | Safe | Idempotent | Request body guidance                 |
-| --------- | -------------------------------------- | ---- | ---------- | ------------------------------------- |
-| `GET`     | Read a resource or collection.         | Yes  | Yes        | Avoid bodies. Use query parameters.   |
-| `HEAD`    | Read metadata without representation.  | Yes  | Yes        | Avoid bodies.                         |
-| `POST`    | Create or custom action.               | No   | No         | Use a body when sending data.         |
-| `PATCH`   | Partial update.                        | No   | Not always | Use a patch document or field mask.   |
-| `PUT`     | Full replacement at known URI.         | No   | Yes        | Body is the complete replacement.     |
-| `DELETE`  | Delete the target resource.            | No   | Yes        | Avoid bodies.                         |
+### DTOs And Domain Models
 
-Status codes should be boring and consistent:
+Use request and response DTOs at the HTTP boundary. Convert DTOs into domain commands before business logic.
 
-| Status                  | Use when                                                                 |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `200 OK`                | Read, update, custom read, or custom action returns a representation.    |
-| `201 Created`           | HTTP create returns a newly created resource and `Location`.             |
-| `202 Accepted`          | Work has started and continues asynchronously.                           |
-| `204 No Content`        | Delete or action succeeds and has no response body.                      |
-| `400 Bad Request`       | Syntax or basic request shape is invalid.                                |
-| `401 Unauthorized`      | Authentication is missing or invalid.                                    |
-| `403 Forbidden`         | Caller is authenticated but lacks permission.                            |
-| `404 Not Found`         | Resource does not exist or should not be revealed to the caller.         |
-| `409 Conflict`          | Request conflicts with current resource state.                           |
-| `412 Precondition Failed` | ETag or other precondition fails.                                      |
-| `429 Too Many Requests` | Caller exceeds quota or rate limits.                                     |
-| `500 Internal Server Error` | Unexpected server failure.                                           |
-| `503 Service Unavailable` | Temporary overload or dependency outage.                               |
+Recommended flow:
 
-Use headers deliberately:
+```text
+HTTP request
+  -> route/controller DTO validation
+  -> domain command
+  -> service method
+  -> repository/client adapters
+  -> domain result
+  -> response DTO
+  -> HTTP response
+```
 
-- `Content-Type` tells the server how to parse the request body.
-- `Accept` tells the server what response format the client wants.
-- `Authorization` carries credentials.
-- `ETag` identifies a resource version.
-- `If-Match` prevents lost updates.
-- `Cache-Control` controls cache behavior.
-- `Location` points to a created resource or operation.
-- `Retry-After` tells clients when to retry after rate limits or temporary outages.
+Rules:
 
-## Pagination, Filtering, And Ordering
+- DTOs describe the wire contract.
+- Domain types describe business invariants.
+- Do not put persistence annotations on public response DTOs.
+- Do not expose ORM entities, database rows, queue messages, or generated client models as API responses.
+- Keep DTO field names stable even when internal domain names improve.
+- Use typed IDs in the domain, even if the wire format is a string.
 
-Collections grow. Design for that from day one.
+### Validation
 
-Pagination rules:
+Validate in layers:
 
-- Every collection-returning endpoint has `page_size`, `page_token`, and `next_page_token`.
-- Page tokens are opaque. Clients store and replay them only.
-- The server may return fewer items than requested.
-- The server must return an empty `next_page_token` when the collection is complete.
-- Do not add pagination later; that breaks clients that assumed a complete list.
+| Layer              | Validates                                                                 |
+| ------------------ | ------------------------------------------------------------------------- |
+| HTTP boundary      | JSON shape, required fields, basic formats, path/body consistency.        |
+| Domain constructor | Invariants such as non-empty names, valid state transitions, permissions. |
+| Persistence layer  | Uniqueness, foreign key existence, transaction constraints.               |
+| External adapter   | Upstream-specific constraints and error mapping.                          |
 
-Filtering rules:
+Return all useful field validation errors at once when possible. Do not make clients fix one missing field per request round trip.
 
-- Use one `filter` string parameter.
-- Document which fields can be filtered.
-- Support a small, consistent grammar before inventing custom query structures.
-- Prefer obvious comparisons: `rating >= 4`, `state = ACTIVE`, `create_time >= "2026-01-01T00:00:00Z"`.
-- Return a clear invalid argument error for unsupported fields or malformed filters.
+### Errors
 
-Ordering rules:
+Use a stable error envelope. For JVM services, this maps well from Scala ADTs or Java sealed interfaces into HTTP responses.
 
-- Use one `order_by` string parameter.
-- Use comma-separated fields: `title,create_time desc`.
-- Default to ascending order unless `desc` is specified.
-- Document the default order and any non-obvious ordering behavior.
-
-## Errors
-
-Error responses are part of the API contract. Clients should not need to parse English prose to understand what happened.
-
-For Google-style APIs, use a `google.rpc.Status` shaped response. For plain HTTP JSON APIs, keep the same idea:
+Use this shape unless a service already has a stronger standard:
 
 ```json
 {
   "error": {
-    "code": 404,
-    "status": "NOT_FOUND",
-    "message": "Book 'publishers/123/books/456' was not found.",
-    "details": [
-      {
-        "type": "ErrorInfo",
-        "reason": "BOOK_NOT_FOUND",
-        "domain": "library.example.com",
-        "metadata": {
-          "resource": "publishers/123/books/456"
-        }
-      }
-    ]
+    "code": "PROJECT_NOT_FOUND",
+    "message": "Project 'prj-456' was not found.",
+    "status": 404,
+    "details": {
+      "projectId": "prj-456"
+    }
   }
 }
 ```
 
 Rules:
 
-- Use stable machine-readable status values.
-- Keep `message` brief, specific, and actionable.
-- Put structured data in `details`, not only in the text message.
-- Do not leak database names, stack traces, hostnames, or internal service names.
-- Use `403 Forbidden` when permission is denied, even if the resource might not exist.
-- Use `404 Not Found` only when the caller is allowed to know absence.
-- Document common errors per endpoint.
+- `code` is stable and machine-readable.
+- `message` is short and safe for humans.
+- `status` matches the HTTP status code.
+- `details` contains structured values clients may use.
+- Do not expose class names, SQL messages, stack traces, hostnames, or internal service names.
+- Map recoverable domain failures explicitly.
+- Let unexpected defects become `500 Internal Server Error` after logging with correlation data.
 
-## Idempotency And Retries
+### Status Codes
 
-Distributed systems fail between the client sending a request and receiving the response. Design mutating operations so clients can safely retry.
+Use a small, consistent subset.
 
-Rules:
+| Status                  | Use when                                                     |
+| ----------------------- | ------------------------------------------------------------ |
+| `200 OK`                | Successful read, update, or action with a response body.     |
+| `201 Created`           | Synchronous create produced a resource.                      |
+| `202 Accepted`          | Work started and continues asynchronously.                   |
+| `204 No Content`        | Delete or action succeeded with no body.                     |
+| `400 Bad Request`       | Request syntax, validation, or field shape is invalid.       |
+| `401 Unauthorized`      | Authentication is missing or invalid.                        |
+| `403 Forbidden`         | Caller is authenticated but lacks permission.                |
+| `404 Not Found`         | Resource is absent or intentionally hidden from the caller.  |
+| `409 Conflict`          | Request conflicts with current resource state.               |
+| `412 Precondition Failed` | Concurrency precondition such as `If-Match` failed.        |
+| `429 Too Many Requests` | Caller exceeds quota or rate limits.                         |
+| `500 Internal Server Error` | Unexpected server failure.                               |
+| `503 Service Unavailable` | Temporary overload or dependency outage.                   |
 
-- Use `request_id` on create and custom mutating requests that might be retried.
-- Treat duplicate `request_id` values as the same logical request for a documented retention window.
-- Return the original successful response when a duplicate request is detected.
-- Keep `GET`, `HEAD`, `PUT`, and `DELETE` idempotent according to HTTP semantics.
-- Use `ETag` and `If-Match` for updates and deletes that must not overwrite newer state.
-- Return retry guidance for transient errors, especially `429` and `503`.
+## Pagination, Filtering, And Sorting
 
-## Long-Running Operations
+Collections grow. A list endpoint without pagination is a future outage or a future breaking change.
 
-Do not keep a normal HTTP request open for work that takes a long time. AIP-151 gives a practical rule of thumb: around 10 seconds is long enough to consider a long-running operation.
+### Pagination
 
-Use this shape:
+Every list endpoint returns a bounded page:
 
 ```http
-POST /v1/publishers/123/books:export
-Content-Type: application/json
-
-{
-  "format": "CSV",
-  "request_id": "8a0d1c4b-31af-4d5f-92e0-bc3b42f88f21"
-}
+GET /v1/projects/prj-456/build-runs?pageSize=100&pageToken=opaque-token
 ```
 
-Return an operation resource:
+The response carries the next token:
 
 ```json
 {
-  "name": "operations/export-books-789",
-  "done": false,
-  "metadata": {
-    "progress_percent": 10
-  }
+  "items": [
+    {
+      "id": "run-789",
+      "uri": "/v1/projects/prj-456/build-runs/run-789",
+      "state": "SUCCEEDED"
+    }
+  ],
+  "nextPageToken": "next-opaque-token"
 }
 ```
 
-Clients poll the operation:
+Rules:
+
+- `pageToken` is opaque.
+- An empty or missing `nextPageToken` means the collection is complete.
+- The server may return fewer items than requested.
+- The server enforces maximum page size.
+- The default ordering must be stable while paging.
+
+### Filtering
+
+Use one documented `filter` query parameter when filtering is needed:
 
 ```http
-GET /v1/operations/export-books-789
+GET /v1/projects/prj-456/build-runs?filter=state%20%3D%20FAILED%20AND%20createdAt%20%3E%3D%20%222026-07-01T00%3A00%3A00Z%22
 ```
 
 Rules:
 
-- The operation has a stable `name`.
-- The operation exposes `done`, `metadata`, `response`, and `error`.
-- Errors that prevent the operation from starting return a normal error immediately.
-- Errors during execution appear in the operation error field.
-- Operation metadata should include useful progress, partial failure, or target resource information.
-- Completed operations may expire after a documented retention period.
+- Document supported fields and operators.
+- Reject unsupported filters with `400 Bad Request`.
+- Keep the grammar small.
+- Do not expose database column names.
+- Do not support expensive filters unless the service has indexes or limits to protect itself.
 
-## Versioning And Compatibility
+### Sorting
 
-Versioning is mostly about promises. If clients integrate once, they should not break because the server made a minor improvement.
+Use one documented `orderBy` query parameter:
+
+```http
+GET /v1/projects/prj-456/build-runs?orderBy=createdAt desc
+```
 
 Rules:
 
-- Put the major version in the path: `/v1`, `/v1beta`, `/v2`.
-- Do not expose minor or patch versions such as `/v1.1` or `/v1.2.3`.
-- Add optional fields, optional query parameters, new resources, and new methods when compatible.
-- Do not add new required fields to existing requests.
-- Do not remove, rename, or change the meaning of existing fields.
-- Do not change a field type.
-- Do not change resource name formats casually.
-- If a breaking change is required, create a new major version.
-- Run old and new major versions in parallel for a documented migration period.
-- Deprecate before removing, and give users enough time to migrate.
+- Document the default order.
+- Sort only by stable, documented fields.
+- Ensure sorting works with pagination.
+- Avoid sorting by fields that change frequently during paging.
 
-Compatibility is more than wire format. It includes semantics. If old clients reasonably expect a list endpoint to return all items, adding pagination with a smaller default page changes behavior and can break them. This is why pagination must be present from the beginning.
+## Idempotency And Retries
+
+Network calls fail in ambiguous places. The server might create the resource and the client might still see a timeout. Design mutating operations so clients can retry safely.
+
+Rules:
+
+- Use an `Idempotency-Key` header or `idempotencyKey` field for retry-sensitive creates and actions.
+- Store the key with enough request identity to detect mismatched retries.
+- Return the original successful response for a duplicate key within the retention window.
+- Make `GET`, `PUT`, and `DELETE` idempotent according to HTTP semantics.
+- Use `If-Match` and `ETag` or explicit versions for optimistic concurrency.
+- Return `Retry-After` for rate limiting and temporary overload when the client should back off.
+
+## Long-Running Work
+
+Do not hold normal HTTP requests open for work that may outlive the request timeout. Build systems, exports, imports, migrations, deployments, and report generation usually need an explicit operation or job resource.
+
+Start work with `202 Accepted`:
+
+```http
+POST /v1/projects/prj-456/build-runs
+Content-Type: application/json
+Accept: application/json
+Idempotency-Key: 9d9c20e5-1f0e-4fb2-91a0-00b0ff47fd3e
+
+{
+  "gitRef": "main",
+  "pipeline": "release"
+}
+```
+
+Return a job-like resource:
+
+```json
+{
+  "id": "run-789",
+  "uri": "/v1/projects/prj-456/build-runs/run-789",
+  "state": "QUEUED",
+  "createdAt": "2026-07-05T10:30:00Z"
+}
+```
+
+Clients poll the resource:
+
+```http
+GET /v1/projects/prj-456/build-runs/run-789
+```
+
+Rules:
+
+- The returned resource has a stable URI.
+- The resource exposes state and timestamps.
+- Terminal states are explicit: `SUCCEEDED`, `FAILED`, `CANCELLED`.
+- Failure details are structured and safe.
+- Cancellation is a custom action when supported.
+- Completed work may expire only if the retention policy is documented.
+
+## Versioning And Compatibility
+
+Versioning is a promise about client stability. Most changes should not require a new major version.
+
+Rules:
+
+- Put the major API version in the path: `/v1`, `/v2`.
+- Avoid minor versions in paths such as `/v1.1`.
+- Add optional request fields, response fields, endpoints, and enum values carefully.
+- Do not add new required fields to existing request DTOs.
+- Do not remove, rename, or retype existing fields.
+- Do not change the meaning of an existing field or status code.
+- Do not change default ordering in a way that breaks paginated clients.
+- Use a new major version for breaking changes.
+- Support old and new versions in parallel during migration.
+
+For JVM code, preserve wire compatibility even if domain code changes. A Scala case class rename or Java record rename is not a valid reason to rename a JSON field.
 
 ## Security And Privacy
 
-Security design belongs in the API contract, not only in middleware.
+Security rules belong in the API contract and the implementation.
 
 Rules:
 
 - Use HTTPS only.
 - Authenticate every non-public request.
 - Authorize by resource, action, and caller.
-- Validate every resource name and parent-child relationship.
-- Never trust client-provided tenant, user, or organization IDs without checking access.
-- Do not put secrets, tokens, passwords, or sensitive filters in URLs.
-- Prefer request bodies for sensitive inputs when caching does not help.
-- Redact secrets from logs, traces, metrics, and error messages.
-- Use least-privilege OAuth scopes or permissions.
-- Make destructive actions explicit and auditable.
+- Validate path IDs against the authenticated tenant or workspace.
+- Do not trust tenant, workspace, or user IDs just because they appear in a JWT or request body.
+- Do not put secrets in URLs.
+- Redact secrets from logs, traces, metrics, errors, and audit events.
+- Make destructive and privilege-changing operations auditable.
+- Prefer least-privilege scopes and permissions.
 
-## Documentation Template
+## Endpoint Documentation Template
 
-Every endpoint should document the same set of facts. Consistency helps humans and generated tooling:
+Every endpoint should document the same facts so clients know what to send, what they receive, and how errors behave.
+
+Use this template:
 
 ```markdown
-### Create Book
+### Create Project
 
-Creates a book under a publisher.
+Creates a project inside a workspace.
 
-`POST /v1/{parent=publishers/*}/books`
+`POST /v1/workspaces/{workspaceId}/projects`
 
 Request:
 
-- `parent` is required. Format: `publishers/{publisher}`.
-- `book_id` is required for caller-chosen IDs.
-- Body is a `Book` without server-output fields.
-- `request_id` is optional and makes retries idempotent.
+- `workspaceId` is required in the path.
+- Body is `CreateProjectRequest`.
+- `Idempotency-Key` is recommended for client retries.
 
 Response:
 
-- Returns the created `Book`.
-- Returns a long-running operation if creation is asynchronous.
+- `201 Created` with `ProjectResponse`.
+- `Location` contains the canonical project URI.
 
 Errors:
 
-- `400 INVALID_ARGUMENT` for malformed IDs or invalid fields.
-- `403 PERMISSION_DENIED` when the caller cannot create books under the publisher.
-- `404 NOT_FOUND` when the publisher does not exist and the caller may know that.
-- `409 ALREADY_EXISTS` when `book_id` already exists.
+- `400 PROJECT_ID_INVALID` when the project ID is malformed.
+- `401 UNAUTHENTICATED` when credentials are missing or invalid.
+- `403 WORKSPACE_FORBIDDEN` when the caller cannot create projects in the workspace.
+- `404 WORKSPACE_NOT_FOUND` when the workspace is absent or hidden from the caller.
+- `409 PROJECT_ALREADY_EXISTS` when the ID is already used.
 ```
 
 ## Design Checklist
 
-Use this checklist before publishing a new API or endpoint.
+Use this checklist before implementing a new endpoint.
 
 ### Resource Model
 
-- The API is modeled around user-visible nouns.
-- Every important resource has a stable resource name.
-- Collection names are plural and consistent.
-- Each resource has one canonical parent.
-- Resource references use resource-name strings.
-- The API does not expose database schema details.
+- The endpoint exposes a user-visible resource or a justified custom action.
+- The resource has one canonical path.
+- Collection names are plural nouns.
+- Path parameters use stable names such as `{projectId}` and `{runId}`.
+- Secondary relationships are fields or links, not duplicate canonical paths.
+- The API does not expose table names, queue names, class names, or package names.
 
-### Methods
+### HTTP Semantics
 
-- Standard methods are used wherever they fit.
-- Get and List have no request body.
-- Create uses `POST` on the collection.
-- Update uses `PATCH` and `update_mask`.
-- Delete uses `DELETE` with no request body.
-- Custom methods use `:verb` and do not duplicate standard methods.
-- Mutating methods support idempotency when retry risk exists.
+- `GET` and `DELETE` do not require request bodies.
+- `POST` creates resources or starts actions.
+- `PATCH` changes only supplied fields.
+- Status codes are predictable and documented.
+- Headers such as `Location`, `ETag`, `If-Match`, `Cache-Control`, and `Retry-After` are used deliberately.
+
+### JVM Boundary
+
+- Request DTOs are separate from domain commands when invariants differ.
+- Response DTOs do not expose persistence entities.
+- Domain errors map explicitly to HTTP errors.
+- Unexpected exceptions are logged with correlation context and returned as safe `500` errors.
+- Validation happens at both the wire boundary and the domain boundary.
 
 ### Collections
 
-- List methods are paginated from the first version.
+- List endpoints are paginated from the first release.
 - Page tokens are opaque.
-- Filtering and ordering are documented.
-- Defaults and maximums are documented.
-- Soft-deleted resources are hidden by default unless `show_deleted` is provided.
-
-### Schema
-
-- Required, optional, output-only, input-only, immutable, and identifier fields are documented.
-- Server-owned fields are output-only.
-- Effective values use `effective_` fields when the server calculates a default.
-- Timestamps, durations, quantities, and enums use consistent formats.
-- Future enum values are considered in client behavior.
-
-### Errors
-
-- Errors use consistent HTTP status codes.
-- Errors include machine-readable status or reason values.
-- Messages are actionable and do not leak internals.
-- Permission checks happen before existence checks when needed.
-- Common errors are documented per endpoint.
+- Default ordering is documented and stable.
+- Filtering and sorting are documented and bounded.
 
 ### Compatibility
 
-- No existing required fields are added.
-- No fields are removed, renamed, or retyped.
-- Existing semantics remain stable.
-- A breaking change creates a new major version.
-- Deprecations include a migration path and date.
+- No new required request fields are added to existing endpoints.
+- Existing field names, types, meanings, and status semantics remain stable.
+- New enum values are safe for older clients.
+- Breaking changes go into a new major version.
+- Deprecations include replacement guidance and a removal window.
 
-## Source Map
+## References
 
-These are the primary references behind this page:
+These references shaped the guide, but the examples and structure above are adapted for Worxbend JVM HTTP APIs:
 
-- [Google AIP index](https://google.aip.dev/)
-- [AIP-121 Resource-oriented design](https://google.aip.dev/121)
-- [AIP-122 Resource names](https://google.aip.dev/122)
-- [AIP-124 Resource association](https://google.aip.dev/124)
-- [AIP-127 HTTP and gRPC Transcoding](https://google.aip.dev/127)
-- [AIP-129 Server-Modified Values and Defaults](https://google.aip.dev/129)
-- [AIP-131 Standard methods: Get](https://google.aip.dev/131)
-- [AIP-132 Standard methods: List](https://google.aip.dev/132)
-- [AIP-133 Standard methods: Create](https://google.aip.dev/133)
-- [AIP-134 Standard methods: Update](https://google.aip.dev/134)
-- [AIP-135 Standard methods: Delete](https://google.aip.dev/135)
-- [AIP-136 Custom methods](https://google.aip.dev/136)
-- [AIP-151 Long-running operations](https://google.aip.dev/151)
-- [AIP-155 Request identification](https://google.aip.dev/155)
-- [AIP-158 Pagination](https://google.aip.dev/158)
-- [AIP-160 Filtering](https://google.aip.dev/160)
-- [AIP-161 Field masks](https://google.aip.dev/161)
-- [AIP-180 Backwards compatibility](https://google.aip.dev/180)
-- [AIP-185 API Versioning](https://google.aip.dev/185)
-- [AIP-190 Naming conventions](https://google.aip.dev/190)
-- [AIP-193 Errors](https://google.aip.dev/193)
-- [AIP-203 Field behavior documentation](https://google.aip.dev/203)
+- [Google AIP-121 Resource-oriented design](https://google.aip.dev/121)
+- [Google AIP-136 Custom methods](https://google.aip.dev/136)
+- [Google AIP-158 Pagination](https://google.aip.dev/158)
+- [Google AIP-160 Filtering](https://google.aip.dev/160)
+- [Google AIP-161 Field masks](https://google.aip.dev/161)
+- [Google AIP-180 Backwards compatibility](https://google.aip.dev/180)
+- [Google AIP-185 API Versioning](https://google.aip.dev/185)
+- [Google AIP-193 Errors](https://google.aip.dev/193)
 - [RFC 9110 HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110)
 - [RFC 5789 PATCH Method for HTTP](https://datatracker.ietf.org/doc/html/rfc5789)
 - [Roy Fielding: REST APIs must be hypertext-driven](https://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven)
