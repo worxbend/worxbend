@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✨ worxbend ✨
+<img src=".github/assets/logo.png" alt="worxbend" width="280">
 
 ### a personal monorepo where scala experiments go to live (or die trying) 💀🧪
 
@@ -9,8 +9,6 @@
 ![License](https://img.shields.io/badge/license-GPL--2.0-blue)
 ![Build](https://img.shields.io/badge/build-Mill-brightgreen)
 ![Vibe](https://img.shields.io/badge/vibe-chaotic%20good-purple)
-
-![banner](https://github.com/worxbend/worxbend/assets/8176996/7c4d7c52-e45b-4558-b3c1-ac79dbd1a2d9)
 
 </div>
 
