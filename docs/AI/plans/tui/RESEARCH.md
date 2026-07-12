@@ -177,10 +177,11 @@ trait StatefulWidget[S]:
 
 with the bonus that Scala 3's SAM (single-abstract-method) conversion gives `Widget`
 lambda-literal support for free, matching Java's `@FunctionalInterface` ergonomics
-without an annotation. See `SPEC.md` §2 for the finalized version of these traits
-(this is close to final as-is; `SPEC.md` only adds a `def renderRef` /
-inline-extension variant to cover the "render without allocating a fresh widget
-instance per frame" case ratatui's `WidgetRef` was added for).
+without an annotation. See `SPEC.md` §2.6 for the finalized version of these traits —
+adopted essentially as-is; note `SPEC.md` deliberately does **not** add an analog of
+ratatui's `WidgetRef` (a JVM widget instance can already be stored and rendered any
+number of times, so the Rust by-value/by-reference wrinkle that motivated `WidgetRef`
+has nothing to solve here).
 
 ### Rendering & threading model
 
@@ -417,14 +418,12 @@ than to a rendering library. It also runs the *same app* in a real terminal or a
 - **`pilot.py`**: `App.run_test()` returns a `Pilot` that can synthesize key presses,
   clicks, and mouse events against a running app instance (backed by
   `HeadlessDriver`), and wait for the app to reach an idle/settled state before
-  asserting. This is the most directly actionable idea to steal: **`PLAN.md` §8
-  currently has no story for end-to-end/interaction testing of `tui-runtime`/`tui-dsl`
-  beyond unit tests on isolated pieces.** A headless backend (`tui-terminal`,
-  implementing the same `Backend` trait as the real JLine backend but writing to an
-  in-memory buffer and accepting synthetic input) plus a small `Pilot`-equivalent in a
-  test-support module would let `tui-examples` apps be tested end-to-end
-  (press-key → assert-rendered-output) without spawning a real terminal — worth adding
-  to the plan explicitly (see the added Plan section below).
+  asserting. This is the most directly actionable idea here, and it **was adopted
+  into the plan**: `PLAN.md` §9 specifies a headless `Backend` implementation
+  (same `Backend` trait as the real JLine backend but writing to an in-memory buffer
+  and accepting synthetic input) plus a `Pilot`-equivalent test helper in the
+  `test-support/` module, letting `tui-examples` apps be tested end-to-end
+  (press-key → assert-rendered-output) without spawning a real terminal.
 - **`worker.py` / `worker_manager.py`**: managed background-task API (`@work` decorator)
   so widgets can kick off async work without manually managing asyncio tasks/cancellation.
   Relevant only if/when we add an optional async integration module — not v1 scope, but
@@ -462,4 +461,4 @@ the cue4s takeaway).
 | TamboUI | three-tier API (immediate / mid-level runner / declarative toolkit); widget catalog; render-thread model; reflection-avoidance discipline for native-image; `CharWidth` utility; module boundaries as a template for our Mill modules |
 | Terminus | idiomatic Scala 3 terminal-control primitives (`core`); its `Var`/`Computed`/`React`-capability fine-grained signals system (`ui`), taken near-verbatim as the base for `tui-runtime`'s reactive state primitive, not just "inspiration" |
 | cue4s | effect-agnostic core API + optional cats-effect module; cross-platform (JVM/Native) build precedent in pure Scala 3; `Prompt[Result]`'s lazy `map`/`mapValidated` functor shape as the model for `Form` field validation |
-| Textual | headless driver + `Pilot`-style programmatic testing harness (adopt for v1 — see Plan §8); DOM+selector query model and reactive-attribute descriptor as reference points if `tui-dsl` grows a query API; widest widget catalog (`DataTable`, `Tree`, `TextArea`) as a stretch-goal reference; full CSS cascade engine and asyncio-first message bus noted as deliberately out of v1 scope |
+| Textual | headless driver + `Pilot`-style programmatic testing harness (adopted for v1 — see `PLAN.md` §9); DOM+selector query model and reactive-attribute descriptor as reference points if `tui-dsl` grows a query API; widest widget catalog (`DataTable`, `Tree`, `TextArea`) as a stretch-goal reference; full CSS cascade engine and asyncio-first message bus noted as deliberately out of v1 scope |

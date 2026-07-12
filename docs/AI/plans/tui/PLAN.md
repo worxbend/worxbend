@@ -34,11 +34,24 @@ from:
 
 - **No copy-pasted implementation code** from any cloned repo, in any language.
   Every type in `SPEC.md`, every algorithm (the constraint solver, the buffer diff,
-  the `CharWidth` table, the signal dependency-tracking mechanics) must be written
+  the `CharWidth` logic, the signal dependency-tracking mechanics) must be written
   from scratch against the *documented behavior/shape*, not translated line-by-line
   from Rust/Java/Python source. Where `RESEARCH.md`/`SPEC.md` quote a signature from a
   reference implementation, that quote is there to justify a design decision in
   prose — it is not a stand-in for an implementation.
+
+  **Clarification — what this rule does *not* cover** (so it doesn't collide with
+  the §12 risk mitigations that reference external material):
+  - *Standards-derived data tables are data, not code.* `CharWidth`'s width table is
+    generated from the Unicode Character Database (East Asian Width, general
+    categories) — deriving that table from the UCD, or checking it against another
+    library's UCD-derived table, is permitted and encouraged; hand-transcribing
+    another library's *code* (its lookup/branching logic) is what's forbidden.
+  - *Replicating test coverage is not copying tests.* Where §12 says to consult
+    Terminus's signal tests, that means: identify the coverage *categories* their
+    suite proves (conditional dependencies, unsubscribe-on-recompute, `peek` vs.
+    `get` semantics) and write original tests covering the same categories — not
+    port their test code.
 - Where an idea is adopted (e.g. Terminus's signals model, TamboUI's render-thread
   guard, Textual's headless-driver testing pattern), the goal is to reimplement it
   **better**: idiomatic Scala 3 (not a Java-shaped or Python-shaped API wearing Scala
@@ -93,8 +106,8 @@ monorepo root to nest under, so module directories live at the repo root, not un
   or its operator may pick either style.
 - Repo root has one `build.mill` (root aggregator, see §4.1) and one directory per
   module: `core/`, `terminal/`, `widgets/`, `runtime/`, `dsl/`, `macros/`,
-  `examples/` — each with its own `package.mill`, `src/main/scala`, and (where
-  relevant) a `test` submodule. Module *directory* names are short (`core`, not
+  `test-support/`, `examples/` — each with its own `package.mill`, `src/main/scala`,
+  and (where relevant) a `test` submodule. Module *directory* names are short (`core`, not
   `tui-core`) since there's no sibling-module ambiguity to disambiguate against
   outside a monorepo; the **published artifact ids stay `tui-core`, `tui-terminal`,
   etc.** via an explicit `artifactName` override (§4.1) so downstream consumers see
@@ -114,8 +127,9 @@ Mirror TamboUI's module boundaries (see `RESEARCH.md`), adapted to Mill's
 | `terminal/` | `tui-terminal` | `core` | Raw terminal control: raw mode, alternate screen, cursor, ANSI codes, key/mouse event reading. Modeled on Terminus's `core` module vocabulary. This is the backend abstraction layer — one implementation is enough for v1 (JLine 3, matching TamboUI's default and this being the JVM's most mature terminal library — see §4.1 for the pinned coordinate), but keep it behind a `Backend` trait so alternative backends are pluggable later (mirrors ratatui's per-backend crates / TamboUI's `-jline3-backend`/`-aesh-backend`/`-panama-backend` split). | `SPEC.md` §3 |
 | `widgets/` | `tui-widgets` | `core` | All built-in widget implementations (see §6 for the backlog). Depends only on `core`, never on `terminal` or the DSL layers — widgets must be terminal-backend-agnostic. | `SPEC.md` §2.6 |
 | `runtime/` | `tui-runtime` | `core`, `terminal` | Mid-level framework: the render loop / "runner" (TamboUI's `TuiRunner` equivalent), event dispatch, tick-rate-driven redraws, resize handling, the render-thread model (single dedicated thread; `checkRenderThread()`/`runOnRenderThread()`/`runLater()` guards), and the `Signal`/`Computed` reactive-state primitive. | `SPEC.md` §4 |
-| `dsl/` | `tui-dsl` | `core`, `widgets`, `runtime` | The high-level declarative Scala 3 DSL (see §5) — the retained-mode component tree, focus management, event routing. This is the module application authors are expected to use day-to-day. | `SPEC.md` §5 |
-| `macros/` | `tui-macros` | `core` | Scala 3 macros/inline metaprogramming for compile-time codegen (event-handler dispatch, case-class → form derivation) — see §7, native-image rationale. No runtime reflection anywhere in this module. | `SPEC.md` §6 |
+| `dsl/` | `tui-dsl` | `core`, `widgets`, `runtime`, `macros` | The high-level declarative Scala 3 DSL (see §5) — the retained-mode component tree, focus management, event routing; consumes `FormSpec`/`ActionHandler` from `macros` for `Form` wiring and action dispatch (`SPEC.md` §6). This is the module application authors are expected to use day-to-day. | `SPEC.md` §5 |
+| `macros/` | `tui-macros` | `core` | Scala 3 macros/inline metaprogramming for compile-time codegen (event-handler dispatch, case-class → form derivation) — owns the `FormSpec`/`ActionHandler` result types alongside the inline defs that produce them; see §7, native-image rationale. No runtime reflection anywhere in this module. | `SPEC.md` §6 |
+| `test-support/` | not published | `core`, `terminal`, `runtime` | Shared test infrastructure: the `Pilot`-equivalent driver (`pressKey`, `click`, `waitForIdle`, `assertRendered` — §9) and the render-to-`Buffer` ScalaTest matchers (§6). Consumed by other modules' `test` submodules only, never by main sources. Scaffolded in step 1 like every other module (its contents land at step 4, but the empty module exists from the start so the step-1 acceptance criterion's module list is final). | — |
 | `examples/` | not published | everything | Runnable example apps, one sub-directory per example (`examples/hello-world/`, …) — also the native-image compile targets, see §8. | — |
 
 Non-goals for v1 (full CSS cascade engine, asyncio-style message bus, screen-stack
@@ -322,8 +336,8 @@ scope without an explicit decision to do so.
 Each widget: implement against the `Widget`/`StatefulWidget` trait in `tui-core`,
 ship a scalatest suite asserting on rendered `Buffer` contents (TamboUI has a
 `tamboui-core-assertj` module for buffer assertions — build an equivalent lightweight
-ScalaTest matcher in `tui-core`'s test support rather than pulling in AssertJ), and get
-a DSL-facing wrapper in `tui-dsl`.
+ScalaTest matcher in the `test-support/` module (§4) rather than pulling in AssertJ),
+and get a DSL-facing wrapper in `tui-dsl`.
 
 ## 7. GraalVM native-image target
 
@@ -415,7 +429,7 @@ Each example must build with `./mill examples.<name>.run` and (once §7 lands)
   `pilot.py`, RESEARCH.md): add a headless `Backend` implementation in `tui-terminal`
   that renders to an in-memory `Buffer` and accepts synthetic key/mouse events instead
   of a real TTY, plus a small `Pilot`-equivalent test helper (`pressKey`, `click`,
-  `waitForIdle`, `assertRendered`) in a shared test-support module. This lets
+  `waitForIdle`, `assertRendered`) in the `test-support/` module (§4). This lets
   `tui-examples` apps be driven end-to-end (press key → assert rendered buffer) in CI
   without a pseudo-terminal. Build this once `tui-runtime`'s event loop exists (step 4
   of §10) — retrofitting it later means every widget test written before it exists gets
@@ -442,7 +456,7 @@ Each example must build with `./mill examples.<name>.run` and (once §7 lands)
 7. `tui-widgets` Tier 2 + `tui-macros` (compile-time event/form binding) together —
    Tier 2 is exactly where reflection temptation shows up first, so build the
    macro-based alternative alongside it, not after.
-8. `counter`, `todo-list` examples (§7) as they become buildable.
+8. `counter`, `todo-list` examples (§8) as they become buildable.
 9. `tui-widgets` Tier 3, `dashboard` example.
 10. GraalVM native-image wiring (§7) against `hello-world` first, then the rest of
     `tui-examples` — validate the reflection-free approach actually holds before
@@ -472,8 +486,8 @@ For each step in §10, "done" means the following, not just "code exists":
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Reflection creeps into `tui-dsl`/widget code outside `tui-macros`, silently breaking native-image later | Medium — the path of least resistance for case-class introspection or event dispatch is often reflection | High — discovered late, expensive to retrofit (this is exactly the TamboUI lesson in `RESEARCH.md`) | Grep-based CI check for `java.lang.reflect`/`Class.forName` outside `tui-macros`; native-image build (step 10) run early enough in CI that violations surface before Tier 4, not just at the end |
-| `CharWidth` has subtle Unicode bugs (e.g. incorrect handling of variation selectors, regional-indicator flag emoji) | Medium — Unicode width computation is a known hard problem even in mature libraries | Medium — visible as misaligned borders/text, not a crash, so may ship unnoticed | Explicit test matrix in §11 step 2; consider vendoring or porting a well-tested width table (e.g. from a Rust `unicode-width`-equivalent) rather than hand-rolling the East-Asian-Width logic |
-| `Signal`/`Computed` dependency tracking has a correctness bug under conditional dependencies (the exact case Terminus's design handles, `RESEARCH.md`) | Low — the algorithm is adopted from working prior art, but the JVM reimplementation is new code | High — silent stale-UI bugs are hard to diagnose | Port Terminus's own test suite approach for `Reactive`/`Var`/`Computed` (check their `notes/` and any signal-specific test files during step 2/4 implementation) rather than writing tests from scratch without that reference |
+| `CharWidth` has subtle Unicode bugs (e.g. incorrect handling of variation selectors, regional-indicator flag emoji) | Medium — Unicode width computation is a known hard problem even in mature libraries | Medium — visible as misaligned borders/text, not a crash, so may ship unnoticed | Explicit test matrix in §11 step 2; generate the width table from the Unicode Character Database rather than hand-rolling East-Asian-Width logic, and cross-check it against a well-tested implementation's output (permitted per §2.1's data-vs-code clarification — the table is standards-derived data, the lookup code stays original) |
+| `Signal`/`Computed` dependency tracking has a correctness bug under conditional dependencies (the exact case Terminus's design handles, `RESEARCH.md`) | Low — the algorithm is adopted from working prior art, but the JVM reimplementation is new code | High — silent stale-UI bugs are hard to diagnose | Replicate the coverage categories Terminus's own `Reactive`/`Var`/`Computed` tests prove (conditional dependencies, unsubscribe-on-recompute, `peek` vs. `get` semantics — per §2.1's replicate-coverage-not-code clarification) as originally written tests, rather than inventing the test matrix from scratch without that reference |
 | GraalVM native-image and JLine 3 interact poorly (terminal libraries are a common source of native-image friction beyond just reflection — e.g. JNI, `System.loadLibrary`) | Medium | High — could block §7/step 10 entirely | Validate with a minimal JLine 3 + native-image spike *before* step 10, ideally as early as step 3, so this is discovered while the terminal layer is still small and cheap to adjust |
 | Scope creep toward Textual-level richness (CSS cascade, screen stack, async) | Medium — Textual's architecture is genuinely appealing and was researched in depth | Medium — dilutes v1 focus, delays a usable release | `SPEC.md` §7's non-goals table is the explicit guardrail; any PR/change adding scope from that table needs a deliberate decision recorded in `SPEC.md` §9, not a silent addition |
 | `Style`/`Cell` allocation rate becomes a real render-loop bottleneck | Low-Medium — untested until real widgets exist | Medium — affects perceived responsiveness, not correctness | `SPEC.md` §9 flags this as an open decision; add a basic render-loop benchmark (JMH or a simple timed loop) once Tier 1 widgets exist (step 5), before optimizing anything |

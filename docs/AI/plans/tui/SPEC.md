@@ -67,6 +67,10 @@ object Cell:
 final class Buffer(val area: Rect):
   private val cells: Array[Cell] = Array.fill(area.area)(Cell.Empty)
 
+  // x/y are ABSOLUTE terminal coordinates (same space as `area`'s x/y offset),
+  // not area-relative — matching ratatui/TamboUI, whose widgets receive a Rect
+  // positioned in absolute space and write to the buffer at those coordinates.
+  // Out-of-area writes are silently clipped, not errors.
   def get(x: Int, y: Int): Cell
   def set(x: Int, y: Int, cell: Cell): Unit
   def setString(x: Int, y: Int, text: String, style: Style): Unit
@@ -104,12 +108,16 @@ final case class Style(
     bg: Option[Color] = None,
     modifiers: Modifiers = Modifiers.None,
 ):
-  def fg(color: Color): Style = copy(fg = Some(color))
-  def bg(color: Color): Style = copy(bg = Some(color))
+  // builders are `with`-prefixed: a case-class field (`fg`) and a `def` cannot
+  // share a name in Scala — vals and defs live in one namespace, so
+  // `def fg(color: Color)` alongside the `fg` field is a double-definition
+  // compile error, not an overload
+  def withFg(color: Color): Style = copy(fg = Some(color))
+  def withBg(color: Color): Style = copy(bg = Some(color))
   def bold: Style = copy(modifiers = modifiers | Modifiers.Bold)
-  // ... one such extension-flavored builder method per modifier, mirroring
-  // TamboUI's `.bold().cyan()` chain (RESEARCH.md) but returning a new
-  // immutable Style rather than mutating `this`
+  // ... one such builder method per modifier (no field collision for these),
+  // mirroring TamboUI's `.bold().cyan()` chain (RESEARCH.md) but returning a
+  // new immutable Style rather than mutating `this`
 
 object Style:
   val Default: Style = Style()
@@ -119,8 +127,9 @@ object Style:
 deliberate allocation-avoidance choice — `Style` values are created per-cell,
 potentially thousands of times per frame, so keeping `Style` itself a small
 value class with no boxed collection inside matters for render-loop throughput
-(`PLAN.md` does not currently have a benchmarking milestone — see §9.2 "Still open"
-below, this is flagged as a risk to watch, not a solved problem).
+(`PLAN.md` §12's risk register schedules a basic render-loop benchmark once Tier 1
+widgets exist — see §9.2 "Still open" below; this stays a risk to watch, not a
+solved problem, until that benchmark actually runs).
 
 ### 2.4 Text primitives
 
@@ -155,9 +164,6 @@ enum Constraint:
   case Fill(weight: Int = 1)
 
 object Constraint:
-  // conveniences so call sites read like ratatui's macros without needing macros:
-  given Conversion[Int, Constraint] = Length(_)
-  given Conversion[Double, Constraint] = pct => Percentage((pct * 100).toInt)
   def fill: Constraint = Fill(1)
 
 enum Direction:
@@ -165,16 +171,35 @@ enum Direction:
 
 final case class Layout(direction: Direction, constraints: Seq[Constraint], spacing: Int = 0):
   def split(area: Rect): Seq[Rect]  // the constraint solver
+
+object Layout:
+  // Constraint shorthand lives here, as a union-typed convenience overload —
+  // NOT as `given Conversion`s. Applying an implicit Conversion at a call site
+  // requires `import scala.language.implicitConversions` (or the -language flag)
+  // to compile warning-free, which under a strict -Werror setup means every
+  // user-facing example would need a language import — unacceptable for a DSL
+  // whose selling point is call-site ergonomics. A union-typed overload gives
+  // the same terseness with no feature flag:
+  def apply(direction: Direction)(constraints: (Int | Double | Constraint)*): Layout =
+    Layout(
+      direction,
+      constraints.map {
+        case cells: Int          => Constraint.Length(cells)
+        case fraction: Double    => Constraint.Percentage((fraction * 100).toInt)
+        case constraint: Constraint => constraint
+      },
+    )
 ```
 
-The `Int`/`Double` `given Conversion`s are the Scala 3 answer to the "constraint
-shorthand" goal in `PLAN.md` §5 (`Constraint` buildable "from a plain `Int`... `Double`
-... or `Constraint.fill`") — implemented as implicit conversions at call sites that take
-`Constraint`, not as overloaded factory methods per unit the way TamboUI does
-(`.length(n)`, `.percent(n)` as separate static methods, `RESEARCH.md`). Keep the
-conversions narrowly scoped (only where a `Constraint` is expected) to avoid the classic
-implicit-conversion foot-gun of `Int`s silently becoming `Constraint`s somewhere
-unrelated — put them in `Constraint`'s companion, not in a global `Predef`-style import.
+This is the Scala 3 answer to the "constraint shorthand" goal in `PLAN.md` §5
+(`Constraint` buildable "from a plain `Int`... `Double`... or `Constraint.fill`") —
+a union-typed vararg overload rather than TamboUI's separate static factory methods
+per unit (`.length(n)`, `.percent(n)`, `RESEARCH.md`), and deliberately **not**
+implicit `Conversion`s (rationale in the code comment above: the language-import tax
+at every call site). Note the `Double` case takes a *fraction* (`0.5` → 50%), not a
+percentage value — name parameters accordingly and cover `0.333`-style truncation
+(`Percentage(33)`) in tests; if exact thirds matter to a caller, `Constraint.Ratio`
+is the right tool, and the Scaladoc for the shorthand should say so.
 
 ### 2.6 Widget traits
 
@@ -193,10 +218,69 @@ ratatui's `WidgetRef`/by-reference workaround (added specifically to let a widge
 stored and rendered more than once) has no analog to build here. A plain Scala
 `trait Widget` instance can already be rendered any number of times.
 
-## 3. `tui-terminal` — backend abstraction
+## 3. Input-event vocabulary (`tui-core`) and `tui-terminal` backend abstraction
+
+### 3.1 Event types live in `tui-core`, not `tui-terminal`
+
+The input-event vocabulary is defined in `io.worxbend.tui.core` — **not** in
+`tui-terminal` — because `tui-widgets` is forbidden from depending on `tui-terminal`
+(`PLAN.md` §4's dependency rule: widgets must be backend-agnostic), yet Tier 2
+interactive widgets (`TextInput`, `Select`, …) and the DSL's
+`onKeyEvent`/`onMouseEvent` handlers (§5.2) all need to pattern-match on key/mouse
+events. Putting the ADT in `core` (exactly as ratatui puts its event-adjacent types in
+`ratatui-core`) keeps the dependency graph intact; `tui-terminal` backends *produce*
+these events, everything above *consumes* them.
+
+```scala
+package io.worxbend.tui.core
+
+enum KeyCode:
+  case Char(c: scala.Char)
+  case Enter, Escape, Backspace, Tab, Delete, Insert, Home, End, PageUp, PageDown
+  case Up, Down, Left, Right
+  case F(n: Int)
+
+opaque type KeyModifiers = Int  // bitset: Shift, Ctrl, Alt — same pattern as
+object KeyModifiers:            // Modifiers in §2.3
+  val None: KeyModifiers = 0
+  val Shift: KeyModifiers = 1 << 0
+  val Ctrl: KeyModifiers = 1 << 1
+  val Alt: KeyModifiers = 1 << 2
+  extension (m: KeyModifiers)
+    def |(other: KeyModifiers): KeyModifiers = m | other
+    def has(flag: KeyModifiers): Boolean = (m & flag) != 0
+
+enum MouseEventKind:
+  case Down, Up, Drag, Moved, ScrollUp, ScrollDown
+
+final case class KeyEvent(code: KeyCode, modifiers: KeyModifiers)
+final case class MouseEvent(x: Int, y: Int, kind: MouseEventKind, modifiers: KeyModifiers)
+
+enum Event:
+  case Key(event: KeyEvent)
+  case Mouse(event: MouseEvent)
+  case Resize(size: Size)
+  case Tick  // synthetic, emitted at the runner's configured tick rate — not a raw
+             // terminal event, injected by tui-runtime (see §4); listed here because
+             // it shares the Event ADT consumers pattern-match against
+```
+
+`KeyEvent`/`MouseEvent` are standalone case classes (wrapped by the `Event` enum
+cases) rather than the enum cases themselves so that handler signatures like
+`onKeyEvent(handler: KeyEvent => Boolean)` (§5.2) can take exactly the key payload —
+a handler that only fires for key events shouldn't take an `Event` it must
+partially match.
+
+### 3.2 `tui-terminal` — backend abstraction
 
 ```scala
 package io.worxbend.tui.terminal
+
+import io.worxbend.tui.core.{Buffer, Event, Size}
+import scala.concurrent.duration.Duration  // scala.concurrent.duration, not
+                                            // java.time — the units-carrying value
+                                            // type idiomatic in Scala APIs; convert
+                                            // at the JLine boundary if it wants millis
 
 trait Backend:
   def size: Either[BackendError, Size]
@@ -212,14 +296,6 @@ enum BackendError:
   case Io(cause: Throwable)
   case UnsupportedTerminal(reason: String)
   case NotInRawMode
-
-enum Event:
-  case Key(code: KeyCode, modifiers: KeyModifiers)
-  case Mouse(x: Int, y: Int, kind: MouseEventKind, modifiers: KeyModifiers)
-  case Resize(size: Size)
-  case Tick  // synthetic, emitted at the runner's configured tick rate — not a raw
-             // terminal event, injected by tui-runtime (see §4); listed here because
-             // it shares the Event ADT consumers pattern-match against
 ```
 
 v1 ships exactly one `Backend` implementation, `JLine3Backend` (per `PLAN.md` §4's
@@ -336,7 +412,8 @@ final class Frame(val area: Rect, private[runtime] val buffer: Buffer):
 ```
 
 This is the direct Scala analog of TamboUI's `TuiRunner` (`RESEARCH.md`) — the
-mid-level API tier from `PLAN.md` §5's three-tier design. `tui-dsl` is built *on top
+mid-level API tier of the three-tier layering adopted from TamboUI (`RESEARCH.md`,
+TamboUI "Three API layers" section). `tui-dsl` is built *on top
 of* `Runner`, not as an alternative to it — the DSL's `TuiApp` (§5) owns a `Runner`
 internally and drives it from `Signal`/`Computed` invalidation rather than exposing
 the raw `(Event, RunnerHandle) => Boolean` callback to DSL users.
@@ -359,10 +436,25 @@ object Element:
   def column(children: Element*): ColumnElement
   def spacer: Element
   // ... one factory per widget in the PLAN.md §6 backlog, mirroring TamboUI's
-  // Toolkit static-import factory set (RESEARCH.md) but as top-level `export`ed
-  // defs from this object rather than requiring `import Toolkit.*`-style
-  // static-import boilerplate — see §5.3 on import ergonomics
+  // Toolkit static-import factory set (RESEARCH.md) — surfaced to users via
+  // top-level `export`s, see the import-ergonomics note below
 ```
+
+**Import ergonomics**: the factories are defined on `object Element` (one obvious
+home, testable directly) and re-exported at the top level of the `dsl` package via
+Scala 3 `export` clauses in the package's top-level definitions file:
+
+```scala
+package io.worxbend.tui.dsl
+
+export Element.{text, panel, row, column, spacer /*, ...every factory */}
+```
+
+so that a single `import io.worxbend.tui.dsl.*` brings in `TuiApp`, `Element`, every
+factory, and the §5.2 extension methods together — the `HelloWorld` example in
+`PLAN.md` §5 compiles with exactly that one import line. This is the Scala 3
+equivalent of TamboUI's `import static dev.tamboui.toolkit.Toolkit.*` with one less
+line of ceremony; do not require users to import `Element.*` separately.
 
 ### 5.2 Styling and layout extension methods
 
@@ -441,6 +533,16 @@ widgets):
 ```scala
 package io.worxbend.tui.macros
 
+// FormSpec and ActionHandler are OWNED BY tui-macros (defined here, alongside
+// the inline defs that produce them) — tui-dsl depends on tui-macros
+// (PLAN.md §4's dependency table) and consumes these types when wiring Form
+// and action dispatch. Keeping the result types in the same module as the
+// macros avoids a circular macros <-> dsl dependency and keeps the macro
+// implementation classpath self-contained.
+final case class FormSpec[A](fields: Seq[FieldSpec], assemble: Seq[Any] => A)
+trait ActionHandler[A]:
+  def handle(action: A): Unit
+
 // 1. Case-class -> Form field derivation
 inline def deriveForm[A]: FormSpec[A]  // inline def, expands via Mirror.ProductOf[A]
                                         // at the call site — no runtime reflection,
@@ -453,6 +555,10 @@ inline def deriveForm[A]: FormSpec[A]  // inline def, expands via Mirror.Product
 // 2. Compile-time event-handler binding, replacing @OnAction
 inline def bindAction[A](inline handler: A => Unit): ActionHandler[A]
 ```
+
+(`FormSpec`/`ActionHandler` shapes above are directional — refine the exact field
+representation during `PLAN.md` §10 step 7 — but their *home module* is settled:
+they live in `tui-macros`, and `tui-dsl` depends on `tui-macros` to reach them.)
 
 Note this is a real simplification opportunity vs. TamboUI: Scala 3's `Mirror`
 typeclass-derivation mechanism (stdlib, not a macro library) covers the
@@ -530,9 +636,9 @@ before):
 it back into this file rather than defaulting silently
 
 1. **Style allocation strategy** (§2.3) — `Style` as an immutable case class is
-   simplest and matches TamboUI/ratatui's model, but if profiling
-   (no benchmarking milestone currently exists in `PLAN.md` — add one before
-   optimizing) shows per-cell `Style` allocation is a hot path, consider a
+   simplest and matches TamboUI/ratatui's model, but if profiling (via the
+   render-loop benchmark `PLAN.md` §12 schedules at step 5)
+   shows per-cell `Style` allocation is a hot path, consider a
    flyweight/interning `StyleId` scheme instead. Do not preemptively optimize this
    without a measurement.
 2. **`Buffer` mutability** (§2.2) — specified as a mutable `Array[Cell]`-backed class
