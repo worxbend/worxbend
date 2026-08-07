@@ -4,10 +4,13 @@ import mill._
 import mill.javalib._
 import mill.javalib.publish._
 import mill.scalalib.SbtModule
+import mill.scalalib.scalafmt.ScalafmtModule
 
-object `package` extends SbtModule with PublishModule {
+object `package` extends SbtModule with PublishModule with ScalafmtModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.8.4"
+
+  def scalacOptions = Seq("-Wunused:all", "-deprecation", "-feature")
 
   def pomSettings = PomSettings(
     description = "Scala 3 configurable toString via inline macros with zero external dependencies. Supports @Redacted, @Excluded annotations and rich formatting configuration.",
@@ -20,9 +23,9 @@ object `package` extends SbtModule with PublishModule {
 
   def publishVersion = "0.1.0-SNAPSHOT"
 
-  object test extends SbtTests with TestModule.ScalaTest {
+  object test extends SbtTests with TestModule.ScalaTest with ScalafmtModule {
 
-    def mvnDeps = super.mvnDeps() ++ Seq(mvn"org.scalatest::scalatest:3.2.19")
+    def mvnDeps = super.mvnDeps() ++ Seq(mvn"org.scalatest::scalatest:3.2.20")
 
     def testSandboxWorkingDir = false
     def testEnableWorkStealing = false

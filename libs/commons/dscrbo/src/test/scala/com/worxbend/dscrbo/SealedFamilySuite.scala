@@ -1,0 +1,152 @@
+package com.worxbend.dscrbo
+
+import com.worxbend.dscrbo.annotations.Redacted
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import org.scalatest.funsuite.AnyFunSuite
+
+/** Deliberately without its own instance, so the family below has to inline it structurally. */
+final case class GenSecret(@Redacted token: String, tag: String)
+
+final case class GenEitherHolder(value: Either[String, GenSecret]) derives Describe
+
+final case class GenTryHolder(value: Try[Int]) derives Describe
+
+final case class GenOptionEitherHolder(value: Option[Either[String, Int]]) derives Describe
+
+final case class GenListEitherHolder(value: List[Either[String, Int]]) derives Describe
+
+sealed trait GenResult[A]
+
+object GenResult:
+
+  final case class Ok[A](value: A)      extends GenResult[A]
+  final case class Bad[A](note: String) extends GenResult[A]
+
+final case class GenResultHolder(value: GenResult[String]) derives Describe
+
+enum GenPair[A]:
+
+  case One(value: A)
+  case Two(first: A, second: A)
+
+final case class GenPairHolder(value: GenPair[String]) derives Describe
+
+enum GenTree[+A]:
+
+  case Leaf(value: A)
+  case Empty
+
+final case class GenTreeHolder(value: GenTree[String]) derives Describe
+
+sealed trait GenTop
+
+object GenTop:
+
+  sealed trait GenMid                                          extends GenTop
+  final case class GenBottom(@Redacted s: String, tag: String) extends GenMid
+
+final case class GenTopHolder(value: GenTop) derives Describe
+
+/** Sealed families whose children carry type parameters. The children have to be instantiated at the parent's type
+  * arguments; using the uninstantiated child reference makes the compiler fail inside its own inliner.
+  */
+final class SealedFamilySuite extends AnyFunSuite:
+
+  private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
+
+  test("Either dispatches to its right branch"):
+    assert(
+      Describe[GenEitherHolder].describe(GenEitherHolder(Right(GenSecret("s3cret", "t"))))(using singleLine) ==
+        "GenEitherHolder(value = Right(value = GenSecret(token = <redacted>, tag = \"t\")))"
+    )
+
+  test("redaction composes through an Either branch"):
+    assert(
+      !Describe[GenEitherHolder]
+        .describe(GenEitherHolder(Right(GenSecret("s3cret", "t"))))(using singleLine)
+        .contains("s3cret")
+    )
+
+  test("Either dispatches to its left branch"):
+    assert(
+      Describe[GenEitherHolder].describe(GenEitherHolder(Left("boom")))(using singleLine) ==
+        "GenEitherHolder(value = Left(value = \"boom\"))"
+    )
+
+  test("Either derives at the root"):
+    assert(Describe.derived[Either[String, Int]].describe(Right(1))(using singleLine) == "Right(value = 1)")
+
+  test("Try dispatches to Success"):
+    assert(
+      Describe[GenTryHolder].describe(GenTryHolder(Success(1)))(using singleLine) ==
+        "GenTryHolder(value = Success(value = 1))"
+    )
+
+  test("Try dispatches to Failure, whose payload is a concrete class rendered by toString"):
+    assert(
+      Describe[GenTryHolder].describe(GenTryHolder(Failure(RuntimeException("boom"))))(using singleLine) ==
+        "GenTryHolder(value = Failure(exception = java.lang.RuntimeException: boom))"
+    )
+
+  test("a generic Option payload dispatches through the family"):
+    assert(
+      Describe[GenOptionEitherHolder].describe(GenOptionEitherHolder(Some(Left("x"))))(using singleLine) ==
+        "GenOptionEitherHolder(value = Some(Left(value = \"x\")))"
+    )
+
+  test("a generic collection element dispatches through the family"):
+    assert(
+      Describe[GenListEitherHolder].describe(GenListEitherHolder(List(Right(1))))(using singleLine) ==
+        "GenListEitherHolder(value = [Right(value = 1)])"
+    )
+
+  test("a user defined generic sealed trait dispatches to a parameterised child"):
+    assert(
+      Describe[GenResultHolder].describe(GenResultHolder(GenResult.Ok("a")))(using singleLine) ==
+        "GenResultHolder(value = Ok(value = \"a\"))"
+    )
+
+  test("a user defined generic sealed trait dispatches to a child that ignores the parameter"):
+    assert(
+      Describe[GenResultHolder].describe(GenResultHolder(GenResult.Bad("b")))(using singleLine) ==
+        "GenResultHolder(value = Bad(note = \"b\"))"
+    )
+
+  test("a generic enum dispatches to a single field case"):
+    assert(
+      Describe[GenPairHolder].describe(GenPairHolder(GenPair.One("a")))(using singleLine) ==
+        "GenPairHolder(value = One(value = \"a\"))"
+    )
+
+  test("a generic enum dispatches to a multi field case"):
+    assert(
+      Describe[GenPairHolder].describe(GenPairHolder(GenPair.Two("a", "b")))(using singleLine) ==
+        "GenPairHolder(value = Two(first = \"a\", second = \"b\"))"
+    )
+
+  test("a covariant enum dispatches to a parameterised case"):
+    assert(
+      Describe[GenTreeHolder].describe(GenTreeHolder(GenTree.Leaf("a")))(using singleLine) ==
+        "GenTreeHolder(value = Leaf(value = \"a\"))"
+    )
+
+  test("a covariant enum dispatches to its singleton case by name"):
+    assert(
+      Describe[GenTreeHolder].describe(GenTreeHolder(GenTree.Empty))(using singleLine) ==
+        "GenTreeHolder(value = Empty)"
+    )
+
+  test("a two level sealed hierarchy still dispatches through its intermediate trait"):
+    assert(
+      Describe[GenTopHolder].describe(GenTopHolder(GenTop.GenBottom("s3cret", "t")))(using singleLine) ==
+        "GenTopHolder(value = GenBottom(s = <redacted>, tag = \"t\"))"
+    )
+
+  test("a null generic sealed value renders as null"):
+    assert(
+      Describe[GenEitherHolder].describe(GenEitherHolder(null))(using singleLine) == "GenEitherHolder(value = null)"
+    )
