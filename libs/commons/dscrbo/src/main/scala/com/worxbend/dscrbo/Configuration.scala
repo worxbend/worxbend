@@ -10,18 +10,53 @@ package com.worxbend.dscrbo
   * reviewed exception to the repository's `noDefaultArgs` guidance — because a sixteen-field options record without
   * defaults is unusable.
   *
+  * A field renders as
+  * {{{
+  * fieldNamePrefix name fieldNameSuffix
+  *   [ fieldNameAndTypeNameSeparator typeNamePrefix Type typeNameSuffix ]
+  *   fieldNameAndValueSeparator valuePrefix value valueSuffix
+  * }}}
+  * where the bracketed group appears only under `useTypeNames`, and the whole name group is dropped when
+  * `useFieldNames` is off.
+  *
   * @param useFieldNames
-  *   render `name = value` instead of a bare `value`.
+  *   render `field = value` instead of a bare `value`; when off, the type name goes too, as it belongs to the name
+  *   group
   * @param useTypeNames
-  *   render the field's declared type between the field name and the value.
+  *   render the *declared* type of every field — never the runtime class, so a `List` field reports `List` and not
+  *   `$colon$colon`
   * @param fullyQualifiedClassName
-  *   render fully qualified names instead of simple names.
+  *   render fully qualified names instead of simple names, for the product's own name and for field type names alike
   * @param shortPackagePrefix
-  *   when qualified names are used, compress leading lowercase package segments to their first character.
+  *   compress leading lowercase package segments to their first character, turning `com.worxbend.example.Order` into
+  *   `c.w.e.Order`; ignored unless `fullyQualifiedClassName` is set
   * @param fieldsSeparator
-  *   inter-field separator, used verbatim on a single line and with trailing whitespace stripped when multiline.
+  *   inter-field separator; used verbatim on a single line, trailing-stripped in multiline so `", "` does not leave a
+  *   trailing space at the end of every line
+  * @param fieldNamePrefix
+  *   inserted before every field name
+  * @param fieldNameSuffix
+  *   inserted after every field name, ahead of any type name
+  * @param fieldNameAndValueSeparator
+  *   inserted between the field name (or its type) and the value
+  * @param fieldNameAndTypeNameSeparator
+  *   inserted between the field name and the type name; only used under `useTypeNames`
+  * @param typeNamePrefix
+  *   inserted before every type name
+  * @param typeNameSuffix
+  *   inserted after every type name
+  * @param valuePrefix
+  *   inserted before every rendered value, `null` and redaction replacements included
+  * @param valueSuffix
+  *   inserted after every rendered value, `null` and redaction replacements included
+  * @param multiline
+  *   always render one field per line; a product with no rendered fields stays on one line regardless, having nothing
+  *   to break
+  * @param multilineIndent
+  *   per-field indentation used in multiline layout; a nested value is inserted verbatim and is *not* re-indented
   * @param multilineIfFieldsAreGreaterOrEqual
-  *   render multiline once this many fields survive exclusion; any value `<= 0` disables the threshold.
+  *   switch to multiline once this many fields are rendered — excluded and transient fields do not count — and any
+  *   value `<= 0` disables the threshold entirely, leaving `multiline` as the only trigger
   */
 final case class Configuration(
     useFieldNames:                      Boolean = true,

@@ -48,6 +48,20 @@ private[dscrbo] object DescribeMacro:
     * not a type the user thinks of as nesting. It exists for one reason: past roughly two dozen layers the Scala 3
     * staging phase overflows a default 1 MB compiler stack, and the value is calibrated below every shape that was
     * measured to do so. A model that trips this cap is refused with a message rather than a `StackOverflowError`.
+    *
+    * '''This number is an empirical measurement, not a derivation.''' It was taken against one compiler on one stack
+    * size, so treat it as a floor that is known safe rather than as the true limit. To re-derive it:
+    *
+    *   1. build a chain of `N` nested case classes, each wrapping the next in `Option[List[Map[String, _]]]`, so that
+    *      every level costs four layers;
+    *   1. compile it with `-Xss` set to the stack size you care about (the shipped value assumes the JVM default of
+    *      1 MB — `./mill libs.commons.dscrbo.test` inherits it);
+    *   1. bisect `N` for the largest value that compiles without a `StackOverflowError` in the staging phase;
+    *   1. set this constant safely below the layer count that `N` implies, and record the compiler version and stack
+    *      size you used here.
+    *
+    * Last measured against Scala 3.8.4 on a 1 MB stack. `NestingDepthSuite` pins both the accept and the refuse side,
+    * so lowering this constant breaks a test rather than silently shrinking what consumers can derive.
     */
   private val MaxEmittedLayers: Int = 20
 

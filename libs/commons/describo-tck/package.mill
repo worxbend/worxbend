@@ -1,4 +1,4 @@
-package build.libs.commons.dscrbo
+package build.libs.commons.`describo-tck`
 
 import mill._
 import mill.javalib._
@@ -6,14 +6,22 @@ import mill.javalib.publish._
 import mill.scalalib.SbtModule
 import mill.scalalib.scalafmt.ScalafmtModule
 
+/** Shared conformance kit for the `describo` and `dscrbo` renderers.
+  *
+  * This module holds the parity specification as data and depends on neither renderer, so `dscrbo`'s zero-dependency
+  * guarantee is untouched: only the two *test* modules depend on this one.
+  */
 object `package` extends SbtModule with PublishModule with ScalafmtModule {
 
   def scalaVersion = "3.8.4"
 
   def scalacOptions = Seq("-Wunused:all", "-deprecation", "-feature")
 
+  def mvnDeps = super.mvnDeps() ++ Seq(mvn"org.scalatest::scalatest:3.2.20")
+
   def pomSettings = PomSettings(
-    description = "Scala 3 configurable toString via inline macros with zero external dependencies. Supports @Redacted, @Excluded annotations and rich formatting configuration.",
+    description =
+      "Shared conformance test kit pinning byte-identical rendering across the describo and dscrbo toString renderers.",
     organization = "io.worxbend",
     url = "https://github.com/worxbend/worxbend",
     licenses = Seq(License.MIT),
@@ -22,15 +30,4 @@ object `package` extends SbtModule with PublishModule with ScalafmtModule {
   )
 
   def publishVersion = "0.1.0-SNAPSHOT"
-
-  object test extends SbtTests with TestModule.ScalaTest with ScalafmtModule {
-
-    // The conformance kit is test-scope only, so it never reaches this module's published dependencies.
-    def moduleDeps = super.moduleDeps ++ Seq(build.libs.commons.`describo-tck`)
-
-    def mvnDeps = super.mvnDeps() ++ Seq(mvn"org.scalatest::scalatest:3.2.20")
-
-    def testSandboxWorkingDir = false
-    def testEnableWorkStealing = false
-  }
 }

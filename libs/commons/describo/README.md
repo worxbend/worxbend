@@ -287,9 +287,37 @@ value-class parameter cannot omit anything — there would be nothing left to pr
   `assertDoesNotCompile`, so the day it changes the test fails rather than the behaviour drifting.
 - **Enum cases under `fullyQualifiedClassName`** carry Magnolia's `TypeInfo`, which reports the
   enclosing *package* rather than the enclosing enum, so `Colour.Red` prints as
-  `com.example.Red`. Simple names are unaffected.
+  `com.example.Red`. Simple names are unaffected. **This is one of the two places `describo` and
+  `dscrbo` disagree**: the sibling macro reads the case symbol directly and prints
+  `com.example.Colour.Red`, which is the more useful spelling. Fixing it here would mean threading the
+  parent's name through `split` into every child instance — a change to the `Printable` interface for a
+  spelling that only appears under a non-default flag. Both behaviours are pinned by
+  `KnownDivergenceSuite` in each module.
 - **Set and Map iteration order** is the insertion order only up to four elements; beyond that
   Scala switches to a hashed representation. Sort before rendering if you need stable output.
+
+## Parity with `dscrbo`, and the two places it stops
+
+`describo` and [`dscrbo`](../dscrbo) are two implementations of one specification. For the same input
+and an equivalent `Configuration` they produce **byte-identical** output, and that is enforced rather
+than promised: `libs/commons/describo-tck` holds the specification as data — a catalogue of
+`(fixture, configuration, expected string)` obligations — and both modules run it through a thin
+adapter. Neither *main* module depends on the kit, so `dscrbo`'s zero-dependency guarantee is intact.
+
+Two differences are deliberate and are pinned by `KnownDivergenceSuite` on both sides, so neither can
+quietly become three:
+
+1. **Enum case qualified names.** `describo` prints `com.example.Red`, `dscrbo` prints
+   `com.example.Colour.Red`. See [Known limitations](#known-limitations). Simple names agree.
+2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable` without
+   ceremony, because its typeclass has real instances for the built-in types a type parameter resolves
+   to. `dscrbo` cannot: its synthesised `derived$Describe[A]` needs a `Describe[A]`, and that module
+   ships no per-type instances by design. **This is a capability `describo` has and `dscrbo` does
+   not.**
+
+Everything else — escaping, `null`, collection and map brackets, `Option`, annotation precedence
+including repeated `@Redacted`, value classes, case objects, sealed families, the multiline threshold
+and every formatting knob — is covered by the shared catalogue and must match exactly.
 
 ## Compatibility
 
