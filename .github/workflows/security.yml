@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "URL to scan (must be an environment we own)"
+        description: "HTTPS URL to scan. Its host must appear in the ZAP_ALLOWED_HOSTS repository variable."
         required: true
         type: string
 
@@ -24,6 +24,56 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Anyone who can dispatch this workflow can choose the URL, and the scan
+      # is an active one. Stating "must be an environment we own" in the input
+      # description asks for that; this enforces it. The allowlist lives in the
+      # ZAP_ALLOWED_HOSTS repository variable as a comma-separated host list,
+      # and an unset variable fails closed rather than scanning anything.
+      - name: Validate scan target
+        env:
+          TARGET: ${{ inputs.target }}
+          ALLOWED_HOSTS: ${{ vars.ZAP_ALLOWED_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ALLOWED_HOSTS:-}" ]; then
+            echo "::error::ZAP_ALLOWED_HOSTS is not configured, so no scan target can be authorised."
+            echo "Set it to a comma-separated list of hosts this repository is allowed to scan."
+            exit 1
+          fi
+
+          scheme="${TARGET%%://*}"
+          if [ "$scheme" != "https" ]; then
+            echo "::error::Target must use https, got '${scheme}'."
+            exit 1
+          fi
+
+          # Strip scheme, then any credentials, then path/query/fragment and port.
+          rest="${TARGET#https://}"
+          rest="${rest##*@}"
+          host="${rest%%/*}"
+          host="${host%%\?*}"
+          host="${host%%#*}"
+          host="${host%%:*}"
+
+          if [ -z "$host" ]; then
+            echo "::error::Could not parse a host out of the target URL."
+            exit 1
+          fi
+
+          IFS=',' read -ra allowed <<< "$ALLOWED_HOSTS"
+          for entry in "${allowed[@]}"; do
+            candidate="$(echo "$entry" | tr -d '[:space:]')"
+            if [ -n "$candidate" ] && [ "$host" = "$candidate" ]; then
+              echo "Target host '${host}' is allowlisted."
+              exit 0
+            fi
+          done
+
+          echo "::error::Host '${host}' is not in ZAP_ALLOWED_HOSTS."
+          echo "Active scanning a host we do not own is not something this workflow will do."
+          exit 1
 
       - name: ZAP Scan
         uses: zaproxy/action-baseline@v0.15.0
