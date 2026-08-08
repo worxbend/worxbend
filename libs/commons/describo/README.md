@@ -65,10 +65,8 @@ name is the job description and nobody tried very hard.
 
 So: this library describes things. **describo.**
 
-Its sibling started life as **dscrbo**, the same joke with the vowels squeezed out, which turned out to
-be a mistake — the two names differed by four vowels and read as a typo of one another, so every
-sentence about either one needed a clause explaining which was meant. It is now called
-[`reveal`](../reveal), which is not an elf name at all. Some jokes are worth exactly one library.
+Its sibling, [`reveal`](../reveal), is not an elf name at all — that one says what it does without the
+costume.
 
 ---
 
