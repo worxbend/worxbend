@@ -27,14 +27,14 @@ trait OpqPlant
 
 object OpqPlant:
 
-  given Describe[OpqPlant] with
+  given PrettyPrintable[OpqPlant] with
     override def describe(value: OpqPlant)(using conf: Configuration): String = "PLANT"
 
 final case class OpqFern(name: String) extends OpqPlant
 
-final case class OpqPlantHolder(plant: OpqPlant) derives Describe
+final case class OpqPlantHolder(plant: OpqPlant) derives PrettyPrintable
 
-final case class OpqExcludedAnimalHolder(@Excluded animal: OpqAnimal, name: String) derives Describe
+final case class OpqExcludedAnimalHolder(@Excluded animal: OpqAnimal, name: String) derives PrettyPrintable
 
 /** Concrete classes the macro cannot see into are rendered by their own `toString`.
   *
@@ -43,7 +43,7 @@ final case class OpqExcludedAnimalHolder(@Excluded animal: OpqAnimal, name: Stri
   * non-final hole recorded on `isAbstractlyTyped`. This fixture pins the current, deliberate behaviour; it is not
   * evidence that the behaviour is safe for every non-final type.
   */
-final case class OpqConcreteHolder(day: LocalDate, error: Throwable) derives Describe
+final case class OpqConcreteHolder(day: LocalDate, error: Throwable) derives PrettyPrintable
 
 /** Composite declared types that pin down no runtime class at all.
   *
@@ -64,54 +64,56 @@ final class OpaqueTypeSuite extends AnyFunSuite:
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
   test("a field typed as a non sealed trait is refused rather than rendered with toString"):
-    assertDoesNotCompile("Describe.derived[OpqAnimalHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqAnimalHolder]")
 
   test("the refusal names the type the macro cannot see into"):
-    val errors = typeCheckErrors("Describe.derived[OpqAnimalHolder]")
+    val errors = typeCheckErrors("PrettyPrintable.derived[OpqAnimalHolder]")
     assert(errors.exists(error => error.message.contains("OpqAnimal")))
 
   test("a field typed as Any is refused"):
-    assertDoesNotCompile("Describe.derived[OpqAnyHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqAnyHolder]")
 
   test("a field typed as an abstract class is refused"):
-    assertDoesNotCompile("Describe.derived[OpqShapeHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqShapeHolder]")
 
   test("providing the instance the error asks for makes the same shape compile"):
-    assert(Describe[OpqPlantHolder].describe(OpqPlantHolder(OpqFern("f")))(using
+    assert(PrettyPrintable[OpqPlantHolder].describe(OpqPlantHolder(OpqFern("f")))(using
       singleLine) == "OpqPlantHolder(plant = PLANT)")
 
   test("excluding the field also makes the same shape compile, because the value is never read"):
     assert(
-      Describe[OpqExcludedAnimalHolder].describe(OpqExcludedAnimalHolder(OpqDog("s3cret", "rex"), "kennel"))(using
-        singleLine) == "OpqExcludedAnimalHolder(name = \"kennel\")"
+      PrettyPrintable[OpqExcludedAnimalHolder].describe(OpqExcludedAnimalHolder(
+        OpqDog("s3cret", "rex"),
+        "kennel",
+      ))(using singleLine) == "OpqExcludedAnimalHolder(name = \"kennel\")"
     )
 
   test("a field typed as an intersection is refused, because no runtime class is pinned down"):
-    assertDoesNotCompile("Describe.derived[OpqIntersectionHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqIntersectionHolder]")
 
   test("a field typed as a union is refused, because no runtime class is pinned down"):
-    assertDoesNotCompile("Describe.derived[OpqUnionHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqUnionHolder]")
 
   test("a field typed as a refinement is refused whenever its refined parent is"):
-    assertDoesNotCompile("Describe.derived[OpqRefinementHolder]")
+    assertDoesNotCompile("PrettyPrintable.derived[OpqRefinementHolder]")
 
   // assertDoesNotCompile alone would also pass if the shape failed for some unrelated reason, which would leave the
   // leak un-pinned. These assert the refusal is the fail-closed one, so the gate is what is being tested.
   test("the intersection refusal is the fail closed one, not an unrelated compile error"):
-    val errors = typeCheckErrors("Describe.derived[OpqIntersectionHolder]")
+    val errors = typeCheckErrors("PrettyPrintable.derived[OpqIntersectionHolder]")
     assert(errors.exists(error => error.message.contains("the declared type is abstract")))
 
   test("the union refusal is the fail closed one, not an unrelated compile error"):
-    val errors = typeCheckErrors("Describe.derived[OpqUnionHolder]")
+    val errors = typeCheckErrors("PrettyPrintable.derived[OpqUnionHolder]")
     assert(errors.exists(error => error.message.contains("the declared type is abstract")))
 
   test("the refinement refusal is the fail closed one, not an unrelated compile error"):
-    val errors = typeCheckErrors("Describe.derived[OpqRefinementHolder]")
+    val errors = typeCheckErrors("PrettyPrintable.derived[OpqRefinementHolder]")
     assert(errors.exists(error => error.message.contains("the declared type is abstract")))
 
   test("a concrete final class is still rendered by its own toString"):
     assert(
-      Describe[OpqConcreteHolder]
+      PrettyPrintable[OpqConcreteHolder]
         .describe(OpqConcreteHolder(LocalDate.parse("2023-01-01"), RuntimeException("boom")))(using singleLine) ==
         "OpqConcreteHolder(day = 2023-01-01, error = java.lang.RuntimeException: boom)"
     )

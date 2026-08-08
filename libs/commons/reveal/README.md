@@ -99,7 +99,7 @@ final case class Account(
     @Redacted password: String,
     @Excluded internal: String,
     roles:              List[String],
-) derives Describe
+) derives PrettyPrintable
 
 given Configuration = Configuration()
 
@@ -137,7 +137,7 @@ Resolved once per field at expansion time, first match wins:
 3. otherwise → the field renders **normally**
 
 ```scala
-final case class T(@Redacted @Excluded both: String, tag: String) derives Describe
+final case class T(@Redacted @Excluded both: String, tag: String) derives PrettyPrintable
 // T(tag = "t")   — omitted, not redacted. Source order of the two annotations is irrelevant.
 ```
 
@@ -152,8 +152,8 @@ When a field carries several `@Redacted`, the one written **first** wins.
 This is the property a hand-written `toString` loses, and the reason this library exists:
 
 ```scala
-final case class Inner(@Redacted secret: String) derives Describe
-final case class Outer(inner: Inner, xs: List[Inner], o: Option[Inner]) derives Describe
+final case class Inner(@Redacted secret: String) derives PrettyPrintable
+final case class Outer(inner: Inner, xs: List[Inner], o: Option[Inner]) derives PrettyPrintable
 
 Outer(Inner("s"), List(Inner("s")), Some(Inner("s"))).asString
 // Outer(inner = Inner(secret = <redacted>), xs = [Inner(secret = <redacted>)], o = Some(Inner(secret = <redacted>)))
@@ -260,10 +260,10 @@ opt:   Option = Some("v")      ✅   not  opt: Some
 
 ## 🧬 Ways to derive
 
-### `derives Describe` — recommended
+### `derives PrettyPrintable` — recommended
 
 ```scala
-final case class Order(id: Long, total: BigDecimal) derives Describe
+final case class Order(id: Long, total: BigDecimal) derives PrettyPrintable
 
 Order(1L, BigDecimal("9.99")).asString
 ```
@@ -277,20 +277,20 @@ given Configuration = Configuration(multiline = true)
 order.asString
 
 // or pass one explicitly
-summon[Describe[Order]].describe(order)(using Configuration(useTypeNames = true))
+summon[PrettyPrintable[Order]].describe(order)(using Configuration(useTypeNames = true))
 ```
 
 ### `AutoToString` — replace `toString` itself
 
 ```scala
-final case class Order(id: Long) extends AutoToString derives Describe
+final case class Order(id: Long) extends AutoToString derives PrettyPrintable
 object Order:
   given Configuration = Configuration()
 
 println(Order(1L))   // Order(id = 1)
 ```
 
-The mixin's members are prefixed (`revealDescribe`, `revealConfiguration`) precisely so they can never
+The mixin's members are prefixed (`revealPrettyPrintable`, `revealConfiguration`) precisely so they can never
 collide with your own field names — a case class with fields called `p` and `c` still compiles.
 
 > [!NOTE]
@@ -304,7 +304,7 @@ final case class Order(id: Long):
   override def toString: String = ToString.derived(this)
 ```
 
-It renders in place without materialising an instance. Prefer `derives Describe` in new code: an
+It renders in place without materialising an instance. Prefer `derives PrettyPrintable` in new code: an
 instance composes, a rendered string does not.
 
 ### Bring your own instance 🔧
@@ -313,7 +313,7 @@ A user-supplied `given` always wins over structural inlining — including for c
 types:
 
 ```scala
-given Describe[Money] with
+given PrettyPrintable[Money] with
   def describe(m: Money)(using Configuration): String = s"${m.amount} ${m.currency}"
 ```
 
@@ -331,7 +331,7 @@ There is no `productElementNames` walk, no per-call `Map`, and no reflection.
 **Resolution order for a field's type:**
 
 1. the instance being derived, if the field is the root type itself
-2. a user-supplied `given Describe[T]` in scope 🥇
+2. a user-supplied `given PrettyPrintable[T]` in scope 🥇
 3. a built-in shape — `String`, `Char`, primitives, `Option`, collections, `Map`, `Array`, `java.util.*`
 4. a sealed family, enum, case object or value class → **expanded structurally**
 5. an abstractly-typed field → **compile error** (see below)
@@ -341,19 +341,19 @@ There is no `productElementNames` walk, no per-call `Map`, and no reflection.
 ### 🪆 Nested case classes are not unrolled
 
 This is the design decision that shapes everything else. A case class is expanded structurally in exactly
-two positions: **at the root**, where you wrote `derives Describe`, and **as a branch of a sealed family**,
+two positions: **at the root**, where you wrote `derives PrettyPrintable`, and **as a branch of a sealed family**,
 which has no instance of its own to delegate to.
 
 Anywhere else, a case-class-typed field is an ordinary typeclass dependency. It earns structured rendering
-by carrying its own `derives Describe`; without one it renders the way Scala already renders it.
+by carrying its own `derives PrettyPrintable`; without one it renders the way Scala already renders it.
 
 **Tuples are the exception**, because they are anonymous containers rather than domain types — you cannot
-write `derives Describe` on `Tuple2`, so delegating would strip their structure permanently *and* bypass the
+write `derives PrettyPrintable` on `Tuple2`, so delegating would strip their structure permanently *and* bypass the
 instances of the elements inside them. Tuples are expanded wherever they appear, like the collections they
 resemble, and their elements go back through the normal resolution:
 
 ```scala
-final case class Holder(p: (Int, Inner)) derives Describe
+final case class Holder(p: (Int, Inner)) derives PrettyPrintable
 // Holder(p = Tuple2(_1 = 1, _2 = Inner(a = 1)))    <- Inner's own instance still applies
 ```
 
@@ -363,10 +363,10 @@ does not.
 
 ```scala
 final case class Inner(a: Int, s: String)                    // no instance
-final case class Outer(i: Inner) derives Describe
+final case class Outer(i: Inner) derives PrettyPrintable
 Outer(Inner(1, "v")).asString                                // Outer(i = Inner(1,v))     <- Inner's own toString
 
-final case class Inner(a: Int, s: String) derives Describe   // has one
+final case class Inner(a: Int, s: String) derives PrettyPrintable   // has one
 Outer(Inner(1, "v")).asString                                // Outer(i = Inner(a = 1, s = "v"))
 ```
 
@@ -379,7 +379,7 @@ classes keep their structural treatment, because for those inlining is the whole
 > One exception, and it is a compile error rather than a surprise. A nested case class that declares
 > `@Redacted` or `@Excluded` but has **no instance** is refused: delegating *that* to `toString` would print
 > exactly what the annotation exists to hide. The error names the field and tells you to add
-> `derives Describe` to it.
+> `derives PrettyPrintable` to it.
 
 ### 🛡️ Fail closed
 
@@ -389,7 +389,7 @@ it via `toString` would print that secret in the clear. The macro refuses rather
 error names the type and tells you how to fix it:
 
 ```scala
-given Describe[ThatType] = ...   // teach it the type, or
+given PrettyPrintable[ThatType] = ...   // teach it the type, or
 @Excluded thatField: ThatType    // exclude the field — its value is then never read
 ```
 
@@ -401,13 +401,13 @@ given Describe[ThatType] = ...   // teach it the type, or
 | :-- | :-- |
 | 🔁 **Nesting: 12 types** | only the shapes that still expand — sealed families, value classes, wrapper chains. Plain nested case classes do not nest at all |
 | 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Binds first: a sealed chain refuses at 11 levels |
-| 🧊 **Generic case classes** | `Box[A] derives Describe` compiles, but summoning it at `Box[Int]` needs a `given Describe[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-reveal-vs-describo) |
+| 🧊 **Generic case classes** | `Box[A] derives PrettyPrintable` compiles, but summoning it at `Box[Int]` needs a `given PrettyPrintable[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-reveal-vs-describo) |
 | 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
 Both nesting caps produce a **refusal with a remedy**, never a `StackOverflowError` in your build. The
 layer cap is a measured floor, not a derivation; the procedure to re-derive it is documented next to the
-constant in `DescribeMacro.scala`.
+constant in `PrettyPrintableMacro.scala`.
 
 ---
 
@@ -425,7 +425,7 @@ its own behaviour in its own tests.
 | Nested case class, no instance | plain `toString`; never unrolled into the parent | auto-derived |
 | Generic case class | needs a `given` for the type argument | ✅ derives unaided |
 | Enum case, qualified name | `com.example.Colour.Red` | `com.example.Red` — Magnolia's `TypeInfo` reports the package |
-| Extension point | `given Describe[T]` | `given Printable[T]`, or one of four factories |
+| Extension point | `given PrettyPrintable[T]` | `given PrettyPrintable[T]`, or one of four factories |
 | Failure at the edges | compile-time refusal at its nesting caps | `StackOverflowError` at render time |
 
 **Choose `reveal`** when you cannot take the magnolia dependency, or when you want a derivation whose

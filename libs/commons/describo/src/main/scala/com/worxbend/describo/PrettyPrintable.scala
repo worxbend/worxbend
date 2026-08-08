@@ -19,7 +19,7 @@ import magnolia1.*
   * The instance carries the declared type of the value it renders ([[printedType]]). Field types are therefore printed
   * without ever dereferencing the field, which is what makes redacted, excluded and `null` fields safe.
   */
-trait Printable[T]:
+trait PrettyPrintable[T]:
 
   /** The declared type of `T`, as it should be printed. */
   def printedType: PrintedType
@@ -30,9 +30,9 @@ trait Printable[T]:
         using configuration: Configuration = Configuration.default
     ): String
 
-trait GenericPrint extends AutoDerivation[Printable]:
+trait GenericPrint extends AutoDerivation[PrettyPrintable]:
 
-  override def join[T](ctx: CaseClass[Typeclass, T]): Printable[T] =
+  override def join[T](ctx: CaseClass[Typeclass, T]): PrettyPrintable[T] =
     val tpe: PrintedType = PrintedType(ctx.typeInfo.short, ctx.typeInfo.full.stripSuffix("$"))
 
     // Annotation scanning is configuration-independent, so it happens once per typeclass instance rather than once per
@@ -40,7 +40,7 @@ trait GenericPrint extends AutoDerivation[Printable]:
     val plan: Vector[(CaseClass.Param[Typeclass, T], FieldRule)] =
       ctx.params.iterator.map(param => (param, FieldRule.of(param.annotations))).toVector
 
-    new Printable[T]:
+    new PrettyPrintable[T]:
 
       override val printedType: PrintedType = tpe
 
@@ -69,10 +69,10 @@ trait GenericPrint extends AutoDerivation[Printable]:
             case FieldRule.Render              =>
               Vector(field(param, Rendering.value(param.deref(value))(using param.typeclass)))
 
-  override def split[T](ctx: SealedTrait[Typeclass, T]): Printable[T] =
+  override def split[T](ctx: SealedTrait[Typeclass, T]): PrettyPrintable[T] =
     val tpe: PrintedType = PrintedType(ctx.typeInfo.short, ctx.typeInfo.full.stripSuffix("$"))
 
-    new Printable[T]:
+    new PrettyPrintable[T]:
 
       override val printedType: PrintedType = tpe
 
@@ -116,16 +116,16 @@ trait GenericPrint extends AutoDerivation[Printable]:
 /** The built-in instances, and the four factories for writing your own.
   *
   * The typeclass is invariant, so only the exact declared type of a field resolves. A field of a collection type
-  * without a built-in instance needs one of its own; [[Printable.instance]], [[Printable.collection]],
-  * [[Printable.mapping]] and [[Printable.valueClass]] exist so that writing one is a one-liner that inherits this
+  * without a built-in instance needs one of its own; [[PrettyPrintable.instance]], [[PrettyPrintable.collection]],
+  * [[PrettyPrintable.mapping]] and [[PrettyPrintable.valueClass]] exist so that writing one is a one-liner that inherits this
   * module's escaping, `null` handling and element separator instead of re-implementing them.
   */
-object Printable extends GenericPrint:
+object PrettyPrintable extends GenericPrint:
 
   /** Instance for a type rendered by a plain function of the value, independently of the configuration.
     *
     * {{{
-    * given Printable[java.util.UUID] = Printable.instance("UUID", "java.util.UUID")(_.toString)
+    * given PrettyPrintable[java.util.UUID] = PrettyPrintable.instance("UUID", "java.util.UUID")(_.toString)
     * }}}
     *
     * The rendered string is used verbatim, so a type that should appear quoted has to quote itself.
@@ -138,14 +138,14 @@ object Printable extends GenericPrint:
   def instance[T](
       simpleName: String,
       qualifiedName: String,
-  )(render: T => String): Printable[T] =
+  )(render: T => String): PrettyPrintable[T] =
     configured[T](PrintedType(simpleName, qualifiedName))((x, _) => render(x))
 
   /** Instance for a container rendered as `[a, b, c]`, with the elements rendered by their own instance.
     *
     * {{{
-    * given Printable[java.util.ArrayDeque[String]] =
-    *   Printable.collection("ArrayDeque", "java.util.ArrayDeque")(_.iterator.asScala)
+    * given PrettyPrintable[java.util.ArrayDeque[String]] =
+    *   PrettyPrintable.collection("ArrayDeque", "java.util.ArrayDeque")(_.iterator.asScala)
     * }}}
     *
     * @param elements
@@ -154,15 +154,15 @@ object Printable extends GenericPrint:
   def collection[C, T](
       simpleName: String,
       qualifiedName: String,
-  )(elements: C => Iterator[T])(using printableT: Printable[T]): Printable[C] =
+  )(elements: C => Iterator[T])(using printableT: PrettyPrintable[T]): PrettyPrintable[C] =
     configured[C](PrintedType(simpleName, qualifiedName)): (x, conf) =>
       Rendering.elements(elements(x))(using printableT)(using conf)
 
   /** Instance for a container rendered as `[k -> v]`, with keys and values rendered by their own instances.
     *
     * {{{
-    * given Printable[java.util.TreeMap[String, Int]] =
-    *   Printable.mapping("TreeMap", "java.util.TreeMap")(_.asScala.iterator)
+    * given PrettyPrintable[java.util.TreeMap[String, Int]] =
+    *   PrettyPrintable.mapping("TreeMap", "java.util.TreeMap")(_.asScala.iterator)
     * }}}
     *
     * @param entries
@@ -171,19 +171,19 @@ object Printable extends GenericPrint:
   def mapping[C, K, V](
       simpleName: String,
       qualifiedName: String,
-  )(entries: C => Iterator[(K, V)])(using keyP: Printable[K], valueP: Printable[V]): Printable[C] =
+  )(entries: C => Iterator[(K, V)])(using keyP: PrettyPrintable[K], valueP: PrettyPrintable[V]): PrettyPrintable[C] =
     configured[C](PrintedType(simpleName, qualifiedName)): (x, conf) =>
       Rendering.entries(entries(x))(using keyP, valueP)(using conf)
 
   /** Instance for a value class, rendered as its payload but named after the wrapper.
     *
-    * Scala 3 synthesises no `Mirror` for a value class, so `derives Printable` cannot be used on one — Magnolia never
+    * Scala 3 synthesises no `Mirror` for a value class, so `derives PrettyPrintable` cannot be used on one — Magnolia never
     * sees it. This is the supported way to give a value class an instance:
     *
     * {{{
     * final case class UserId(value: String) extends AnyVal
     * object UserId:
-    *   given Printable[UserId] = Printable.valueClass("UserId", "com.example.UserId")(_.value)
+    *   given PrettyPrintable[UserId] = PrettyPrintable.valueClass("UserId", "com.example.UserId")(_.value)
     * }}}
     *
     * @param simpleName
@@ -196,14 +196,14 @@ object Printable extends GenericPrint:
   def valueClass[W, U](
       simpleName: String,
       qualifiedName: String,
-  )(unwrap: W => U)(using printableU: Printable[U]): Printable[W] =
+  )(unwrap: W => U)(using printableU: PrettyPrintable[U]): PrettyPrintable[W] =
     configured[W](PrintedType(simpleName, qualifiedName)): (x, conf) =>
       Rendering.value(unwrap(x))(using printableU)(using conf)
 
   private def configured[T](
       tpe: PrintedType
-  )(render: (T, Configuration) => String): Printable[T] =
-    new Printable[T]:
+  )(render: (T, Configuration) => String): PrettyPrintable[T] =
+    new PrettyPrintable[T]:
 
       override val printedType: PrintedType = tpe
 
@@ -216,94 +216,96 @@ object Printable extends GenericPrint:
   private def quotedChar(x: Char): String =
     s"'${Rendering.escaped(x.toString).replace("'", "\\'")}'"
 
-  given string: Printable[String] =
+  given string: PrettyPrintable[String] =
     instance[String]("String", "java.lang.String")(x => s"\"${Rendering.escaped(x)}\"")
 
-  given char: Printable[Char] = instance[Char]("Char", "scala.Char")(quotedChar)
+  given char: PrettyPrintable[Char] = instance[Char]("Char", "scala.Char")(quotedChar)
 
-  given int: Printable[Int]     = instance[Int]("Int", "scala.Int")(_.toString)
-  given long: Printable[Long]   = instance[Long]("Long", "scala.Long")(_.toString)
-  given short: Printable[Short] = instance[Short]("Short", "scala.Short")(_.toString)
-  given byte: Printable[Byte]   = instance[Byte]("Byte", "scala.Byte")(_.toString)
+  given int: PrettyPrintable[Int]     = instance[Int]("Int", "scala.Int")(_.toString)
+  given long: PrettyPrintable[Long]   = instance[Long]("Long", "scala.Long")(_.toString)
+  given short: PrettyPrintable[Short] = instance[Short]("Short", "scala.Short")(_.toString)
+  given byte: PrettyPrintable[Byte]   = instance[Byte]("Byte", "scala.Byte")(_.toString)
 
-  given double: Printable[Double]   = instance[Double]("Double", "scala.Double")(_.toString)
-  given float: Printable[Float]     = instance[Float]("Float", "scala.Float")(_.toString)
-  given boolean: Printable[Boolean] = instance[Boolean]("Boolean", "scala.Boolean")(_.toString)
+  given double: PrettyPrintable[Double]   = instance[Double]("Double", "scala.Double")(_.toString)
+  given float: PrettyPrintable[Float]     = instance[Float]("Float", "scala.Float")(_.toString)
+  given boolean: PrettyPrintable[Boolean] = instance[Boolean]("Boolean", "scala.Boolean")(_.toString)
 
-  given bigInt: Printable[BigInt]         = instance[BigInt]("BigInt", "scala.math.BigInt")(_.toString)
-  given bigDecimal: Printable[BigDecimal] = instance[BigDecimal]("BigDecimal", "scala.math.BigDecimal")(_.toString)
+  given bigInt: PrettyPrintable[BigInt]         = instance[BigInt]("BigInt", "scala.math.BigInt")(_.toString)
 
-  given javaInteger: Printable[java.lang.Integer] =
+  given bigDecimal: PrettyPrintable[BigDecimal] =
+    instance[BigDecimal]("BigDecimal", "scala.math.BigDecimal")(_.toString)
+
+  given javaInteger: PrettyPrintable[java.lang.Integer] =
     instance[java.lang.Integer]("Integer", "java.lang.Integer")(_.toString)
 
-  given javaCharacter: Printable[java.lang.Character] =
+  given javaCharacter: PrettyPrintable[java.lang.Character] =
     instance[java.lang.Character]("Character", "java.lang.Character")(x => quotedChar(x.charValue))
 
-  given localDate: Printable[LocalDate] = instance[LocalDate]("LocalDate", "java.time.LocalDate")(_.toString)
-  given localTime: Printable[LocalTime] = instance[LocalTime]("LocalTime", "java.time.LocalTime")(_.toString)
-  given instant: Printable[Instant]     = instance[Instant]("Instant", "java.time.Instant")(_.toString)
-  given duration: Printable[Duration]   = instance[Duration]("Duration", "java.time.Duration")(_.toString)
-  given period: Printable[Period]       = instance[Period]("Period", "java.time.Period")(_.toString)
+  given localDate: PrettyPrintable[LocalDate] = instance[LocalDate]("LocalDate", "java.time.LocalDate")(_.toString)
+  given localTime: PrettyPrintable[LocalTime] = instance[LocalTime]("LocalTime", "java.time.LocalTime")(_.toString)
+  given instant: PrettyPrintable[Instant]     = instance[Instant]("Instant", "java.time.Instant")(_.toString)
+  given duration: PrettyPrintable[Duration]   = instance[Duration]("Duration", "java.time.Duration")(_.toString)
+  given period: PrettyPrintable[Period]       = instance[Period]("Period", "java.time.Period")(_.toString)
 
-  given zonedDateTime: Printable[ZonedDateTime] =
+  given zonedDateTime: PrettyPrintable[ZonedDateTime] =
     instance[ZonedDateTime]("ZonedDateTime", "java.time.ZonedDateTime")(_.toString)
 
-  given offsetDateTime: Printable[OffsetDateTime] =
+  given offsetDateTime: PrettyPrintable[OffsetDateTime] =
     instance[OffsetDateTime]("OffsetDateTime", "java.time.OffsetDateTime")(_.toString)
 
-  given offsetTime: Printable[OffsetTime] = instance[OffsetTime]("OffsetTime", "java.time.OffsetTime")(_.toString)
+  given offsetTime: PrettyPrintable[OffsetTime] = instance[OffsetTime]("OffsetTime", "java.time.OffsetTime")(_.toString)
 
   // The typeclass stays invariant on purpose. Contravariance would let a single Iterable instance serve List, Set and
   // Vector, but it collides with Magnolia's AutoDerivation for types that also have a Mirror. Invariance is what
   // guarantees that a `List[String]` field picks `list` and not `iterable`, so the bodies are shared through the
   // factories above instead of through the variance annotation.
 
-  given iterable[T](using Printable[T]): Printable[Iterable[T]] =
+  given iterable[T](using PrettyPrintable[T]): PrettyPrintable[Iterable[T]] =
     collection[Iterable[T], T]("Iterable", "scala.collection.Iterable")(_.iterator)
 
-  given seq[T](using Printable[T]): Printable[Seq[T]] =
+  given seq[T](using PrettyPrintable[T]): PrettyPrintable[Seq[T]] =
     collection[Seq[T], T]("Seq", "scala.collection.immutable.Seq")(_.iterator)
 
-  given indexedSeq[T](using Printable[T]): Printable[IndexedSeq[T]] =
+  given indexedSeq[T](using PrettyPrintable[T]): PrettyPrintable[IndexedSeq[T]] =
     collection[IndexedSeq[T], T]("IndexedSeq", "scala.collection.immutable.IndexedSeq")(_.iterator)
 
-  given list[T](using Printable[T]): Printable[List[T]] =
+  given list[T](using PrettyPrintable[T]): PrettyPrintable[List[T]] =
     collection[List[T], T]("List", "scala.collection.immutable.List")(_.iterator)
 
-  given vector[T](using Printable[T]): Printable[Vector[T]] =
+  given vector[T](using PrettyPrintable[T]): PrettyPrintable[Vector[T]] =
     collection[Vector[T], T]("Vector", "scala.collection.immutable.Vector")(_.iterator)
 
-  given set[T](using Printable[T]): Printable[Set[T]] =
+  given set[T](using PrettyPrintable[T]): PrettyPrintable[Set[T]] =
     collection[Set[T], T]("Set", "scala.collection.immutable.Set")(_.iterator)
 
-  given array[T](using Printable[T]): Printable[Array[T]] =
+  given array[T](using PrettyPrintable[T]): PrettyPrintable[Array[T]] =
     collection[Array[T], T]("Array", "scala.Array")(_.iterator)
 
-  given javaList[T](using Printable[T]): Printable[java.util.List[T]] =
+  given javaList[T](using PrettyPrintable[T]): PrettyPrintable[java.util.List[T]] =
     collection[java.util.List[T], T]("List", "java.util.List")(_.asScala.iterator)
 
-  given javaArrayList[T](using Printable[T]): Printable[java.util.ArrayList[T]] =
+  given javaArrayList[T](using PrettyPrintable[T]): PrettyPrintable[java.util.ArrayList[T]] =
     collection[java.util.ArrayList[T], T]("ArrayList", "java.util.ArrayList")(_.asScala.iterator)
 
-  given javaLinkedList[T](using Printable[T]): Printable[java.util.LinkedList[T]] =
+  given javaLinkedList[T](using PrettyPrintable[T]): PrettyPrintable[java.util.LinkedList[T]] =
     collection[java.util.LinkedList[T], T]("LinkedList", "java.util.LinkedList")(_.asScala.iterator)
 
-  given javaSet[T](using Printable[T]): Printable[java.util.Set[T]] =
+  given javaSet[T](using PrettyPrintable[T]): PrettyPrintable[java.util.Set[T]] =
     collection[java.util.Set[T], T]("Set", "java.util.Set")(_.asScala.iterator)
 
-  given javaHashSet[T](using Printable[T]): Printable[java.util.HashSet[T]] =
+  given javaHashSet[T](using PrettyPrintable[T]): PrettyPrintable[java.util.HashSet[T]] =
     collection[java.util.HashSet[T], T]("HashSet", "java.util.HashSet")(_.asScala.iterator)
 
-  given map[K, V](using Printable[K], Printable[V]): Printable[Map[K, V]] =
+  given map[K, V](using PrettyPrintable[K], PrettyPrintable[V]): PrettyPrintable[Map[K, V]] =
     mapping[Map[K, V], K, V]("Map", "scala.collection.immutable.Map")(_.iterator)
 
-  given javaMap[K, V](using Printable[K], Printable[V]): Printable[java.util.Map[K, V]] =
+  given javaMap[K, V](using PrettyPrintable[K], PrettyPrintable[V]): PrettyPrintable[java.util.Map[K, V]] =
     mapping[java.util.Map[K, V], K, V]("Map", "java.util.Map")(_.asScala.iterator)
 
-  given javaHashMap[K, V](using Printable[K], Printable[V]): Printable[java.util.HashMap[K, V]] =
+  given javaHashMap[K, V](using PrettyPrintable[K], PrettyPrintable[V]): PrettyPrintable[java.util.HashMap[K, V]] =
     mapping[java.util.HashMap[K, V], K, V]("HashMap", "java.util.HashMap")(_.asScala.iterator)
 
-  given option[T](using printableT: Printable[T]): Printable[Option[T]] =
+  given option[T](using printableT: PrettyPrintable[T]): PrettyPrintable[Option[T]] =
     configured[Option[T]](PrintedType("Option", "scala.Option")): (x, conf) =>
       x match
         case Some(payload) => s"Some(${Rendering.value(payload)(using printableT)(using conf)})"

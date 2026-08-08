@@ -2,7 +2,7 @@ package com.worxbend.reveal
 
 /** Runtime support for macro-generated code.
   *
-  * This object is public only because the code emitted by [[Describe.derived]] and [[ToString.derived]] refers to it
+  * This object is public only because the code emitted by [[PrettyPrintable.derived]] and [[ToString.derived]] refers to it
   * from the user's compilation unit. It is not part of the intended user-facing API and carries no compatibility
   * promise beyond what the macro needs. Members the emitted code never names are narrowed accordingly: helpers used
   * only from inside this object are `private`, and helpers evaluated at macro-expansion time are `private[reveal]`.
@@ -81,7 +81,7 @@ object Rendering:
     if value == null then NullLiteral else render(value)
 
   /** Delegates to an existing instance, null-safely. */
-  def nested[A](value: A, instance: Describe[A], conf: Configuration): String =
+  def nested[A](value: A, instance: PrettyPrintable[A], conf: Configuration): String =
     if value == null then NullLiteral else instance.describe(value)(using conf)
 
   /** Renders an `Option`; a `null` `Option` reference renders as `null`, not as `None`. */

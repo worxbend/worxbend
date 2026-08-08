@@ -25,15 +25,16 @@ private object Rendering:
   /** Renders a value through its typeclass, short-circuiting `null` to the bare `null` literal. The explicit branch is
     * what makes the null / redaction / omission ordering auditable.
     */
-  def value[A](element: A)(using printable: Printable[A])(using Configuration): String =
+  def value[A](element: A)(using printable: PrettyPrintable[A])(using Configuration): String =
     if element == null then nullLiteral else printable.asString(element)
 
   /** `[a, b, c]` over an already-null-checked container. */
-  def elements[A](iterator: Iterator[A])(using Printable[A])(using Configuration): String =
+  def elements[A](iterator: Iterator[A])(using PrettyPrintable[A])(using Configuration): String =
     iterator.map(element => value(element)).mkString("[", elementSeparator, "]")
 
   /** `[k -> v]` over an already-null-checked container. */
-  def entries[K, V](iterator: Iterator[(K, V)])(using Printable[K], Printable[V])(using Configuration): String =
+  def entries[K, V](iterator: Iterator[(K, V)])(using PrettyPrintable[K], PrettyPrintable[V])(using
+      Configuration): String =
     iterator
       .map((key, entryValue) => s"${value(key)} -> ${value(entryValue)}")
       .mkString("[", elementSeparator, "]")

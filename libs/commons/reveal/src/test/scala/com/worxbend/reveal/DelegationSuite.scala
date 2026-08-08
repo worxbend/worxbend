@@ -8,7 +8,7 @@ import scala.compiletime.testing.typeCheckErrors
 import org.scalatest.funsuite.AnyFunSuite
 
 // A nested case class that carries its own instance: rendered structurally, through that instance.
-final case class DelInstanced(a: Int, s: String) derives Describe
+final case class DelInstanced(a: Int, s: String) derives PrettyPrintable
 
 // The same shape without one: rendered by its own toString, not unrolled into whoever holds it.
 final case class DelPlain(a: Int, s: String)
@@ -18,20 +18,20 @@ final case class DelSecret(@Redacted token: String, tag: String)
 
 final case class DelExcluding(@Excluded hidden: String, tag: String)
 
-final case class DelHoldsInstanced(inner: DelInstanced) derives Describe
-final case class DelHoldsPlain(inner: DelPlain) derives Describe
-final case class DelHoldsPlainList(inner: List[DelPlain]) derives Describe
-final case class DelHoldsPlainOption(inner: Option[DelPlain]) derives Describe
+final case class DelHoldsInstanced(inner: DelInstanced) derives PrettyPrintable
+final case class DelHoldsPlain(inner: DelPlain) derives PrettyPrintable
+final case class DelHoldsPlainList(inner: List[DelPlain]) derives PrettyPrintable
+final case class DelHoldsPlainOption(inner: Option[DelPlain]) derives PrettyPrintable
 
 final case class DelId(raw: Long) extends AnyVal
-final case class DelHoldsValueClass(id: DelId) derives Describe
+final case class DelHoldsValueClass(id: DelId) derives PrettyPrintable
 
-enum DelColour derives Describe:
+enum DelColour derives PrettyPrintable:
 
   case Red
   case Sized(n: Int, label: String)
 
-final case class DelHoldsEnum(c: DelColour) derives Describe
+final case class DelHoldsEnum(c: DelColour) derives PrettyPrintable
 
 /** The delegation contract: what this macro expands, and what it hands to `toString`.
   *
@@ -44,7 +44,7 @@ final class DelegationSuite extends AnyFunSuite:
 
   private given Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private def show[A](a: A)(using d: Describe[A]): String = d.describe(a)
+  private def show[A](a: A)(using d: PrettyPrintable[A]): String = d.describe(a)
 
   test("a nested case class with its own instance renders structurally"):
     assert(show(DelHoldsInstanced(DelInstanced(
@@ -62,60 +62,62 @@ final class DelegationSuite extends AnyFunSuite:
     assert(show(DelHoldsPlainOption(Some(DelPlain(1, "v")))) == "DelHoldsPlainOption(inner = Some(DelPlain(1,v)))")
 
   test("giving the nested type an instance is all it takes to get structure back"):
-    given Describe[DelPlain] = Describe.derived[DelPlain]
-    assert(Describe.derived[DelHoldsPlain].describe(DelHoldsPlain(DelPlain(
+    given PrettyPrintable[DelPlain] = PrettyPrintable.derived[DelPlain]
+    assert(PrettyPrintable.derived[DelHoldsPlain].describe(DelHoldsPlain(DelPlain(
       1,
       "v",
     ))) == """DelHoldsPlain(inner = DelPlain(a = 1, s = "v"))""")
 
   // The one case where delegating to toString would defeat the library's purpose, so it is a compile error instead.
   test("a nested case class with @Redacted and no instance is refused"):
-    val errors = typeCheckErrors("Describe.derived[DelHoldsSecret]").map(_.message)
+    val errors = typeCheckErrors("PrettyPrintable.derived[DelHoldsSecret]").map(_.message)
     assert(errors.nonEmpty)
 
   test("the refusal names the offending field and prescribes a remedy"):
     val errors = typeCheckErrors("""
-      final case class Holder(s: DelSecret) derives Describe
+      final case class Holder(s: DelSecret) derives PrettyPrintable
     """).map(_.message)
     assert(errors.exists(_.contains("`token`")), errors.mkString("\n"))
-    assert(errors.exists(_.contains("derives Describe")), errors.mkString("\n"))
+    assert(errors.exists(_.contains("derives PrettyPrintable")), errors.mkString("\n"))
 
   test("@Excluded on a nested type without an instance is refused for the same reason"):
     val errors = typeCheckErrors("""
-      final case class Holder(s: DelExcluding) derives Describe
+      final case class Holder(s: DelExcluding) derives PrettyPrintable
     """).map(_.message)
     assert(errors.exists(_.contains("`hidden`")), errors.mkString("\n"))
 
   test("giving the redacting type an instance makes the same shape compile, and it redacts"):
-    given Describe[DelSecret] = Describe.derived[DelSecret]
-    final case class Holder(s: DelSecret) derives Describe
-    assert(Describe.derived[Holder].describe(Holder(DelSecret("hunter2", "t"))).contains("<redacted>"))
+    given PrettyPrintable[DelSecret] = PrettyPrintable.derived[DelSecret]
+    final case class Holder(s: DelSecret) derives PrettyPrintable
+    assert(PrettyPrintable.derived[Holder].describe(Holder(DelSecret("hunter2", "t"))).contains("<redacted>"))
 
   // ------------------- the guard reaches all the way down, not one level
 
   test("an unannotated intermediate hiding a redacted descendant is refused"):
-    val errors = typeCheckErrors("final case class H(m: DelDeepMiddle) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(m: DelDeepMiddle) derives PrettyPrintable").map(_.message)
     assert(errors.nonEmpty, "a redacted descendant must not reach toString")
     assert(errors.exists(_.contains("DelDeepSecret")), errors.mkString("\n"))
     assert(errors.exists(_.contains("`token`")), errors.mkString("\n"))
 
   test("a redacted descendant reached through a collection is refused too"):
-    val errors = typeCheckErrors("final case class H(m: DelDeepListMiddle) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(m: DelDeepListMiddle) derives PrettyPrintable").map(_.message)
     assert(errors.nonEmpty, "a List[Secret] behind an intermediate must not reach toString")
 
   test("an excluded descendant behind an intermediate is refused on the same grounds"):
-    val errors = typeCheckErrors("final case class H(m: DelDeepExcludingMiddle) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(m: DelDeepExcludingMiddle) derives PrettyPrintable").map(_.message)
     assert(errors.exists(_.contains("`hidden`")), errors.mkString("\n"))
 
   test("a redacted branch of a sealed family behind an intermediate is refused"):
-    val errors = typeCheckErrors("final case class H(m: DelSealedMiddle) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(m: DelSealedMiddle) derives PrettyPrintable").map(_.message)
     assert(errors.nonEmpty, "a redacting sealed branch must not reach toString")
 
   test("giving the intermediate an instance makes it compile, and the descendant is redacted"):
-    given Describe[DelDeepSecret] = Describe.derived[DelDeepSecret]
-    given Describe[DelDeepMiddle] = Describe.derived[DelDeepMiddle]
-    final case class Holder(m: DelDeepMiddle) derives Describe
-    assert(Describe.derived[Holder].describe(Holder(DelDeepMiddle(DelDeepSecret("hunter2")))).contains("<redacted>"))
+    given PrettyPrintable[DelDeepSecret] = PrettyPrintable.derived[DelDeepSecret]
+    given PrettyPrintable[DelDeepMiddle] = PrettyPrintable.derived[DelDeepMiddle]
+    final case class Holder(m: DelDeepMiddle) derives PrettyPrintable
+    assert(
+      PrettyPrintable.derived[Holder].describe(Holder(DelDeepMiddle(DelDeepSecret("hunter2")))).contains("<redacted>")
+    )
 
   test("a type with nothing annotated anywhere below it still delegates"):
     assert(show(DelHoldsPlain(DelPlain(1, "v"))) == "DelHoldsPlain(inner = DelPlain(1,v))")
@@ -124,26 +126,26 @@ final class DelegationSuite extends AnyFunSuite:
   // graph is finite. `Growth[Int]` -> `Growth[List[Int]]` -> `Growth[List[List[Int]]]` never repeats, so there is no
   // cycle to find; before the depth bound this hung the compiler outright rather than failing it.
   test("a type whose arguments grow at every step is refused instead of hanging the compiler"):
-    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives PrettyPrintable").map(_.message)
     assert(errors.nonEmpty, "an argument-growing recursive type must terminate the scan")
     assert(errors.exists(_.contains("cannot prove")), errors.mkString("\n"))
 
   test("the refusal explains that the shape is unprovable rather than annotated"):
-    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives PrettyPrintable").map(_.message)
     assert(errors.exists(_.contains("still growing")), errors.mkString("\n"))
-    assert(errors.exists(_.contains("derives Describe")), errors.mkString("\n"))
+    assert(errors.exists(_.contains("derives PrettyPrintable")), errors.mkString("\n"))
 
   test("giving the growing type an instance breaks the scan out of it"):
-    given Describe[DelGrowth[Int]] = Describe.FromFunction((v, _) => "grown")
-    final case class H(g: DelGrowth[Int]) derives Describe
-    assert(Describe.derived[H].describe(H(DelGrowth(None, "t"))) == "H(g = grown)")
+    given PrettyPrintable[DelGrowth[Int]] = PrettyPrintable.FromFunction((v, _) => "grown")
+    final case class H(g: DelGrowth[Int]) derives PrettyPrintable
+    assert(PrettyPrintable.derived[H].describe(H(DelGrowth(None, "t"))) == "H(g = grown)")
 
   test("an ordinary recursive type still scans clean, because it does cycle"):
     assert(show(DelHoldsRecursive(DelRecursive(Nil))) == "DelHoldsRecursive(r = DelRecursive(List()))")
 
   // ------------------------------- tuples are containers, not nested domain types
 
-  // A tuple is a case class, so the delegation rule would apply to it — but nobody can write `derives Describe` on
+  // A tuple is a case class, so the delegation rule would apply to it — but nobody can write `derives PrettyPrintable` on
   // Tuple2, so delegating would strip its structure permanently AND bypass the instances of its elements. Tuples are
   // therefore expanded wherever they appear, like the collections they resemble.
   test("a tuple field is expanded rather than handed to its own toString"):
@@ -157,7 +159,7 @@ final class DelegationSuite extends AnyFunSuite:
     assert(show(DelTupleOfPlain((1, DelPlain(2, "v")))) == "DelTupleOfPlain(p = Tuple2(_1 = 1, _2 = DelPlain(2,v)))")
 
   test("a tuple hiding a redacting element is refused, not printed"):
-    val errors = typeCheckErrors("final case class H(p: (String, DelSecret)) derives Describe").map(_.message)
+    val errors = typeCheckErrors("final case class H(p: (String, DelSecret)) derives PrettyPrintable").map(_.message)
     assert(errors.nonEmpty, "a redacting element inside a tuple must not reach toString")
 
   test("a three element tuple expands the same way"):
@@ -205,12 +207,12 @@ final case class DelGrowth[A](next: Option[DelGrowth[List[A]]], tag: String)
 
 // Ordinary recursion for contrast: this one does cycle, so it scans clean and delegates.
 final case class DelRecursive(children: List[DelRecursive])
-final case class DelHoldsRecursive(r: DelRecursive) derives Describe
+final case class DelHoldsRecursive(r: DelRecursive) derives PrettyPrintable
 
-final case class DelTupleHolder(p: (Int, String)) derives Describe
-final case class DelTupleOfInstanced(p: (Int, DelInstanced)) derives Describe
-final case class DelTupleOfPlain(p: (Int, DelPlain)) derives Describe
-final case class DelTriple(t: (Int, String, Boolean)) derives Describe
-final case class DelListInstanced(xs: List[DelInstanced]) derives Describe
-final case class DelListPlain(xs: List[DelPlain]) derives Describe
-final case class DelMapInstanced(m: Map[String, DelInstanced]) derives Describe
+final case class DelTupleHolder(p: (Int, String)) derives PrettyPrintable
+final case class DelTupleOfInstanced(p: (Int, DelInstanced)) derives PrettyPrintable
+final case class DelTupleOfPlain(p: (Int, DelPlain)) derives PrettyPrintable
+final case class DelTriple(t: (Int, String, Boolean)) derives PrettyPrintable
+final case class DelListInstanced(xs: List[DelInstanced]) derives PrettyPrintable
+final case class DelListPlain(xs: List[DelPlain]) derives PrettyPrintable
+final case class DelMapInstanced(m: Map[String, DelInstanced]) derives PrettyPrintable

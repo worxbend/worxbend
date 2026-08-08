@@ -4,7 +4,7 @@ import com.worxbend.reveal.annotations.Redacted
 
 import org.scalatest.funsuite.AnyFunSuite
 
-/** The mixin resolves its deferred `Describe` and `Configuration` at the class definition site, so both the fixtures
+/** The mixin resolves its deferred `PrettyPrintable` and `Configuration` at the class definition site, so both the fixtures
   * and the `given Configuration` they see live here, inside one object. Keeping the given out of the package's top
   * level is what lets the other suites prove that implicit search for a `Configuration` can still fail.
   */

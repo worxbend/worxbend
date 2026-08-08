@@ -5,9 +5,9 @@ import java.time.LocalDate
 
 import org.scalatest.funsuite.AnyFunSuite
 
-final case class ValText(text: String) derives Describe
+final case class ValText(text: String) derives PrettyPrintable
 
-final case class ValLetter(letter: Char) derives Describe
+final case class ValLetter(letter: Char) derives PrettyPrintable
 
 final case class ValNumbers(
     integer: Int,
@@ -17,58 +17,58 @@ final case class ValNumbers(
     double:  Double,
     float:   Float,
     flag:    Boolean,
-) derives Describe
+) derives PrettyPrintable
 
-final case class ValBigDecimal(amount: BigDecimal) derives Describe
+final case class ValBigDecimal(amount: BigDecimal) derives PrettyPrintable
 
-final case class ValBigInt(amount: BigInt) derives Describe
+final case class ValBigInt(amount: BigInt) derives PrettyPrintable
 
-final case class ValDates(day: LocalDate, at: Instant) derives Describe
+final case class ValDates(day: LocalDate, at: Instant) derives PrettyPrintable
 
-final case class ValList(items: List[String]) derives Describe
+final case class ValList(items: List[String]) derives PrettyPrintable
 
-final case class ValVector(items: Vector[String]) derives Describe
+final case class ValVector(items: Vector[String]) derives PrettyPrintable
 
-final case class ValSet(items: Set[String]) derives Describe
+final case class ValSet(items: Set[String]) derives PrettyPrintable
 
-final case class ValSeq(items: Seq[String]) derives Describe
+final case class ValSeq(items: Seq[String]) derives PrettyPrintable
 
-final case class ValIndexedSeq(items: IndexedSeq[String]) derives Describe
+final case class ValIndexedSeq(items: IndexedSeq[String]) derives PrettyPrintable
 
-final case class ValIterable(items: Iterable[String]) derives Describe
+final case class ValIterable(items: Iterable[String]) derives PrettyPrintable
 
-final case class ValArray(items: Array[String]) derives Describe
+final case class ValArray(items: Array[String]) derives PrettyPrintable
 
-final case class ValNestedList(items: List[List[String]]) derives Describe
+final case class ValNestedList(items: List[List[String]]) derives PrettyPrintable
 
-final case class ValMap(entries: Map[String, String]) derives Describe
+final case class ValMap(entries: Map[String, String]) derives PrettyPrintable
 
-final case class ValIntMap(entries: Map[Int, Int]) derives Describe
+final case class ValIntMap(entries: Map[Int, Int]) derives PrettyPrintable
 
-final case class ValOptionText(entry: Option[String]) derives Describe
+final case class ValOptionText(entry: Option[String]) derives PrettyPrintable
 
-final case class ValOptionList(entry: Option[List[String]]) derives Describe
+final case class ValOptionList(entry: Option[List[String]]) derives PrettyPrintable
 
-final case class ValJavaList(items: java.util.List[String]) derives Describe
+final case class ValJavaList(items: java.util.List[String]) derives PrettyPrintable
 
-final case class ValJavaArrayList(items: java.util.ArrayList[String]) derives Describe
+final case class ValJavaArrayList(items: java.util.ArrayList[String]) derives PrettyPrintable
 
-final case class ValJavaLinkedList(items: java.util.LinkedList[String]) derives Describe
+final case class ValJavaLinkedList(items: java.util.LinkedList[String]) derives PrettyPrintable
 
-final case class ValJavaSet(items: java.util.Set[String]) derives Describe
+final case class ValJavaSet(items: java.util.Set[String]) derives PrettyPrintable
 
-final case class ValJavaHashSet(items: java.util.HashSet[String]) derives Describe
+final case class ValJavaHashSet(items: java.util.HashSet[String]) derives PrettyPrintable
 
-final case class ValJavaMap(entries: java.util.Map[String, String]) derives Describe
+final case class ValJavaMap(entries: java.util.Map[String, String]) derives PrettyPrintable
 
-final case class ValJavaHashMap(entries: java.util.HashMap[String, String]) derives Describe
+final case class ValJavaHashMap(entries: java.util.HashMap[String, String]) derives PrettyPrintable
 
 /** Value-position rendering: quoting, escaping, containers and nulls. */
 final class ValueRenderingSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private def text(value: String): String = Describe[ValText].describe(ValText(value))(using singleLine)
+  private def text(value: String): String = PrettyPrintable[ValText].describe(ValText(value))(using singleLine)
 
   test("a string is quoted"):
     assert(text("plain") == "ValText(text = \"plain\")")
@@ -101,168 +101,176 @@ final class ValueRenderingSuite extends AnyFunSuite:
     assert(text(null) == "ValText(text = null)")
 
   test("a char is single quoted"):
-    assert(Describe[ValLetter].describe(ValLetter('c'))(using singleLine) == "ValLetter(letter = 'c')")
+    assert(PrettyPrintable[ValLetter].describe(ValLetter('c'))(using singleLine) == "ValLetter(letter = 'c')")
 
   test("a single quote inside a char is escaped"):
-    assert(Describe[ValLetter].describe(ValLetter('\''))(using singleLine) == "ValLetter(letter = '\\'')")
+    assert(PrettyPrintable[ValLetter].describe(ValLetter('\''))(using singleLine) == "ValLetter(letter = '\\'')")
 
   test("a newline char is escaped"):
-    assert(Describe[ValLetter].describe(ValLetter('\n'))(using singleLine) == "ValLetter(letter = '\\n')")
+    assert(PrettyPrintable[ValLetter].describe(ValLetter('\n'))(using singleLine) == "ValLetter(letter = '\\n')")
 
   test("numeric and boolean primitives render bare"):
     assert(
-      Describe[ValNumbers].describe(ValNumbers(1, 2L, 3.toShort, 4.toByte, 5.5d, 6.5f, true))(using singleLine) ==
+      PrettyPrintable[ValNumbers].describe(ValNumbers(1, 2L, 3.toShort, 4.toByte, 5.5d, 6.5f, true))(using
+        singleLine) ==
         "ValNumbers(integer = 1, long = 2, short = 3, byte = 4, double = 5.5, float = 6.5, flag = true)"
     )
 
   test("a BigDecimal keeps its scale"):
     assert(
-      Describe[ValBigDecimal].describe(ValBigDecimal(BigDecimal("1000.50")))(using singleLine) ==
+      PrettyPrintable[ValBigDecimal].describe(ValBigDecimal(BigDecimal("1000.50")))(using singleLine) ==
         "ValBigDecimal(amount = 1000.50)"
     )
 
   test("a BigInt renders bare"):
-    assert(Describe[ValBigInt].describe(ValBigInt(BigInt("42")))(using singleLine) == "ValBigInt(amount = 42)")
+    assert(PrettyPrintable[ValBigInt].describe(ValBigInt(BigInt("42")))(using singleLine) == "ValBigInt(amount = 42)")
 
   test("java.time values render through their own toString"):
     assert(
-      Describe[ValDates]
+      PrettyPrintable[ValDates]
         .describe(ValDates(LocalDate.parse("2023-01-01"), Instant.parse("2023-01-01T00:00:00Z")))(using singleLine) ==
         "ValDates(day = 2023-01-01, at = 2023-01-01T00:00:00Z)"
     )
 
   test("a List renders in brackets with quoted elements"):
-    assert(Describe[ValList].describe(ValList(List("a", "b")))(using singleLine) == "ValList(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValList].describe(ValList(List("a", "b")))(using
+      singleLine) == "ValList(items = [\"a\", \"b\"])")
 
   test("an empty List renders as empty brackets"):
-    assert(Describe[ValList].describe(ValList(Nil))(using singleLine) == "ValList(items = [])")
+    assert(PrettyPrintable[ValList].describe(ValList(Nil))(using singleLine) == "ValList(items = [])")
 
   test("a null List renders as null, not as empty brackets"):
-    assert(Describe[ValList].describe(ValList(null))(using singleLine) == "ValList(items = null)")
+    assert(PrettyPrintable[ValList].describe(ValList(null))(using singleLine) == "ValList(items = null)")
 
   test("a Vector renders in brackets"):
     assert(
-      Describe[ValVector].describe(ValVector(Vector("a", "b")))(using singleLine) == "ValVector(items = [\"a\", \"b\"])"
+      PrettyPrintable[ValVector].describe(ValVector(Vector("a", "b")))(using
+        singleLine) == "ValVector(items = [\"a\", \"b\"])"
     )
 
   test("a Set renders in brackets"):
-    assert(Describe[ValSet].describe(ValSet(Set("a", "b")))(using singleLine) == "ValSet(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValSet].describe(ValSet(Set("a", "b")))(using
+      singleLine) == "ValSet(items = [\"a\", \"b\"])")
 
   test("a Seq renders in brackets"):
-    assert(Describe[ValSeq].describe(ValSeq(Seq("a", "b")))(using singleLine) == "ValSeq(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValSeq].describe(ValSeq(Seq("a", "b")))(using
+      singleLine) == "ValSeq(items = [\"a\", \"b\"])")
 
   test("an IndexedSeq renders in brackets"):
     assert(
-      Describe[ValIndexedSeq].describe(ValIndexedSeq(IndexedSeq("a", "b")))(using singleLine) ==
+      PrettyPrintable[ValIndexedSeq].describe(ValIndexedSeq(IndexedSeq("a", "b")))(using singleLine) ==
         "ValIndexedSeq(items = [\"a\", \"b\"])"
     )
 
   test("an Iterable renders in brackets"):
     assert(
-      Describe[ValIterable].describe(ValIterable(Iterable("a", "b")))(using singleLine) ==
+      PrettyPrintable[ValIterable].describe(ValIterable(Iterable("a", "b")))(using singleLine) ==
         "ValIterable(items = [\"a\", \"b\"])"
     )
 
   test("an Array renders in brackets"):
     assert(
-      Describe[ValArray].describe(ValArray(Array("a", "b")))(using singleLine) == "ValArray(items = [\"a\", \"b\"])"
+      PrettyPrintable[ValArray].describe(ValArray(Array("a", "b")))(using
+        singleLine) == "ValArray(items = [\"a\", \"b\"])"
     )
 
   test("a null Array renders as null"):
-    assert(Describe[ValArray].describe(ValArray(null))(using singleLine) == "ValArray(items = null)")
+    assert(PrettyPrintable[ValArray].describe(ValArray(null))(using singleLine) == "ValArray(items = null)")
 
   test("nested collections render recursively"):
     assert(
-      Describe[ValNestedList].describe(ValNestedList(List(List("a"), List("b", "c"))))(using singleLine) ==
+      PrettyPrintable[ValNestedList].describe(ValNestedList(List(List("a"), List("b", "c"))))(using singleLine) ==
         "ValNestedList(items = [[\"a\"], [\"b\", \"c\"]])"
     )
 
   test("a Map renders as bracketed arrow entries"):
     assert(
-      Describe[ValMap].describe(ValMap(Map("key1" -> "value1", "key2" -> "value2")))(using singleLine) ==
+      PrettyPrintable[ValMap].describe(ValMap(Map("key1" -> "value1", "key2" -> "value2")))(using singleLine) ==
         "ValMap(entries = [\"key1\" -> \"value1\", \"key2\" -> \"value2\"])"
     )
 
   test("a Map with non string keys renders both sides by the value rules"):
     assert(
-      Describe[ValIntMap].describe(ValIntMap(Map(1 -> 2)))(using singleLine) == "ValIntMap(entries = [1 -> 2])"
+      PrettyPrintable[ValIntMap].describe(ValIntMap(Map(1 -> 2)))(using singleLine) == "ValIntMap(entries = [1 -> 2])"
     )
 
   test("an empty Map renders as empty brackets"):
-    assert(Describe[ValMap].describe(ValMap(Map.empty))(using singleLine) == "ValMap(entries = [])")
+    assert(PrettyPrintable[ValMap].describe(ValMap(Map.empty))(using singleLine) == "ValMap(entries = [])")
 
   test("a null Map renders as null"):
-    assert(Describe[ValMap].describe(ValMap(null))(using singleLine) == "ValMap(entries = null)")
+    assert(PrettyPrintable[ValMap].describe(ValMap(null))(using singleLine) == "ValMap(entries = null)")
 
   test("Some quotes its payload"):
     assert(
-      Describe[ValOptionText].describe(ValOptionText(Some("hi")))(using singleLine) ==
+      PrettyPrintable[ValOptionText].describe(ValOptionText(Some("hi")))(using singleLine) ==
         "ValOptionText(entry = Some(\"hi\"))"
     )
 
   test("None renders as None"):
-    assert(Describe[ValOptionText].describe(ValOptionText(None))(using singleLine) == "ValOptionText(entry = None)")
+    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(None))(using
+      singleLine) == "ValOptionText(entry = None)")
 
   test("a null Option renders as null, not as None"):
-    assert(Describe[ValOptionText].describe(ValOptionText(null))(using singleLine) == "ValOptionText(entry = null)")
+    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(null))(using
+      singleLine) == "ValOptionText(entry = null)")
 
   test("a null Option payload renders as null"):
     assert(
-      Describe[ValOptionText].describe(ValOptionText(Some(null)))(using singleLine) ==
+      PrettyPrintable[ValOptionText].describe(ValOptionText(Some(null)))(using singleLine) ==
         "ValOptionText(entry = Some(null))"
     )
 
   test("an Option of a collection renders both layers"):
     assert(
-      Describe[ValOptionList].describe(ValOptionList(Some(List("a"))))(using singleLine) ==
+      PrettyPrintable[ValOptionList].describe(ValOptionList(Some(List("a"))))(using singleLine) ==
         "ValOptionList(entry = Some([\"a\"]))"
     )
 
   test("a java.util.List renders in brackets"):
     assert(
-      Describe[ValJavaList].describe(ValJavaList(java.util.List.of("a", "b")))(using singleLine) ==
+      PrettyPrintable[ValJavaList].describe(ValJavaList(java.util.List.of("a", "b")))(using singleLine) ==
         "ValJavaList(items = [\"a\", \"b\"])"
     )
 
   test("a java.util.ArrayList renders in brackets"):
     assert(
-      Describe[ValJavaArrayList]
+      PrettyPrintable[ValJavaArrayList]
         .describe(ValJavaArrayList(java.util.ArrayList(java.util.List.of("a", "b"))))(using singleLine) ==
         "ValJavaArrayList(items = [\"a\", \"b\"])"
     )
 
   test("a java.util.LinkedList renders in brackets"):
     assert(
-      Describe[ValJavaLinkedList]
+      PrettyPrintable[ValJavaLinkedList]
         .describe(ValJavaLinkedList(java.util.LinkedList(java.util.List.of("a"))))(using singleLine) ==
         "ValJavaLinkedList(items = [\"a\"])"
     )
 
   test("a java.util.Set renders in brackets"):
     assert(
-      Describe[ValJavaSet].describe(ValJavaSet(java.util.Set.of("a")))(using singleLine) ==
+      PrettyPrintable[ValJavaSet].describe(ValJavaSet(java.util.Set.of("a")))(using singleLine) ==
         "ValJavaSet(items = [\"a\"])"
     )
 
   test("a java.util.HashSet renders in brackets"):
     assert(
-      Describe[ValJavaHashSet]
+      PrettyPrintable[ValJavaHashSet]
         .describe(ValJavaHashSet(java.util.HashSet(java.util.List.of("a"))))(using singleLine) ==
         "ValJavaHashSet(items = [\"a\"])"
     )
 
   test("a null java collection renders as null"):
-    assert(Describe[ValJavaList].describe(ValJavaList(null))(using singleLine) == "ValJavaList(items = null)")
+    assert(PrettyPrintable[ValJavaList].describe(ValJavaList(null))(using singleLine) == "ValJavaList(items = null)")
 
   test("a java.util.Map renders in the same bracket form as a Scala Map"):
     assert(
-      Describe[ValJavaMap].describe(ValJavaMap(java.util.Map.of("k", "v")))(using singleLine) ==
+      PrettyPrintable[ValJavaMap].describe(ValJavaMap(java.util.Map.of("k", "v")))(using singleLine) ==
         "ValJavaMap(entries = [\"k\" -> \"v\"])"
     )
 
   test("a java.util.HashMap renders in brackets, not in braces"):
     assert(
-      Describe[ValJavaHashMap]
+      PrettyPrintable[ValJavaHashMap]
         .describe(ValJavaHashMap(java.util.HashMap(java.util.Map.of("k", "v"))))(using singleLine) ==
         "ValJavaHashMap(entries = [\"k\" -> \"v\"])"
     )

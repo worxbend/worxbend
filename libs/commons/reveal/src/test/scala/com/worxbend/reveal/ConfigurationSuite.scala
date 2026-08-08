@@ -4,11 +4,11 @@ import com.worxbend.reveal.annotations.Excluded
 
 import org.scalatest.funsuite.AnyFunSuite
 
-final case class CfgPair(alpha: String, beta: Int) derives Describe
+final case class CfgPair(alpha: String, beta: Int) derives PrettyPrintable
 
-final case class CfgFour(a: Int, b: Int, c: Int, d: Int) derives Describe
+final case class CfgFour(a: Int, b: Int, c: Int, d: Int) derives PrettyPrintable
 
-final case class CfgFive(a: Int, b: Int, c: Int, d: Int, e: Int) derives Describe
+final case class CfgFive(a: Int, b: Int, c: Int, d: Int, e: Int) derives PrettyPrintable
 
 final case class CfgSixMostlyExcluded(
     a:           Int,
@@ -17,11 +17,11 @@ final case class CfgSixMostlyExcluded(
     d:           Int,
     @Excluded e: Int,
     @Excluded f: Int,
-) derives Describe
+) derives PrettyPrintable
 
-final case class CfgAllExcluded(@Excluded only: String) derives Describe
+final case class CfgAllExcluded(@Excluded only: String) derives PrettyPrintable
 
-final case class CfgNullable(value: String) derives Describe
+final case class CfgNullable(value: String) derives PrettyPrintable
 
 /** Every configuration flag, one flag per test, always applied explicitly rather than through a mixin. */
 final class ConfigurationSuite extends AnyFunSuite:
@@ -30,7 +30,8 @@ final class ConfigurationSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private def render(configuration: Configuration): String = Describe[CfgPair].describe(flat)(using configuration)
+  private def render(configuration: Configuration): String =
+    PrettyPrintable[CfgPair].describe(flat)(using configuration)
 
   test("useFieldNames renders names by default"):
     assert(render(singleLine) == "CfgPair(alpha = \"x\", beta = 1)")
@@ -101,7 +102,8 @@ final class ConfigurationSuite extends AnyFunSuite:
 
   test("valuePrefix and valueSuffix also wrap a null value"):
     val configuration = singleLine.copy(valuePrefix = "[", valueSuffix = "]")
-    assert(Describe[CfgNullable].describe(CfgNullable(null))(using configuration) == "CfgNullable(value = [null])")
+    assert(PrettyPrintable[CfgNullable].describe(CfgNullable(null))(using
+      configuration) == "CfgNullable(value = [null])")
 
   test("multiline forces the multiline layout below the threshold"):
     assert(render(singleLine.copy(multiline = true)) == "CfgPair(\n  alpha = \"x\",\n  beta = 1\n)")
@@ -115,40 +117,41 @@ final class ConfigurationSuite extends AnyFunSuite:
   test("multilineIfFieldsAreGreaterOrEqual triggers exactly at the threshold"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = 5)
     assert(
-      Describe[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
+      PrettyPrintable[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
         "CfgFive(\n  a = 1,\n  b = 2,\n  c = 3,\n  d = 4,\n  e = 5\n)"
     )
 
   test("multilineIfFieldsAreGreaterOrEqual leaves one field below the threshold on a single line"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = 5)
     assert(
-      Describe[CfgFour].describe(CfgFour(1, 2, 3, 4))(using configuration) == "CfgFour(a = 1, b = 2, c = 3, d = 4)"
+      PrettyPrintable[CfgFour].describe(CfgFour(1, 2, 3, 4))(using
+        configuration) == "CfgFour(a = 1, b = 2, c = 3, d = 4)"
     )
 
   test("multilineIfFieldsAreGreaterOrEqual counts fields after exclusion"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = 5)
     assert(
-      Describe[CfgSixMostlyExcluded].describe(CfgSixMostlyExcluded(1, 2, 3, 4, 5, 6))(using configuration) ==
+      PrettyPrintable[CfgSixMostlyExcluded].describe(CfgSixMostlyExcluded(1, 2, 3, 4, 5, 6))(using configuration) ==
         "CfgSixMostlyExcluded(a = 1, b = 2, c = 3, d = 4)"
     )
 
   test("multilineIfFieldsAreGreaterOrEqual = 0 disables the threshold"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = 0)
     assert(
-      Describe[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
+      PrettyPrintable[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
         "CfgFive(a = 1, b = 2, c = 3, d = 4, e = 5)"
     )
 
   test("a negative multilineIfFieldsAreGreaterOrEqual disables the threshold"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
     assert(
-      Describe[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
+      PrettyPrintable[CfgFive].describe(CfgFive(1, 2, 3, 4, 5))(using configuration) ==
         "CfgFive(a = 1, b = 2, c = 3, d = 4, e = 5)"
     )
 
   test("a type with no rendered fields stays on one line even when multiline is requested"):
     val configuration = Configuration(multiline = true)
-    assert(Describe[CfgAllExcluded].describe(CfgAllExcluded("s"))(using configuration) == "CfgAllExcluded()")
+    assert(PrettyPrintable[CfgAllExcluded].describe(CfgAllExcluded("s"))(using configuration) == "CfgAllExcluded()")
 
   test("Configuration.default is the same value as an unconfigured Configuration"):
     assert(Configuration.default == Configuration())

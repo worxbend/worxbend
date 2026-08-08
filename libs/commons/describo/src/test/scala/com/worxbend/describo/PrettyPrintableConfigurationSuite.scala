@@ -4,26 +4,26 @@ import com.worxbend.describo.annotations.Excluded
 
 import org.scalatest.funsuite.AnyFunSuite
 
-final case class ConfigPair(alpha: Int, beta: String) derives Printable
+final case class ConfigPair(alpha: Int, beta: String) derives PrettyPrintable
 
-final case class ConfigTriple(alpha: Int, beta: Int, gamma: Int) derives Printable
+final case class ConfigTriple(alpha: Int, beta: Int, gamma: Int) derives PrettyPrintable
 
-final case class ConfigAllExcluded(@Excluded alpha: Int, @Excluded beta: Int) derives Printable
+final case class ConfigAllExcluded(@Excluded alpha: Int, @Excluded beta: Int) derives PrettyPrintable
 
-class PrintableConfigurationSuite extends AnyFunSuite:
+class PrettyPrintableConfigurationSuite extends AnyFunSuite:
 
   private val pair: ConfigPair = ConfigPair(1, "x")
 
-  private def render(conf: Configuration): String = summon[Printable[ConfigPair]].asString(pair)(using conf)
+  private def render(conf: Configuration): String = summon[PrettyPrintable[ConfigPair]].asString(pair)(using conf)
 
   private def renderTriple(conf: Configuration): String =
-    summon[Printable[ConfigTriple]].asString(ConfigTriple(1, 2, 3))(using conf)
+    summon[PrettyPrintable[ConfigTriple]].asString(ConfigTriple(1, 2, 3))(using conf)
 
   test("the default configuration renders field names on a single line"):
-    assert(summon[Printable[ConfigPair]].asString(pair) == "ConfigPair(alpha = 1, beta = \"x\")")
+    assert(summon[PrettyPrintable[ConfigPair]].asString(pair) == "ConfigPair(alpha = 1, beta = \"x\")")
 
   test("Configuration.default is the configuration used when no argument is given"):
-    assert(summon[Printable[ConfigPair]].asString(pair) == render(Configuration.default))
+    assert(summon[PrettyPrintable[ConfigPair]].asString(pair) == render(Configuration.default))
 
   test("useFieldNames = false drops the field names"):
     assert(render(Configuration(useFieldNames = false)) == "ConfigPair(1, \"x\")")
@@ -127,10 +127,11 @@ class PrintableConfigurationSuite extends AnyFunSuite:
 
   test("a type whose fields are all excluded stays on one line under multiline = true"):
     val actual =
-      summon[Printable[ConfigAllExcluded]].asString(ConfigAllExcluded(1, 2))(using Configuration(multiline = true))
+      summon[PrettyPrintable[ConfigAllExcluded]].asString(ConfigAllExcluded(1, 2))(using
+        Configuration(multiline = true))
     assert(actual == "ConfigAllExcluded()")
 
   test("the fields separator is unused when no field is rendered"):
     val conf   = Configuration(multiline = true, fieldsSeparator = " | ")
-    val actual = summon[Printable[ConfigAllExcluded]].asString(ConfigAllExcluded(1, 2))(using conf)
+    val actual = summon[PrettyPrintable[ConfigAllExcluded]].asString(ConfigAllExcluded(1, 2))(using conf)
     assert(actual == "ConfigAllExcluded()")

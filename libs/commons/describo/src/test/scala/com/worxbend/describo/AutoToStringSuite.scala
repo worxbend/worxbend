@@ -11,18 +11,18 @@ object MixinDefaults:
 
   given configuration: Configuration = Configuration.default
 
-  final case class Account(@Redacted password: String, name: String) extends AutoToString derives Printable
+  final case class Account(@Redacted password: String, name: String) extends AutoToString derives PrettyPrintable
 
   /** D1 regression: `AutoToString` used to declare `given p` and `given c`, which collided with any field of the same
     * name and failed to compile.
     */
-  final case class Coordinates(p: Int, c: String) extends AutoToString derives Printable
+  final case class Coordinates(p: Int, c: String) extends AutoToString derives PrettyPrintable
 
 object MixinCustomised:
 
   given configuration: Configuration = Configuration(useFieldNames = false, fieldsSeparator = " | ")
 
-  final case class Point(x: Int, y: Int) extends AutoToString derives Printable
+  final case class Point(x: Int, y: Int) extends AutoToString derives PrettyPrintable
 
 class AutoToStringSuite extends AnyFunSuite:
 

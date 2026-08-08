@@ -1,6 +1,6 @@
 package com.worxbend.reveal
 
-/** Rendering options consumed by [[Describe]].
+/** Rendering options consumed by [[PrettyPrintable]].
   *
   * Kept field-for-field identical with com.worxbend.describo.Configuration. Any change here must be mirrored there and
   * in both READMEs.

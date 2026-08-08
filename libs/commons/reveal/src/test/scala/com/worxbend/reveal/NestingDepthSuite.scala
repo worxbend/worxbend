@@ -4,7 +4,7 @@ import scala.compiletime.testing.typeCheckErrors
 
 import org.scalatest.funsuite.AnyFunSuite
 
-// A plain chain of fourteen case classes, none of them carrying `derives Describe`. Under the current design this
+// A plain chain of fourteen case classes, none of them carrying `derives PrettyPrintable`. Under the current design this
 // chain does not nest at all: the root expands, and its single field — an ordinary nested case class with no instance
 // — renders with its own `toString`. Depth is therefore irrelevant to it, which is the point of the fixtures below.
 final case class Plain13(value: String)
@@ -62,7 +62,7 @@ final class NestingDepthSuite extends AnyFunSuite:
   // ---------------------------------------------------- plain case classes
 
   test("a fourteen deep chain of plain case classes derives, because none of it is nested into the root"):
-    assertCompiles("Describe.derived[Plain00]")
+    assertCompiles("PrettyPrintable.derived[Plain00]")
 
   test("only the root of that chain is structured; the rest is its own toString"):
     val value = Plain00(
@@ -71,40 +71,40 @@ final class NestingDepthSuite extends AnyFunSuite:
       )
     )
     assert(
-      Describe.derived[Plain00].describe(value)(using singleLine) ==
+      PrettyPrintable.derived[Plain00].describe(value)(using singleLine) ==
         "Plain00(value = Plain01(Plain02(Plain03(Plain04(Plain05(Plain06(Plain07(Plain08(Plain09(Plain10(Plain11(Plain12(Plain13(x))))))))))))))"
     )
 
   // ------------------------------------------------------- sealed families
 
   test("ten levels of sealed dispatch expand"):
-    assertCompiles("Describe.derived[Sealed07]")
+    assertCompiles("PrettyPrintable.derived[Sealed07]")
 
   test("eleven levels of sealed dispatch are refused"):
-    assert(typeCheckErrors("Describe.derived[Sealed06]").nonEmpty)
+    assert(typeCheckErrors("PrettyPrintable.derived[Sealed06]").nonEmpty)
 
   // The refusal names the branch it stopped at rather than the sealed trait above it, because the branch is the type
   // being expanded when the budget runs out and is therefore the one an instance has to be attached to.
   test("the sealed refusal is the layer cap, and it names the branch it stopped at"):
-    val errors = typeCheckErrors("Describe.derived[Sealed06]").map(_.message)
+    val errors = typeCheckErrors("PrettyPrintable.derived[Sealed06]").map(_.message)
     assert(errors.exists(message => message.contains("layers of generated code")), errors.mkString("\n"))
     assert(errors.exists(message => message.contains("Branch")), errors.mkString("\n"))
 
   test("the sealed refusal prescribes a remedy implicit search really honours"):
-    val errors = typeCheckErrors("Describe.derived[Sealed06]").map(_.message)
-    assert(errors.exists(message => message.contains("derives Describe")), errors.mkString("\n"))
+    val errors = typeCheckErrors("PrettyPrintable.derived[Sealed06]").map(_.message)
+    assert(errors.exists(message => message.contains("derives PrettyPrintable")), errors.mkString("\n"))
 
   test("giving one link of a too deep sealed chain its own instance breaks the chain"):
     assertCompiles("""
-      given Describe[Sealed10] = Describe.derived[Sealed10]
-      Describe.derived[Sealed06]
+      given PrettyPrintable[Sealed10] = PrettyPrintable.derived[Sealed10]
+      PrettyPrintable.derived[Sealed06]
     """)
 
   test("a ten level sealed chain renders through every level"):
     val value: Sealed07 =
       Branch07(Branch08(Branch09(Branch10(Branch11(Branch12(Branch13(Branch14(Branch15(Branch16("x"))))))))))
     assert(
-      Describe
+      PrettyPrintable
         .derived[Sealed07]
         .describe(value)(using singleLine)
         .startsWith("Branch07(value = Branch08(value = Branch09(")

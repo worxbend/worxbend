@@ -6,27 +6,27 @@ final case class LcId(raw: Long) extends AnyVal
 
 object LcId:
 
-  given Printable[LcId] = Printable.valueClass[LcId, Long]("LcId", "com.worxbend.describo.LcId")(_.raw)
+  given PrettyPrintable[LcId] = PrettyPrintable.valueClass[LcId, Long]("LcId", "com.worxbend.describo.LcId")(_.raw)
 
-enum LcColour derives Printable:
+enum LcColour derives PrettyPrintable:
 
   case Red
 
-final case class LcColl(xs: List[String], m: Map[String, Int]) derives Printable
+final case class LcColl(xs: List[String], m: Map[String, Int]) derives PrettyPrintable
 
-final case class LcTyped(t: (Int, String), e: LcColour, id: LcId, o: Option[Int]) derives Printable
+final case class LcTyped(t: (Int, String), e: LcColour, id: LcId, o: Option[Int]) derives PrettyPrintable
 
-final case class LcWide(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) derives Printable
+final case class LcWide(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int) derives PrettyPrintable
 
 /** The configuration options applied to composite values rather than to flat ones.
   *
-  * `PrintableConfigurationSuite` exercises each option against a simple two-field record, which is the right way to
+  * `PrettyPrintableConfigurationSuite` exercises each option against a simple two-field record, which is the right way to
   * pin what the option means. These pin what it does once the value has structure — where an option can plausibly
   * apply at the wrong level, such as wrapping every element instead of the whole collection.
   */
-final class PrintableLayoutCompositionSuite extends AnyFunSuite:
+final class PrettyPrintableLayoutCompositionSuite extends AnyFunSuite:
 
-  private def render[A](value: A, configuration: Configuration)(using printable: Printable[A]): String =
+  private def render[A](value: A, configuration: Configuration)(using printable: PrettyPrintable[A]): String =
     printable.asString(value)(using configuration)
 
   test("the multiline layout breaks fields, not the elements inside them"):

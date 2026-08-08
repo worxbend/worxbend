@@ -3,7 +3,7 @@ package com.worxbend.reveal
 import scala.annotation.StaticAnnotation
 import scala.annotation.meta.field
 
-/** Field annotations understood by [[Describe]].
+/** Field annotations understood by [[PrettyPrintable]].
   *
   * Precedence is resolved once per field, first match wins:
   *   1. `@Excluded` or `@transient` -> the field is omitted entirely;

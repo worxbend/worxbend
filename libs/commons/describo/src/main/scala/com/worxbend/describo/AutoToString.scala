@@ -10,8 +10,8 @@ package com.worxbend.describo
   */
 trait AutoToString:
 
-  protected given describoPrintable: Printable[this.type] = scala.compiletime.deferred
+  protected given describoPrettyPrintable: PrettyPrintable[this.type] = scala.compiletime.deferred
 
   protected given describoConfiguration: Configuration = scala.compiletime.deferred
 
-  override def toString: String = describoPrintable.asString(this)(using describoConfiguration)
+  override def toString: String = describoPrettyPrintable.asString(this)(using describoConfiguration)

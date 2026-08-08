@@ -6,7 +6,7 @@ import com.worxbend.reveal.annotations.Redacted
 import scala.deriving.Mirror
 import scala.quoted.*
 
-/** Expansion-time engine behind [[Describe.derived]] and [[ToString.derived]].
+/** Expansion-time engine behind [[PrettyPrintable.derived]] and [[ToString.derived]].
   *
   * Every decision that can be made from the declared types — which fields are omitted, which are redacted, how each
   * declared type is spelled, which renderer a field's type needs — is made here, once. What survives into the generated
@@ -16,7 +16,7 @@ import scala.quoted.*
   * The work itself lives in [[Expansion]], one instance per expanded root type, so that every step is an addressable
   * member with an explicit result type rather than a local definition buried in one long method.
   */
-private[reveal] object DescribeMacro:
+private[reveal] object PrettyPrintableMacro:
 
   /** Resolution of a single field. First match wins, evaluated exactly once per field at expansion time:
     *   1. `@Excluded` or `@transient` -> [[FieldRule.Omit]];
@@ -69,7 +69,7 @@ private[reveal] object DescribeMacro:
     * breaks a test rather than silently moving what consumers can derive.
     *
     * '''Neither cap is `-Xmax-inlines`, and neither shadows it.''' That compiler setting limits *successive inline
-    * expansions*, and this macro never approaches it: `Describe.derived` is a single `inline def` whose body is a
+    * expansions*, and this macro never approaches it: `PrettyPrintable.derived` is a single `inline def` whose body is a
     * single splice, so the compiler's counter never rises above one however deep the model. All the recursion here is
     * ordinary recursion in [[Expansion.renderValue]], running at staging level 0, which the compiler does not count
     * and cannot bound — which is precisely why these two constants have to exist.
@@ -96,10 +96,10 @@ private[reveal] object DescribeMacro:
     */
   private val MaxScanDepth: Int = 64
 
-  def describeImpl[T: Type](using Quotes): Expr[Describe[T]] =
+  def deriveImpl[T: Type](using Quotes): Expr[PrettyPrintable[T]] =
     '{
-      lazy val instance: Describe[T] =
-        Describe.FromFunction[T]((value: T, conf: Configuration) =>
+      lazy val instance: PrettyPrintable[T] =
+        PrettyPrintable.FromFunction[T]((value: T, conf: Configuration) =>
           ${ Expansion[T]('conf, Some('instance)).renderRoot('value) }
         )
       instance
@@ -110,7 +110,7 @@ private[reveal] object DescribeMacro:
     * twice per rendered field at every level of nesting, so splicing `conf` directly would re-evaluate the caller's
     * expression once per occurrence — measured at 30 evaluations for a fifteen-node model. Binding it to a `val`
     * first makes it one evaluation whose result every occurrence shares, which also guarantees that a single render
-    * cannot mix two different configurations. [[describeImpl]] needs no equivalent: its `conf` is a lambda parameter
+    * cannot mix two different configurations. [[deriveImpl]] needs no equivalent: its `conf` is a lambda parameter
     * and is therefore already a stable local.
     *
     * Two further consequences, observable only for a configuration expression that does something. The binding is
@@ -153,7 +153,7 @@ private[reveal] object DescribeMacro:
     *     is why the sealed path is now clean; it does not catch one laundered through `.asTerm`, which is the shape
     *     the product path uses. A regression on the product side would compile silently.
     */
-  final private class Expansion[T: Type](conf: Expr[Configuration], self: Option[Expr[Describe[T]]])(using
+  final private class Expansion[T: Type](conf: Expr[Configuration], self: Option[Expr[PrettyPrintable[T]]])(using
       quotes: Quotes):
 
     import quotes.reflect.*
@@ -254,7 +254,7 @@ private[reveal] object DescribeMacro:
     /** A tuple is a case class, but it is an anonymous container rather than a domain type.
       *
       * The delegation rule — "a nested case class supplies its own instance, or renders with toString" — has no
-      * meaning for `Tuple2`: nobody can write `derives Describe` on it, so delegating would permanently strip
+      * meaning for `Tuple2`: nobody can write `derives PrettyPrintable` on it, so delegating would permanently strip
       * structure and, worse, bypass the instances of the elements *inside* it. Tuples are therefore expanded
       * wherever they appear, exactly like the collections they resemble, and their elements go back through the
       * normal resolution so element instances and redaction still apply.
@@ -395,14 +395,14 @@ private[reveal] object DescribeMacro:
 
     /** A user-written instance beats every structural handler except [[renderPrimitive]], which [[renderValue]]
       * consults first. The ten primitive types are therefore resolved statically and are *not* overridable: a
-      * `given Describe[Int]` in scope is silently ignored for `Int` fields. That is deliberate — it is what lets this
+      * `given PrettyPrintable[Int]` in scope is silently ignored for `Int` fields. That is deliberate — it is what lets this
       * module ship no per-type instances at all, and it saves an implicit search per primitive field at expansion
       * time. `KnownDivergenceSuite` records the same design choice from the other direction.
       */
     private def renderSummoned(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       tpe.asType match
         case '[t] =>
-          Expr.summon[Describe[t]].map { instance =>
+          Expr.summon[PrettyPrintable[t]].map { instance =>
             val value = coerce[t](term)
             '{ Rendering.nested[t]($value, $instance, $conf) }
           }
@@ -510,8 +510,8 @@ private[reveal] object DescribeMacro:
     private def renderCycle(tpe: TypeRepr, nesting: Nesting): Option[Expr[String]] =
       Option.when(nesting.isOpen(tpe))(
         report.errorAndAbort(
-          s"Describe cannot inline the recursive type ${tpe.show}: add `derives Describe` to it, " +
-            s"or provide a `given Describe[${tpe.show}]` in scope."
+          s"PrettyPrintable cannot inline the recursive type ${tpe.show}: add `derives PrettyPrintable` to it, " +
+            s"or provide a `given PrettyPrintable[${tpe.show}]` in scope."
         )
       )
 
@@ -522,22 +522,22 @@ private[reveal] object DescribeMacro:
         '{ Rendering.opaque($value) }
       else
         report.errorAndAbort(
-          s"Describe cannot see into ${tpe.show}: the declared type is abstract, so the runtime value may be a type " +
+          s"PrettyPrintable cannot see into ${tpe.show}: the declared type is abstract, so the runtime value may be a type " +
             "with @Redacted fields and rendering it with toString would print them in the clear. Provide a " +
-            s"`given Describe[${tpe.show}]`, seal the hierarchy, or mark the field @Excluded."
+            s"`given PrettyPrintable[${tpe.show}]`, seal the hierarchy, or mark the field @Excluded."
         )
 
     /** Which shapes this macro expands structurally, and which it delegates.
       *
       * '''A nested case class is never unrolled into its parent.''' A case class is expanded in exactly two
-      * positions: at the root, the type the user actually wrote `derives Describe` on; and as a branch of a sealed
+      * positions: at the root, the type the user actually wrote `derives PrettyPrintable` on; and as a branch of a sealed
       * family being dispatched, which has no instance of its own to delegate to. Anywhere else, a case-class-typed
       * field has
       * already been offered to [[renderSelf]] and [[renderSummoned]], so reaching here means it has no instance of its
       * own, and the answer is `toString` via [[renderOpaque]] rather than another level of inlining.
       *
       * This is the composition story a typeclass is supposed to have: a nested type earns structured rendering by
-      * carrying its own `derives Describe`. Unrolling it instead made one derivation's emitted expression grow with
+      * carrying its own `derives PrettyPrintable`. Unrolling it instead made one derivation's emitted expression grow with
       * the whole reachable object graph, which is what forced [[MaxNestedTypes]], [[MaxEmittedLayers]] and a cycle
       * stack into existence, and what put wide-and-deep models within reach of the JVM's 65,535-byte per-method
       * `Code` limit. Delegating measured 1.51x faster and 13.5x smaller at depth 12.
@@ -564,7 +564,7 @@ private[reveal] object DescribeMacro:
       * {{{
       * final case class Secret(@Redacted token: String)
       * final case class Middle(s: Secret)            // declares nothing itself
-      * final case class Outer(m: Middle) derives Describe
+      * final case class Outer(m: Middle) derives PrettyPrintable
       * // Outer(m = Middle(Secret(hunter2)))         <- the secret, in the clear
       * }}}
       *
@@ -584,20 +584,20 @@ private[reveal] object DescribeMacro:
             else s"${owner.show}, reachable from it, declares `${field.name}`"
           Some(
             report.errorAndAbort(
-              s"Describe will not render ${tpe.show} with toString: $where as @Redacted or @Excluded, and toString " +
+              s"PrettyPrintable will not render ${tpe.show} with toString: $where as @Redacted or @Excluded, and toString " +
                 s"ignores both at every depth, so the value would be printed in the clear. Nested case classes are " +
-                s"not unrolled into their parent, so add `derives Describe` to ${tpe.show}, provide a " +
-                s"`given Describe[${tpe.show}]`, or mark the field @Excluded here."
+                s"not unrolled into their parent, so add `derives PrettyPrintable` to ${tpe.show}, provide a " +
+                s"`given PrettyPrintable[${tpe.show}]`, or mark the field @Excluded here."
             )
           )
 
         case Reachability.Unprovable(at) =>
           Some(
             report.errorAndAbort(
-              s"Describe cannot prove that rendering ${tpe.show} with toString would not print a @Redacted field: " +
+              s"PrettyPrintable cannot prove that rendering ${tpe.show} with toString would not print a @Redacted field: " +
                 s"its type graph is still growing at ${at.show} after $MaxScanDepth levels, which happens when a " +
                 "recursive type applies a wrapper to its own parameter. Rather than guess, it refuses. Add " +
-                s"`derives Describe` to ${tpe.show}, provide a `given Describe[${tpe.show}]`, or mark the field " +
+                s"`derives PrettyPrintable` to ${tpe.show}, provide a `given PrettyPrintable[${tpe.show}]`, or mark the field " +
                 "@Excluded here."
             )
           )
@@ -610,7 +610,7 @@ private[reveal] object DescribeMacro:
       * case `seen` cannot: a type whose arguments grow at every step never repeats, so there is no cycle to detect
       * and the walk would otherwise hang the compiler. See [[MaxScanDepth]].
       *
-      * Note that a reachable type having its own `Describe` instance does not make it safe here. Once the outermost
+      * Note that a reachable type having its own `PrettyPrintable` instance does not make it safe here. Once the outermost
       * type is rendered by `toString`, every instance below it is bypassed too.
       */
     private def annotatedWithin(tpe: TypeRepr, seen: List[TypeRepr], depth: Int): Reachability =
@@ -663,8 +663,8 @@ private[reveal] object DescribeMacro:
       else rendered
 
     private def tooDeep(tpe: TypeRepr, budget: String): String =
-      s"Describe reached $budget at ${tpe.show} and stopped inlining. Add `derives Describe` to ${tpe.show}, or " +
-        s"provide a `given Describe[${tpe.show}]` in scope, so that the chain is broken by a call to an instance " +
+      s"PrettyPrintable reached $budget at ${tpe.show} and stopped inlining. Add `derives PrettyPrintable` to ${tpe.show}, or " +
+        s"provide a `given PrettyPrintable[${tpe.show}]` in scope, so that the chain is broken by a call to an instance " +
         "instead of being unrolled any further."
 
     /** Resolution order for a field's type. First match wins.
@@ -673,7 +673,7 @@ private[reveal] object DescribeMacro:
       * construction. Were `renderSummoned` to run first it would find that same instance through implicit search and
       * inline it into itself.
       *
-      * `renderSummoned` sits ahead of `renderPrimitive` so that a user-supplied `given Describe[T]` really does win
+      * `renderSummoned` sits ahead of `renderPrimitive` so that a user-supplied `given PrettyPrintable[T]` really does win
       * for every `T`, including `String`, `Char` and the numeric primitives. The reverse order made the built-in
       * scalar renderings unoverridable while the README promised the opposite; the documented contract is the one
       * worth keeping, and the cost is one implicit search per scalar field at expansion time only.
@@ -791,8 +791,8 @@ private[reveal] object DescribeMacro:
           .orElse(unifyChild(parent, child, parameters))
           .getOrElse(
             report.errorAndAbort(
-              s"Describe cannot work out the type arguments of ${child.fullName} inside ${parent.show}. Provide a " +
-                s"`given Describe[${parent.show}]` in scope so that the family is rendered by an instance instead."
+              s"PrettyPrintable cannot work out the type arguments of ${child.fullName} inside ${parent.show}. Provide a " +
+                s"`given PrettyPrintable[${parent.show}]` in scope so that the family is rendered by an instance instead."
             )
           )
 
@@ -870,6 +870,6 @@ private[reveal] object DescribeMacro:
         .getOrElse(
           report.errorAndAbort(
             s"${rootType.show} is not a case class, case object, sealed trait or enum, " +
-              "so Describe cannot be derived for it."
+              "so PrettyPrintable cannot be derived for it."
           )
         )

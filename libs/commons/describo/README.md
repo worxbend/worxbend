@@ -18,6 +18,7 @@ _You describe **what** a value should look like; describo works out **how** from
 ## 📑 Contents
 
 - [Why describo](#-why-describo)
+- [What's with the name?](#-whats-with-the-name)
 - [Install](#-install)
 - [Quick start](#-quick-start)
 - [Redaction and exclusion](#-redaction-and-exclusion)
@@ -43,16 +44,31 @@ the password field — and it prints it in exactly **one shape** you cannot chan
 | | |
 | :-- | :-- |
 | 🔐 **Secrets stay secret** | `@Redacted` and `@Excluded` fields are never dereferenced, and redaction **composes through nesting** — a secret inside a `Map` inside an `Option` is still redacted |
-| 🧬 **Ordinary typeclass** | `Printable[A]` composes like any other. Give a third-party type an instance and every model that reaches it renders properly |
-| 🪆 **Auto-derivation** | Nested case classes are derived implicitly; you write `derives Printable` once at the top |
+| 🧬 **Ordinary typeclass** | `PrettyPrintable[A]` composes like any other. Give a third-party type an instance and every model that reaches it renders properly |
+| 🪆 **Auto-derivation** | Nested case classes are derived implicitly; you write `derives PrettyPrintable` once at the top |
 | 🎨 **16 formatting knobs** | Field names, type names, separators, affixes, qualified names, multiline layout |
 | 🛡️ **No reflection at render time** | Type names come from the typeclass, not from `getClass`, so a `null` or redacted field is never touched |
-| 🧩 **Generic case classes** | `Box[A] derives Printable` derives at the instantiated type with no ceremony |
+| 🧩 **Generic case classes** | `Box[A] derives PrettyPrintable` derives at the instantiated type with no ceremony |
 
 > [!TIP]
 > If you **cannot take the magnolia dependency**, the sibling module [`reveal`](../reveal) solves the
 > same problem with a hand-written inline macro and *zero* runtime dependencies. The two are
 > independent — see [describo vs reveal](#-describo-vs-reveal).
+
+---
+
+## 🧝 What's with the name?
+
+In *Disenchantment*, every elf out of Elfwood is named for the one thing they do, with an `-o` stapled
+on the end. Elfo is an elf. Sorcerio does sorcery. Shocko, Speako, Weirdo, Leavo — the joke is that the
+name is the job description and nobody tried very hard.
+
+So: this library describes things. **describo.**
+
+Its sibling started life as **dscrbo**, the same joke with the vowels squeezed out, which turned out to
+be a mistake — the two names differed by four vowels and read as a typo of one another, so every
+sentence about either one needed a clause explaining which was meant. It is now called
+[`reveal`](../reveal), which is not an elf name at all. Some jokes are worth exactly one library.
 
 ---
 
@@ -99,9 +115,9 @@ final case class Account(
     @Redacted password: String,
     @Excluded internal: String,
     roles:              List[String],
-) derives Printable
+) derives PrettyPrintable
 
-summon[Printable[Account]].asString(
+summon[PrettyPrintable[Account]].asString(
   Account(7L, "ada@example.com", "hunter2", "scratch", List("admin"))
 )
 ```
@@ -123,7 +139,7 @@ The password is replaced, the internal field is gone, and neither value was ever
 given Configuration = Configuration(multiline = true)
 
 final case class Account(@Redacted password: String, name: String)
-    extends AutoToString derives Printable
+    extends AutoToString derives PrettyPrintable
 
 println(Account("hunter2", "Ada"))
 ```
@@ -133,7 +149,7 @@ println(Account("hunter2", "Ada"))
 > class-definition site** — a type that mixes it in renders with one fixed configuration for life. To
 > vary configuration per call, use the typeclass directly.
 >
-> Both members are named `describoPrintable` and `describoConfiguration` and are `protected`. They
+> Both members are named `describoPrettyPrintable` and `describoConfiguration` and are `protected`. They
 > share a namespace with your fields, so short names are not safe: an earlier version declared
 > `given p` and `given c`, and any case class with a field named `p` or `c` failed to compile.
 
@@ -169,8 +185,8 @@ surfaces `param.annotations` in reverse source order, so `FieldRule.of` reverses
 ### Redaction composes 🪆
 
 ```scala
-final case class Inner(@Redacted secret: String) derives Printable
-final case class Outer(inner: Inner, xs: List[Inner], o: Option[Inner]) derives Printable
+final case class Inner(@Redacted secret: String) derives PrettyPrintable
+final case class Outer(inner: Inner, xs: List[Inner], o: Option[Inner]) derives PrettyPrintable
 
 // Outer(inner = Inner(secret = <redacted>), xs = [Inner(secret = <redacted>)], o = Some(Inner(secret = <redacted>)))
 ```
@@ -288,13 +304,13 @@ Set, HashSet, Map, HashMap}`.
 >
 > This is a **closed** type set, which is the main ergonomic difference from `reveal`. For example
 > `scala.util.Try` does not compile out of the box, because `Failure` reaches `Throwable` and nothing
-> supplies an instance for it — one line fixes that, and `PrintableCompositionSuite` pins both halves.
+> supplies an instance for it — one line fixes that, and `PrettyPrintableCompositionSuite` pins both halves.
 
 ---
 
 ## 🔧 Writing your own instance
 
-`Printable` has two members — `printedType` and the `asString` extension — but you rarely implement
+`PrettyPrintable` has two members — `printedType` and the `asString` extension — but you rarely implement
 them by hand. Four factories fill both in and give you this module's escaping, `null` handling and
 element separator for free. Each takes the simple and the fully qualified name, which is what
 `useTypeNames` and `fullyQualifiedClassName` print.
@@ -305,35 +321,35 @@ import scala.jdk.CollectionConverters.*
 
 // A scalar rendered by a plain function. The string is used verbatim, so quote it yourself if the
 // type should appear quoted.
-given Printable[java.util.UUID] =
-  Printable.instance("UUID", "java.util.UUID")(_.toString)
+given PrettyPrintable[java.util.UUID] =
+  PrettyPrintable.instance("UUID", "java.util.UUID")(_.toString)
 
 // A container rendered as [a, b, c]; elements go through their own instances.
-given Printable[java.util.ArrayDeque[String]] =
-  Printable.collection("ArrayDeque", "java.util.ArrayDeque")(_.asScala.iterator)
+given PrettyPrintable[java.util.ArrayDeque[String]] =
+  PrettyPrintable.collection("ArrayDeque", "java.util.ArrayDeque")(_.asScala.iterator)
 
 // A container rendered as [k -> v]; keys and values go through their own instances.
-given Printable[java.util.TreeMap[String, Int]] =
-  Printable.mapping("TreeMap", "java.util.TreeMap")(_.asScala.iterator)
+given PrettyPrintable[java.util.TreeMap[String, Int]] =
+  PrettyPrintable.mapping("TreeMap", "java.util.TreeMap")(_.asScala.iterator)
 
 // A wrapper rendered as its payload but named after the wrapper.
-given Printable[UserId] =
-  Printable.valueClass("UserId", "com.example.UserId")(_.value)
+given PrettyPrintable[UserId] =
+  PrettyPrintable.valueClass("UserId", "com.example.UserId")(_.value)
 ```
 
-`PrintableFactorySuite` is exactly the code above, so the snippet cannot rot.
+`PrettyPrintableFactorySuite` is exactly the code above, so the snippet cannot rot.
 
 ---
 
 ## 💎 Value classes
 
-Scala 3 synthesises no `Mirror` for a value class, so **`derives Printable` cannot be used on one** —
+Scala 3 synthesises no `Mirror` for a value class, so **`derives PrettyPrintable` cannot be used on one** —
 Magnolia never sees it. Give it an instance explicitly:
 
 ```scala
 final case class UserId(value: String) extends AnyVal
 object UserId:
-  given Printable[UserId] = Printable.valueClass("UserId", "com.example.UserId")(_.value)
+  given PrettyPrintable[UserId] = PrettyPrintable.valueClass("UserId", "com.example.UserId")(_.value)
 ```
 
 The wrapper renders as its payload (`"u1"`) but is *named* after the wrapper, so a `UserId` field
@@ -353,7 +369,7 @@ honoured without unwrapping.
 | :-- | :-- |
 | 📐 **Nested multiline isn't re-indented** | A nested case class is inserted verbatim, so its lines are not indented relative to the parent. Use a single-line configuration for deeply nested values |
 | 🔁 **Depth is bounded by the stack** | Recursive descent, one JVM frame per level, so a value nested a few hundred levels deep throws `StackOverflowError` — roughly where the generated `toString` would. Breadth is unaffected; collections render iteratively. There is no configurable cap |
-| 💎 **Value classes need an explicit instance** | See above. `PrintableStructureSuite` pins this with an `assertDoesNotCompile`, so the day Scala changes it a test fails rather than the behaviour drifting |
+| 💎 **Value classes need an explicit instance** | See above. `PrettyPrintableStructureSuite` pins this with an `assertDoesNotCompile`, so the day Scala changes it a test fails rather than the behaviour drifting |
 | 🏷️ **Enum cases under `fullyQualifiedClassName`** | Magnolia's `TypeInfo` reports the enclosing *package*, not the enclosing enum, so `Colour.Red` prints `com.example.Red`. Simple names are unaffected |
 | 🔀 **Set and Map iteration order** | Insertion order only up to four elements; beyond that Scala switches to a hashed representation. Sort before rendering if you need stable output |
 
@@ -398,18 +414,18 @@ Version `0.1.0-SNAPSHOT` has never been published, and the following source-brea
 made together, on purpose, before the first release:
 
 - The package moved from `io.worxbend.describo` to `com.worxbend.describo`.
-- `Configuration` and `annotations.{Redacted, Excluded}` moved out of `object Printable` into the
+- `Configuration` and `annotations.{Redacted, Excluded}` moved out of `object PrettyPrintable` into the
   package.
-- `Printable.TypeAliases` was **deleted**. It mapped runtime class names such as `$colon$colon` and
+- `PrettyPrintable.TypeAliases` was **deleted**. It mapped runtime class names such as `$colon$colon` and
   `Map2` back to friendly names; type names now come from the declared type, so there is nothing left
   to map.
-- `Printable` gained an abstract member, `printedType`. Hand-written instances must supply it — the
+- `PrettyPrintable` gained an abstract member, `printedType`. Hand-written instances must supply it — the
   four factories supply it for you.
 - `Configuration.fieldsSeparator`'s default changed from `","` to `", "`. The field is now actually
   read; the old default only looked correct because single-line joining was hardcoded to `", "`.
 - `Char` now renders as `'c'` rather than bare `c`.
 - `java.util.HashMap` now renders as `[...]` like every other map, rather than `{...}`.
-- The `AutoToString` members `p` and `c` were renamed to `describoPrintable` and
+- The `AutoToString` members `p` and `c` were renamed to `describoPrettyPrintable` and
   `describoConfiguration` and made `protected`.
 
 ---
