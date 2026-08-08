@@ -91,6 +91,56 @@ final class DelegationSuite extends AnyFunSuite:
     final case class Holder(s: DelSecret) derives Describe
     assert(Describe.derived[Holder].describe(Holder(DelSecret("hunter2", "t"))).contains("<redacted>"))
 
+  // ------------------- the guard reaches all the way down, not one level
+
+  test("an unannotated intermediate hiding a redacted descendant is refused"):
+    val errors = typeCheckErrors("final case class H(m: DelDeepMiddle) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "a redacted descendant must not reach toString")
+    assert(errors.exists(_.contains("DelDeepSecret")), errors.mkString("\n"))
+    assert(errors.exists(_.contains("`token`")), errors.mkString("\n"))
+
+  test("a redacted descendant reached through a collection is refused too"):
+    val errors = typeCheckErrors("final case class H(m: DelDeepListMiddle) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "a List[Secret] behind an intermediate must not reach toString")
+
+  test("an excluded descendant behind an intermediate is refused on the same grounds"):
+    val errors = typeCheckErrors("final case class H(m: DelDeepExcludingMiddle) derives Describe").map(_.message)
+    assert(errors.exists(_.contains("`hidden`")), errors.mkString("\n"))
+
+  test("a redacted branch of a sealed family behind an intermediate is refused"):
+    val errors = typeCheckErrors("final case class H(m: DelSealedMiddle) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "a redacting sealed branch must not reach toString")
+
+  test("giving the intermediate an instance makes it compile, and the descendant is redacted"):
+    given Describe[DelDeepSecret] = Describe.derived[DelDeepSecret]
+    given Describe[DelDeepMiddle] = Describe.derived[DelDeepMiddle]
+    final case class Holder(m: DelDeepMiddle) derives Describe
+    assert(Describe.derived[Holder].describe(Holder(DelDeepMiddle(DelDeepSecret("hunter2")))).contains("<redacted>"))
+
+  test("a type with nothing annotated anywhere below it still delegates"):
+    assert(show(DelHoldsPlain(DelPlain(1, "v"))) == "DelHoldsPlain(inner = DelPlain(1,v))")
+
+  // Regression: the scan cuts cycles by remembering types already on the path, which is enough only when the type
+  // graph is finite. `Growth[Int]` -> `Growth[List[Int]]` -> `Growth[List[List[Int]]]` never repeats, so there is no
+  // cycle to find; before the depth bound this hung the compiler outright rather than failing it.
+  test("a type whose arguments grow at every step is refused instead of hanging the compiler"):
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "an argument-growing recursive type must terminate the scan")
+    assert(errors.exists(_.contains("cannot prove")), errors.mkString("\n"))
+
+  test("the refusal explains that the shape is unprovable rather than annotated"):
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    assert(errors.exists(_.contains("still growing")), errors.mkString("\n"))
+    assert(errors.exists(_.contains("derives Describe")), errors.mkString("\n"))
+
+  test("giving the growing type an instance breaks the scan out of it"):
+    given Describe[DelGrowth[Int]] = Describe.FromFunction((v, _) => "grown")
+    final case class H(g: DelGrowth[Int]) derives Describe
+    assert(Describe.derived[H].describe(H(DelGrowth(None, "t"))) == "H(g = grown)")
+
+  test("an ordinary recursive type still scans clean, because it does cycle"):
+    assert(show(DelHoldsRecursive(DelRecursive(Nil))) == "DelHoldsRecursive(r = DelRecursive(List()))")
+
   // ------------------------------- shapes that still expand structurally
 
   test("a value class is still seen through, with no instance of its own"):
@@ -103,3 +153,21 @@ final class DelegationSuite extends AnyFunSuite:
     assert(show(DelHoldsEnum(DelColour.Sized(2, "m"))) == """DelHoldsEnum(c = Sized(n = 2, label = "m"))""")
 
 final case class DelHoldsSecret(s: DelSecret)
+
+// An unannotated intermediate does not make the descendant safe: toString ignores the annotations at every depth.
+final case class DelDeepSecret(@Redacted token: String)
+final case class DelDeepMiddle(s: DelDeepSecret)
+final case class DelDeepListMiddle(xs: List[DelDeepSecret])
+final case class DelDeepExcludingMiddle(s: DelExcluding)
+
+sealed trait DelSealedSecret
+final case class DelSealedBranch(@Redacted token: String) extends DelSealedSecret
+final case class DelSealedMiddle(s: DelSealedSecret)
+
+// Argument-growing recursion: each step applies List to the parameter, so no two instantiations are ever equal and
+// there is no cycle for the scan to detect. Bounded by MaxScanDepth rather than by cycle detection.
+final case class DelGrowth[A](next: Option[DelGrowth[List[A]]], tag: String)
+
+// Ordinary recursion for contrast: this one does cycle, so it scans clean and delegates.
+final case class DelRecursive(children: List[DelRecursive])
+final case class DelHoldsRecursive(r: DelRecursive) derives Describe
