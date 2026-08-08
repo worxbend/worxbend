@@ -68,6 +68,11 @@ private object TckFixtures:
 /** Unlike magnolia, the macro sees straight through a value class, so no explicit instance is required here. */
 final case class TckIdent(v: Int) extends AnyVal
 
+/** Top-level on purpose: the qualified-name obligations expect `<package>.TckQualified`, so this must not be
+  * nested inside the fixtures object.
+  */
+final case class TckQualified(a: Int, s: String) derives Describe
+
 sealed trait Base derives Describe
 final case class Child(v: Int) extends Base
 
@@ -81,6 +86,8 @@ private object DscrboTckAdapter extends TckAdapter:
   import TckFixtures.*
 
   override def rendererName: String = "dscrbo"
+
+  override def fixturePackage: String = "com.worxbend.dscrbo"
 
   /** One obvious line per field: a compile error here is the signal that the kit's record and this module's
     * `Configuration` have drifted apart.
@@ -148,6 +155,7 @@ private object DscrboTckAdapter extends TckAdapter:
       case "enum-fields"           => show(EnumFieldsHolder(Colour.Sized(2)))
       case "either-right"          => show(EitherHolder(Right(1)))
       case "either-left"           => show(EitherHolder(Left("e")))
+      case "qualified-names"       => show(TckQualified(1, "v"))
       case "deep-recursion"        => show(Node(1, Some(Node(2, Some(Node(3, Some(Node(4, None))))))))
       case "layout-threshold"      => show(Pair(1, 2))
       case "redacted-default"      => show(Secretish("s", "t"))

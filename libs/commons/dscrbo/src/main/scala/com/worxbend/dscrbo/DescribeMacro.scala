@@ -45,23 +45,38 @@ private[dscrbo] object DescribeMacro:
   /** How many nested layers of generated code the macro will emit before it refuses to unroll further.
     *
     * Unlike [[MaxNestedTypes]] this counts wrappers too, because a wrapper costs an emitted layer even though it is
-    * not a type the user thinks of as nesting. It exists for one reason: past roughly two dozen layers the Scala 3
-    * staging phase overflows a default 1 MB compiler stack, and the value is calibrated below every shape that was
-    * measured to do so. A model that trips this cap is refused with a message rather than a `StackOverflowError`.
+    * not a type the user thinks of as nesting. It exists for one reason: a deep enough tree makes the Scala 3 staging
+    * phase overflow the compiler's stack, and a model that trips this cap is refused with a message rather than with
+    * a `StackOverflowError`.
     *
-    * '''This number is an empirical measurement, not a derivation.''' It was taken against one compiler on one stack
-    * size, so treat it as a floor that is known safe rather than as the true limit. To re-derive it:
+    * '''Both numbers are empirical measurements against one compiler at one stack size, and the stack size is the
+    * whole story.''' Measured with Scala 3.8.4, with both caps raised out of the way so that the stack is what fails:
     *
-    *   1. build a chain of `N` nested case classes, each wrapping the next in `Option[List[Map[String, _]]]`, so that
-    *      every level costs four layers;
-    *   1. compile it with `-Xss` set to the stack size you care about (the shipped value assumes the JVM default of
-    *      1 MB — `./mill libs.commons.dscrbo.test` inherits it);
-    *   1. bisect `N` for the largest value that compiles without a `StackOverflowError` in the staging phase;
-    *   1. set this constant safely below the layer count that `N` implies, and record the compiler version and stack
-    *      size you used here.
+    *   - at `-Xss1m`: a chain of case classes each wrapping the next in `Option[List[Map[String, _]]]` (four layers
+    *     per level) survives 28 layers and overflows by 32; a plain chain survives 12 types below the root and
+    *     overflows at 13.
+    *   - at `-Xss10m`, which is what this repository actually builds with (`.mill-jvm-opts`), a plain chain of 140
+    *     types and a wrapper chain of 160 layers both compile without trouble.
     *
-    * Last measured against Scala 3.8.4 on a 1 MB stack. `NestingDepthSuite` pins both the accept and the refuse side,
-    * so lowering this constant breaks a test rather than silently shrinking what consumers can derive.
+    * So the two caps are not equally tight. Against a 1 MB stack [[MaxNestedTypes]] has '''no margin at all''' — the
+    * first shape it refuses is the first shape that overflows — while `MaxEmittedLayers` keeps roughly eight layers
+    * in hand. Against the 10 MB the build uses, both are about an order of magnitude conservative. Treat them as
+    * calibrated for the small-stack case, which is the one that fails destructively.
+    *
+    * To re-derive: raise both constants far out of the way, generate the chain you care about, compile with the
+    * `-Xss` you want to support, bisect for the largest shape that compiles, and record the compiler version and
+    * stack size here. `NestingDepthSuite` pins both the accept and the refuse side, so changing either constant
+    * breaks a test rather than silently moving what consumers can derive.
+    *
+    * '''Neither cap is `-Xmax-inlines`, and neither shadows it.''' That compiler setting limits *successive inline
+    * expansions*, and this macro never approaches it: `Describe.derived` is a single `inline def` whose body is a
+    * single splice, so the compiler's counter never rises above one however deep the model. All the recursion here is
+    * ordinary recursion in [[Expansion.renderValue]], running at staging level 0, which the compiler does not count
+    * and cannot bound — which is precisely why these two constants have to exist.
+    *
+    * Both caps bound *depth*. Neither bounds the *size* of what is emitted, which grows with the branching factor as
+    * well, so a model that is wide as well as deep can be very expensive to compile while sitting inside both caps.
+    * If that ever bites, the fix is a third budget counting emitted nodes, not a smaller value here.
     */
   private val MaxEmittedLayers: Int = 20
 
@@ -74,15 +89,53 @@ private[dscrbo] object DescribeMacro:
       instance
     }
 
+  /** [[ToString.derived]] takes its configuration as an `inline` parameter, and an inline parameter creates no
+    * binding: the argument tree is substituted at every occurrence. The expansion reads the configuration roughly
+    * twice per rendered field at every level of nesting, so splicing `conf` directly would re-evaluate the caller's
+    * expression once per occurrence — measured at 30 evaluations for a fifteen-node model. Binding it to a `val`
+    * first makes it one evaluation whose result every occurrence shares, which also guarantees that a single render
+    * cannot mix two different configurations. [[describeImpl]] needs no equivalent: its `conf` is a lambda parameter
+    * and is therefore already a stable local.
+    *
+    * Two further consequences, observable only for a configuration expression that does something. The binding is
+    * evaluated before the value expression, where previously the value came first; and it is evaluated
+    * unconditionally, where previously a `null` root short-circuited inside `Rendering.nullOr` without ever reading
+    * the configuration — so a configuration that throws now propagates on a `null` root instead of rendering `null`.
+    * Both are accepted deliberately: an effectful configuration is already outside what this API promises, and one
+    * evaluation with a predictable order is a better contract than N with none.
+    */
   def toStringImpl[T: Type](
       value: Expr[T],
       conf: Expr[Configuration],
-  )(using Quotes): Expr[String] = Expansion[T](conf, None).renderRoot(value)
+  )(using Quotes): Expr[String] =
+    '{
+      val configuration: Configuration = $conf
+      ${ Expansion[T]('configuration, None).renderRoot(value) }
+    }
 
   /** One expansion of one root type `T`.
     *
     * `conf` is the runtime configuration expression the generated code reads; `self` is the instance the generated code
     * can call back into, which is what makes a self-recursive root type work without unrolling forever.
+    *
+    * '''On capturing `Quotes`.''' Taking `Quotes` as a `using` class parameter and importing `quotes.reflect.*` once
+    * makes it a field, which the reflection guide explicitly advises against: every `TypeRepr`, `Term` and `Symbol` in
+    * the ~30 members below is then path-dependent on that one field. It is done on purpose, and the trade is worth
+    * naming so that nobody either "fixes" it blindly or copies it without knowing the cost.
+    *
+    *   - What it buys: one fixed reflection context for the whole expansion, so each step of the derivation is an
+    *     addressable member with an explicit result type, and the state every step needs — `conf`, `self`, the cached
+    *     symbols — is held once rather than threaded through every signature. It also disposes of the *other* rule in
+    *     the same guide, "avoid nested contexts": `quotes.Nested` appears nowhere, and every `Expr` a deeper level
+    *     needs is passed to it explicitly.
+    *   - What it costs: a member that receives an `Expr` created inside a splice and re-embeds it in a quote built
+    *     from the captured field extrudes that `Expr` from its scope. That is not hypothetical — it is exactly what
+    *     the sealed-dispatch path did until [[branchCondition]], [[renderChild]] and [[renderBranches]] were given
+    *     their own `(using Quotes)`; see the note there.
+    *   - What keeps it honest: `-Xcheck-macros`, enabled on this module's test module, where the macro actually
+    *     expands. It should stay on — but note the guard is partial, not total. It catches an extruded `Expr`, which
+    *     is why the sealed path is now clean; it does not catch one laundered through `.asTerm`, which is the shape
+    *     the product path uses. A regression on the product side would compile silently.
     */
   final private class Expansion[T: Type](conf: Expr[Configuration], self: Option[Expr[Describe[T]]])(using
       quotes: Quotes):
@@ -118,11 +171,26 @@ private[dscrbo] object DescribeMacro:
     private val redactedSymbol: Symbol  = TypeRepr.of[Redacted].typeSymbol
     private val transientSymbol: Symbol = TypeRepr.of[scala.transient].typeSymbol
 
+    /** The container classes [[renderValue]] dispatches on, resolved once through `TypeRepr.of[_].typeSymbol` rather
+      * than looked up by name on every call. Naming the class in Scala rather than in a string is what the macro
+      * guides prescribe, and it makes a typo a compile error here instead of an expansion-time crash at a use site.
+      */
+    private val optionClass: Symbol        = TypeRepr.of[Option[Any]].typeSymbol
+    private val scalaMapClass: Symbol      = TypeRepr.of[scala.collection.Map[Any, Any]].typeSymbol
+    private val scalaIterableClass: Symbol = TypeRepr.of[scala.collection.Iterable[Any]].typeSymbol
+    private val javaMapClass: Symbol       = TypeRepr.of[java.util.Map[Any, Any]].typeSymbol
+    private val javaIterableClass: Symbol  = TypeRepr.of[java.lang.Iterable[Any]].typeSymbol
+
     /** Types that carry no information about what they actually hold, so nothing may be assumed about their fields. */
     private val universalTypes: List[TypeRepr] =
       List(TypeRepr.of[Any], TypeRepr.of[AnyRef], TypeRepr.of[AnyVal], TypeRepr.of[Matchable])
 
     // ------------------------------------------------------------------ types
+
+    /** The root type as every comparison against it needs to see it. Computed once: [[renderSelf]] consults it for
+      * every value rendered anywhere in the expansion, not just at the root.
+      */
+    private val rootType: TypeRepr = structural(TypeRepr.of[T])
 
     /** Dealiases and widens, but keeps singleton module types (case objects, enum values) intact. */
     private def structural(tpe: TypeRepr): TypeRepr =
@@ -130,8 +198,7 @@ private[dscrbo] object DescribeMacro:
       if dealiased.termSymbol.exists && dealiased.termSymbol.flags.is(Flags.Module) then dealiased
       else dealiased.widen.dealias
 
-    private def typeArgsOf(tpe: TypeRepr, className: String): Option[List[TypeRepr]] =
-      val cls = Symbol.requiredClass(className)
+    private def typeArgsOf(tpe: TypeRepr, cls: Symbol): Option[List[TypeRepr]] =
       if !tpe.derivesFrom(cls) then None
       else
         tpe.baseType(cls) match
@@ -140,8 +207,9 @@ private[dscrbo] object DescribeMacro:
 
     private def coerce[U: Type](term: Term): Expr[U] =
       // The cast is load-bearing only for `this.type` receivers, where the declared and structural types differ.
+      // Written as a quote rather than a hand-built `TypeApply`, so the typer checks it instead of the author.
       if term.tpe <:< TypeRepr.of[U] then term.asExprOf[U]
-      else TypeApply(Select.unique(term, "asInstanceOf"), List(TypeTree.of[U])).asExprOf[U]
+      else '{ ${ term.asExprOf[Any] }.asInstanceOf[U] }
 
     private def isModuleType(tpe: TypeRepr): Boolean =
       (tpe.termSymbol.exists && tpe.termSymbol.flags.is(Flags.Module)) || tpe.typeSymbol.flags.is(Flags.Module)
@@ -154,17 +222,37 @@ private[dscrbo] object DescribeMacro:
       tpe.typeSymbol.flags.is(Flags.Case) && !isModuleType(tpe)
 
     private def isValueClass(tpe: TypeRepr): Boolean =
-      isCaseClass(tpe) && tpe.derivesFrom(Symbol.requiredClass("scala.AnyVal")) &&
+      isCaseClass(tpe) && tpe.derivesFrom(defn.AnyValClass) &&
       tpe.typeSymbol.caseFields.sizeIs == 1
 
     /** True when the declared type could stand for something else at runtime — a trait, an abstract class, an abstract
       * type member, `Any` and friends. Such a value may be an annotated case class, so rendering it with `toString`
       * would print a `@Redacted` field in the clear. The macro refuses instead of leaking.
+      *
+      * The three composite shapes are matched before the flag tests rather than after, because for all three the flag
+      * tests are vacuously false and would wave the type through:
+      *
+      *   - an intersection and a union both have `NoSymbol` for a `typeSymbol`, so every flag test answers `false` on
+      *     a symbol that does not exist. Neither shape pins down a runtime class, so both are refused outright.
+      *   - a refinement's `typeSymbol` is the *alias* symbol of the refined type, which carries none of the parent's
+      *     flags — `AnyRef { def foo: Int }` is neither abstract nor `=:= AnyRef`. Refining a type adds members but
+      *     cannot narrow which classes inhabit it, so the question is answered by the parent, recursively.
+      *
+      * '''Known hole, deliberately still open: a concrete but non-final class.''' Nothing here tests `Flags.Final`,
+      * so a field declared at `class Base` accepts a `final case class Sub(@Redacted secret: String) extends Base`
+      * and prints the secret in the clear. Closing it means refusing anything but a final class, which also refuses
+      * `java.lang.Throwable` and most of the Java library — `OpaqueTypeSuite` pins `Throwable` as renderable, and
+      * `docs/libraries/tostring-rendering-spec.md` does not say which way this should go. It is a specification
+      * decision, not an oversight; do not close it here without settling the spec first.
       */
     private def isAbstractlyTyped(tpe: TypeRepr): Boolean =
-      val symbol = tpe.typeSymbol
-      symbol.isAbstractType || symbol.flags.is(Flags.Trait) || symbol.flags.is(Flags.Abstract) ||
-      universalTypes.exists(tpe =:= _)
+      tpe match
+        case AndType(_, _) | OrType(_, _) => true
+        case Refinement(parent, _, _)     => isAbstractlyTyped(parent)
+        case _                            =>
+          val symbol = tpe.typeSymbol
+          symbol.isAbstractType || symbol.flags.is(Flags.Trait) || symbol.flags.is(Flags.Abstract) ||
+          universalTypes.exists(tpe =:= _)
 
     // ------------------------------------------------------------------ names
 
@@ -179,19 +267,27 @@ private[dscrbo] object DescribeMacro:
     private def namingSymbolOf(tpe: TypeRepr): Symbol =
       if tpe.termSymbol.exists && tpe.termSymbol.flags.is(Flags.Module) then tpe.termSymbol else tpe.typeSymbol
 
+    /** All three spellings are computed here, at expansion time, and reach the generated code as string literals; only
+      * the choice between them is left to the runtime `Configuration`.
+      */
     private def nameExpr(symbol: Symbol): Expr[String] =
-      val qualified = qualifiedNameOf(symbol)
-      '{
-        Rendering.selectName(
-          ${ Expr(simpleNameOf(symbol)) },
-          ${ Expr(qualified) },
-          ${ Expr(Rendering.compressPackages(qualified)) },
-          $conf,
-        )
-      }
+      val qualified  = qualifiedNameOf(symbol)
+      val simple     = Expr(simpleNameOf(symbol))
+      val full       = Expr(qualified)
+      val compressed = Expr(Rendering.compressPackages(qualified))
+      '{ Rendering.selectName($simple, $full, $compressed, $conf) }
 
     // ------------------------------------------------------------ annotations
 
+    /** Deliberately narrower than `argument.asExpr.value`, and not to be "simplified" onto it.
+      *
+      * `FromExpr[String]` — what `.value` uses — also constant-folds references to `inline val` and `final val`, so
+      * delegating to it would silently start accepting `@Redacted(SomeConstant)`. That contradicts the documented
+      * contract on `@Redacted` ("replacement must be a string literal") and would widen what the annotation accepts
+      * with no test pinning either behaviour. The literal shapes below are matched by hand so that the boundary stays
+      * exactly where the annotation's own documentation puts it. The `NamedArg` strip is outside `FromExpr`'s remit
+      * in any case and would be needed either way.
+      */
     private def stringLiteralOf(argument: Term): Option[String] =
       argument match
         case NamedArg(_, inner)             => stringLiteralOf(inner)
@@ -230,6 +326,15 @@ private[dscrbo] object DescribeMacro:
 
     // ----------------------------------------------------------- value render
 
+    /** The ten arms below look like duplication asking to be folded into a single `case '[t] if isPrimitive(tpe)`, and
+      * they must not be. The *static* type of the spliced term is what selects the primitive `toString`: written as
+      * `term.asExprOf[Int]` the compiler emits the unboxed `Int.toString`, whereas a bound type variable `t` would
+      * resolve to `Any.toString` and box every primitive field of every rendered value. The repetition is
+      * load-bearing.
+      *
+      * This is also the one structural handler consulted ahead of [[renderSelf]] and [[renderSummoned]] — see the note
+      * on [[renderSummoned]] for why primitives are deliberately not overridable.
+      */
     private def renderPrimitive(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       tpe.asType match
         case '[String]  => Some('{ Rendering.string(${ term.asExprOf[String] }) })
@@ -244,41 +349,54 @@ private[dscrbo] object DescribeMacro:
         case '[Unit]    => Some('{ ${ term.asExprOf[Unit] }.toString })
         case _          => None
 
-    /** A user-written instance always wins, so it is consulted before any structural handler. */
+    /** A user-written instance beats every structural handler except [[renderPrimitive]], which [[renderValue]]
+      * consults first. The ten primitive types are therefore resolved statically and are *not* overridable: a
+      * `given Describe[Int]` in scope is silently ignored for `Int` fields. That is deliberate — it is what lets this
+      * module ship no per-type instances at all, and it saves an implicit search per primitive field at expansion
+      * time. `KnownDivergenceSuite` records the same design choice from the other direction.
+      */
     private def renderSummoned(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       tpe.asType match
         case '[t] =>
-          Expr.summon[Describe[t]].map(instance => '{ Rendering.nested[t](${ coerce[t](term) }, $instance, $conf) })
+          Expr.summon[Describe[t]].map { instance =>
+            val value = coerce[t](term)
+            '{ Rendering.nested[t]($value, $instance, $conf) }
+          }
 
     /** The root's own instance, used before implicit search so that deriving a recursive type is not a cyclic search. */
     private def renderSelf(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       self
-        .filter(_ => tpe =:= structural(TypeRepr.of[T]))
-        .map(instance => '{ Rendering.nested[T](${ coerce[T](term) }, $instance, $conf) })
+        .filter(_ => tpe =:= rootType)
+        .map { instance =>
+          val value = coerce[T](term)
+          '{ Rendering.nested[T]($value, $instance, $conf) }
+        }
 
     private def renderOption(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      typeArgsOf(tpe, "scala.Option").collect {
+      typeArgsOf(tpe, optionClass).collect {
         case List(element) =>
           element.asType match
             case '[e] =>
+              val source = coerce[Option[e]](term)
               '{
                 Rendering.optionValue[e](
-                  ${ coerce[Option[e]](term) },
+                  $source,
                   (item: e) => ${ renderValue(element, 'item.asTerm, nesting.wrapped) },
                 )
               }
       }
 
     private def renderScalaMap(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      typeArgsOf(tpe, "scala.collection.Map").collect {
+      typeArgsOf(tpe, scalaMapClass).collect {
         case List(keyType, valueType) =>
           keyType.asType match
             case '[k] =>
               valueType.asType match
                 case '[v] =>
+                  val source = coerce[scala.collection.Map[k, v]](term)
                   '{
                     Rendering.mapValue[k, v](
-                      ${ coerce[scala.collection.Map[k, v]](term) },
+                      $source,
                       (key: k) => ${ renderValue(keyType, 'key.asTerm, nesting.wrapped) },
                       (item: v) => ${ renderValue(valueType, 'item.asTerm, nesting.wrapped) },
                     )
@@ -290,37 +408,40 @@ private[dscrbo] object DescribeMacro:
         case AppliedType(_, List(element)) =>
           element.asType match
             case '[e] =>
+              val source = coerce[Array[e]](term)
               '{
                 Rendering.arrayValue[e](
-                  ${ coerce[Array[e]](term) },
+                  $source,
                   (item: e) => ${ renderValue(element, 'item.asTerm, nesting.wrapped) },
                 )
               }
       }
 
     private def renderScalaIterable(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      typeArgsOf(tpe, "scala.collection.Iterable").collect {
+      typeArgsOf(tpe, scalaIterableClass).collect {
         case List(element) =>
           element.asType match
             case '[e] =>
+              val source = coerce[Iterable[e]](term)
               '{
                 Rendering.iterableValue[e](
-                  ${ coerce[Iterable[e]](term) },
+                  $source,
                   (item: e) => ${ renderValue(element, 'item.asTerm, nesting.wrapped) },
                 )
               }
       }
 
     private def renderJavaMap(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      typeArgsOf(tpe, "java.util.Map").collect {
+      typeArgsOf(tpe, javaMapClass).collect {
         case List(keyType, valueType) =>
           keyType.asType match
             case '[k] =>
               valueType.asType match
                 case '[v] =>
+                  val source = coerce[java.util.Map[k, v]](term)
                   '{
                     Rendering.javaMapValue[k, v](
-                      ${ coerce[java.util.Map[k, v]](term) },
+                      $source,
                       (key: k) => ${ renderValue(keyType, 'key.asTerm, nesting.wrapped) },
                       (item: v) => ${ renderValue(valueType, 'item.asTerm, nesting.wrapped) },
                     )
@@ -328,13 +449,14 @@ private[dscrbo] object DescribeMacro:
       }
 
     private def renderJavaIterable(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      typeArgsOf(tpe, "java.lang.Iterable").collect {
+      typeArgsOf(tpe, javaIterableClass).collect {
         case List(element) =>
           element.asType match
             case '[e] =>
+              val source = coerce[java.lang.Iterable[e]](term)
               '{
                 Rendering.javaIterableValue[e](
-                  ${ coerce[java.lang.Iterable[e]](term) },
+                  $source,
                   (item: e) => ${ renderValue(element, 'item.asTerm, nesting.wrapped) },
                 )
               }
@@ -351,7 +473,9 @@ private[dscrbo] object DescribeMacro:
 
     /** Last resort. Safe only for a type that cannot stand for an annotated subtype at runtime. */
     private def renderOpaque(tpe: TypeRepr, term: Term): Expr[String] =
-      if !isAbstractlyTyped(tpe) then '{ Rendering.opaque(${ term.asExprOf[Any] }) }
+      if !isAbstractlyTyped(tpe) then
+        val value = term.asExprOf[Any]
+        '{ Rendering.opaque($value) }
       else
         report.errorAndAbort(
           s"Describe cannot see into ${tpe.show}: the declared type is abstract, so the runtime value may be a type " +
@@ -384,11 +508,22 @@ private[dscrbo] object DescribeMacro:
         s"provide a `given Describe[${tpe.show}]` in scope, so that the chain is broken by a call to an instance " +
         "instead of being unrolled any further."
 
+    /** Resolution order for a field's type. First match wins.
+      *
+      * `renderSelf` must stay first: it recognises the root type being derived and calls back into the instance under
+      * construction. Were `renderSummoned` to run first it would find that same instance through implicit search and
+      * inline it into itself.
+      *
+      * `renderSummoned` sits ahead of `renderPrimitive` so that a user-supplied `given Describe[T]` really does win
+      * for every `T`, including `String`, `Char` and the numeric primitives. The reverse order made the built-in
+      * scalar renderings unoverridable while the README promised the opposite; the documented contract is the one
+      * worth keeping, and the cost is one implicit search per scalar field at expansion time only.
+      */
     private def renderValue(rawType: TypeRepr, term: Term, nesting: Nesting): Expr[String] =
       val tpe = structural(rawType)
-      renderPrimitive(tpe, term)
-        .orElse(renderSelf(tpe, term))
+      renderSelf(tpe, term)
         .orElse(renderSummoned(tpe, term))
+        .orElse(renderPrimitive(tpe, term))
         .orElse(renderOption(tpe, term, nesting))
         .orElse(renderScalaMap(tpe, term, nesting))
         .orElse(renderArray(tpe, term, nesting))
@@ -410,19 +545,14 @@ private[dscrbo] object DescribeMacro:
           renderValue(tpe.memberType(parameter), Select(term, parameter), nesting.inside(tpe))
 
     private def fieldExpr(owner: TypeRepr, field: Symbol, value: Expr[String]): Expr[String] =
-      val declared  = structural(owner.memberType(field))
-      val symbol    = namingSymbolOf(declared)
-      val qualified = qualifiedNameOf(symbol)
-      '{
-        Rendering.field(
-          ${ Expr(field.name) },
-          ${ Expr(simpleNameOf(symbol)) },
-          ${ Expr(qualified) },
-          ${ Expr(Rendering.compressPackages(qualified)) },
-          $value,
-          $conf,
-        )
-      }
+      val declared   = structural(owner.memberType(field))
+      val symbol     = namingSymbolOf(declared)
+      val qualified  = qualifiedNameOf(symbol)
+      val name       = Expr(field.name)
+      val simple     = Expr(simpleNameOf(symbol))
+      val full       = Expr(qualified)
+      val compressed = Expr(Rendering.compressPackages(qualified))
+      '{ Rendering.field($name, $simple, $full, $compressed, $value, $conf) }
 
     private def productBody(tpe: TypeRepr, term: Term, nesting: Nesting): Expr[String] =
       val nextNesting = nesting.inside(tpe)
@@ -435,14 +565,17 @@ private[dscrbo] object DescribeMacro:
               val value = renderValue(tpe.memberType(field), Select(term, field), nextNesting)
               Some(fieldExpr(tpe, field, value))
         }
-      '{ Rendering.assemble(${ nameExpr(tpe.typeSymbol) }, ${ Expr.ofList(rendered) }, $conf) }
+      val name        = nameExpr(tpe.typeSymbol)
+      val fields      = Expr.ofList(rendered)
+      '{ Rendering.assemble($name, $fields, $conf) }
 
     private def renderProduct(tpe: TypeRepr, term: Term, nesting: Nesting): Expr[String] =
       tpe.asType match
         case '[t] =>
+          val value = coerce[t](term)
           '{
             Rendering.nullOr[t](
-              ${ coerce[t](term) },
+              $value,
               (bound: t) => ${ productBody(tpe, 'bound.asTerm, nesting) },
             )
           }
@@ -457,6 +590,9 @@ private[dscrbo] object DescribeMacro:
     private def tupleElements(tpe: TypeRepr): List[TypeRepr] =
       tpe.asType match
         case '[head *: tail] => TypeRepr.of[head] :: tupleElements(TypeRepr.of[tail])
+        case '[EmptyTuple]   => Nil
+        // Not a tuple at all: the mirror was misread. Reported as "no children", which routes `appliedChildType`
+        // through `unifyChild` and, failing that, to an explicit refusal — never to a silently wrong rendering.
         case _               => Nil
 
     /** The children of a sealed parent, already instantiated at the parent's type arguments.
@@ -512,9 +648,19 @@ private[dscrbo] object DescribeMacro:
       else if child.flags.is(Flags.Module) then Option(child.companionModule).filter(_.exists)
       else None
 
-    private def branchCondition(child: Symbol, scrutinee: Expr[Any]): Expr[Boolean] =
+    /** The three members below take their own `Quotes` rather than using the one [[Expansion]] captured, and that is
+      * load-bearing rather than stylistic. They are the only members that receive a bare `Expr` created *inside* a
+      * splice — the `bound` lambda parameter that [[renderSealed]] introduces — and re-embed it in a quote of their
+      * own. Building that quote with the captured outer `Quotes` extrudes `bound` from the splice that created it,
+      * which `-Xcheck-macros` rejects as a `ScopeException`; taking `(using Quotes)` means the splice's own context
+      * wins resolution and the expression never leaves its scope. The sibling product path escapes the same check only
+      * because it launders its `bound` through `.asTerm`, which drops the scope tag — so it is unchecked, not exempt.
+      */
+    private def branchCondition(child: Symbol, scrutinee: Expr[Any])(using Quotes): Expr[Boolean] =
       moduleOf(child) match
-        case Some(module) => '{ $scrutinee == ${ Ref(module).asExpr } }
+        case Some(module) =>
+          val singleton = Ref(module).asExpr
+          '{ $scrutinee == $singleton }
         case None         =>
           erasedChildType(child).asType match
             case '[c] => '{ $scrutinee.isInstanceOf[c] }
@@ -524,7 +670,7 @@ private[dscrbo] object DescribeMacro:
         child: Symbol,
         scrutinee: Expr[Any],
         nesting: Nesting,
-    ): Expr[String] =
+    )(using Quotes): Expr[String] =
       moduleOf(child) match
         case Some(module) => nameExpr(module)
         case None         =>
@@ -537,21 +683,23 @@ private[dscrbo] object DescribeMacro:
         children: List[Symbol],
         scrutinee: Expr[Any],
         nesting: Nesting,
-    ): Expr[String] =
+    )(using Quotes): Expr[String] =
       children match
         case Nil           => '{ Rendering.opaque($scrutinee) }
         case child :: rest =>
-          '{
-            if ${ branchCondition(child, scrutinee) } then ${ renderChild(parent, child, scrutinee, nesting) }
-            else ${ renderBranches(parent, rest, scrutinee, nesting) }
-          }
+          // `scrutinee` is bound by the enclosing splice, not by this quote, so all three pieces are built before it.
+          val matches  = branchCondition(child, scrutinee)
+          val rendered = renderChild(parent, child, scrutinee, nesting)
+          val fallback = renderBranches(parent, rest, scrutinee, nesting)
+          '{ if $matches then $rendered else $fallback }
 
     private def renderSealed(tpe: TypeRepr, term: Term, nesting: Nesting): Expr[String] =
       val children    = tpe.typeSymbol.children
       val nextNesting = nesting.dispatching(tpe)
+      val value       = term.asExprOf[Any]
       '{
         Rendering.nullOr[Any](
-          ${ term.asExprOf[Any] },
+          $value,
           (bound: Any) => ${ renderBranches(tpe, children, 'bound, nextNesting) },
         )
       }
@@ -559,7 +707,6 @@ private[dscrbo] object DescribeMacro:
     // ------------------------------------------------------------------- root
 
     def renderRoot(root: Expr[T]): Expr[String] =
-      val rootType = structural(TypeRepr.of[T])
       renderStructure(rootType, root.asTerm, Nesting(0, 0, Nil))
         .getOrElse(
           report.errorAndAbort(

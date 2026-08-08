@@ -278,8 +278,76 @@ object Tck:
     ),
   )
 
+  /** The naming options: qualified names, package compression, and the type-name affixes.
+    *
+    * These were the last public options the catalogue did not exercise, which meant the two engines could have
+    * disagreed on any of them while every test stayed green.
+    */
+  private val naming: List[TckCase] = List(
+    TckCase(
+      "qualified-names",
+      TckConfiguration(
+        fullyQualifiedClassName = true,
+        shortPackagePrefix = false,
+        multilineIfFieldsAreGreaterOrEqual = -1,
+      ),
+      """{pkg}.TckQualified(a = 1, s = "v")""",
+      "fullyQualifiedClassName spells the product's whole name; {pkg} is each adapter's own fixture package",
+    ),
+    TckCase(
+      "qualified-names",
+      TckConfiguration(
+        fullyQualifiedClassName = true,
+        shortPackagePrefix = true,
+        multilineIfFieldsAreGreaterOrEqual = -1,
+      ),
+      """c.w.d.TckQualified(a = 1, s = "v")""",
+      "shortPackagePrefix compresses leading lowercase segments; both modules genuinely compress to c.w.d",
+    ),
+    TckCase(
+      "qualified-names",
+      TckConfiguration(
+        fullyQualifiedClassName = true,
+        shortPackagePrefix = false,
+        useTypeNames = true,
+        multilineIfFieldsAreGreaterOrEqual = -1,
+      ),
+      """{pkg}.TckQualified(a: scala.Int = 1, s: java.lang.String = "v")""",
+      "fullyQualifiedClassName qualifies field type names too, and those are not module-specific",
+    ),
+    TckCase(
+      "qualified-names",
+      TckConfiguration(
+        fullyQualifiedClassName = true,
+        shortPackagePrefix = true,
+        useTypeNames = true,
+        multilineIfFieldsAreGreaterOrEqual = -1,
+      ),
+      """c.w.d.TckQualified(a: s.Int = 1, s: j.l.String = "v")""",
+      "package compression applies to field type names as well as to the product's own name",
+    ),
+    TckCase(
+      "layout-threshold",
+      TckConfiguration(
+        useTypeNames = true,
+        fieldNameAndTypeNameSeparator = "::",
+        typeNamePrefix = "<",
+        typeNameSuffix = ">",
+        multilineIfFieldsAreGreaterOrEqual = -1,
+      ),
+      """Pair(a::<Int> = 1, b::<Int> = 2)""",
+      "fieldNameAndTypeNameSeparator, typeNamePrefix and typeNameSuffix all apply to the type name group",
+    ),
+    TckCase(
+      "layout-threshold",
+      TckConfiguration(useFieldNames = false, useTypeNames = true, multilineIfFieldsAreGreaterOrEqual = -1),
+      """Pair(1, 2)""",
+      "useFieldNames = false drops the type name too, because the type belongs to the name group",
+    ),
+  )
+
   /** Every obligation, in a stable order. */
-  val cases: List[TckCase] = scalars ++ containers ++ structures ++ annotations ++ layout
+  val cases: List[TckCase] = scalars ++ containers ++ structures ++ annotations ++ layout ++ naming
 
   /** Distinct fixture ids an adapter must be able to build. */
   val fixtureIds: List[String] = cases.map(_.fixtureId).distinct.sorted

@@ -11,6 +11,18 @@ trait TckAdapter:
   /** A short name for the renderer under test, used in failure messages. */
   def rendererName: String
 
+  /** The package the adapter's top-level fixtures live in, e.g. `com.worxbend.dscrbo`.
+    *
+    * Qualified-name obligations cannot be shared literals: each module's fixtures necessarily sit in its own package,
+    * so `fullyQualifiedClassName` renders a different string on each side even when both engines are correct. The
+    * catalogue writes `{pkg}` where the adapter's package belongs and [[TckConformance]] substitutes this value before
+    * comparing, which keeps the *shape* of the qualified name under test without pretending the two are identical.
+    *
+    * `shortPackagePrefix` needs no such treatment: `com.worxbend.describo` and `com.worxbend.dscrbo` both compress to
+    * `c.w.d`, so those obligations really are shared literals.
+    */
+  def fixturePackage: String
+
   /** Builds the value named by `fixtureId` and renders it under `configuration`.
     *
     * Must throw [[TckAdapter.UnknownFixture]] for an id it does not implement, so that a fixture added to the kit

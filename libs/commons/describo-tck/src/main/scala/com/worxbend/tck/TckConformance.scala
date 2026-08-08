@@ -12,14 +12,15 @@ abstract class TckConformance(adapter: TckAdapter) extends AnyFunSuite:
 
   Tck.cases.foreach: obligation =>
     test(s"[${adapter.rendererName}] ${obligation.fixtureId}: ${obligation.note}"):
-      val actual = adapter.render(obligation.fixtureId, obligation.configuration)
+      val expected = obligation.expected.replace("{pkg}", adapter.fixturePackage)
+      val actual   = adapter.render(obligation.fixtureId, obligation.configuration)
       assert(
-        actual == obligation.expected,
+        actual == expected,
         s"""|
             |renderer  : ${adapter.rendererName}
             |fixture   : ${obligation.fixtureId}
             |obligation: ${obligation.note}
-            |expected  : ${TckConformance.visible(obligation.expected)}
+            |expected  : ${TckConformance.visible(expected)}
             |actual    : ${TckConformance.visible(actual)}
             |""".stripMargin,
       )

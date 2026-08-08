@@ -76,6 +76,11 @@ object TckIdent:
   given Printable[TckIdent] =
     Printable.valueClass[TckIdent, Int]("TckIdent", "com.worxbend.describo.TckIdent")(_.v)
 
+/** Top-level on purpose: the qualified-name obligations expect `<package>.TckQualified`, so this must not be
+  * nested inside the fixtures object.
+  */
+final case class TckQualified(a: Int, s: String) derives Printable
+
 sealed trait Base derives Printable
 final case class Child(v: Int) extends Base
 
@@ -89,6 +94,8 @@ private object DescriboTckAdapter extends TckAdapter:
   import TckFixtures.*
 
   override def rendererName: String = "describo"
+
+  override def fixturePackage: String = "com.worxbend.describo"
 
   /** One obvious line per field: a compile error here is the signal that the kit's record and this module's
     * `Configuration` have drifted apart.
@@ -156,6 +163,7 @@ private object DescriboTckAdapter extends TckAdapter:
       case "enum-fields"           => show(EnumFieldsHolder(Colour.Sized(2)))
       case "either-right"          => show(EitherHolder(Right(1)))
       case "either-left"           => show(EitherHolder(Left("e")))
+      case "qualified-names"       => show(TckQualified(1, "v"))
       case "deep-recursion"        => show(Node(1, Some(Node(2, Some(Node(3, Some(Node(4, None))))))))
       case "layout-threshold"      => show(Pair(1, 2))
       case "redacted-default"      => show(Secretish("s", "t"))

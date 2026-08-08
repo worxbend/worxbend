@@ -6,7 +6,7 @@ import mill.javalib.publish._
 import mill.scalalib.SbtModule
 import mill.scalalib.scalafmt.ScalafmtModule
 
-object `package` extends SbtModule with PublishModule with ScalafmtModule {
+object `package` extends SbtModule with PublishModule with ScalafmtModule { outer =>
 
   def scalaVersion = "3.8.4"
 
@@ -24,6 +24,12 @@ object `package` extends SbtModule with PublishModule with ScalafmtModule {
   def publishVersion = "0.1.0-SNAPSHOT"
 
   object test extends SbtTests with TestModule.ScalaTest with ScalafmtModule {
+
+    // The macro expands at the *use* site, so `-Xcheck-macros` only checks anything when it is set here rather than on
+    // the module that defines the macro. It validates the trees and types `DescribeMacro` hand-builds outside a quote
+    // (`Select`, `AppliedType`, `Ref`), and detects scope extrusion — which matters because `Expansion` deliberately
+    // captures one `Quotes`. Deliberately kept off the published module so consumers do not pay for the check.
+    def scalacOptions = outer.scalacOptions() ++ Seq("-Xcheck-macros")
 
     // The conformance kit is test-scope only, so it never reaches this module's published dependencies.
     def moduleDeps = super.moduleDeps ++ Seq(build.libs.commons.`describo-tck`)

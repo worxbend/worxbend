@@ -100,3 +100,34 @@ final class DerivationSuite extends AnyFunSuite:
 
   test("a primitive is rejected at compile time"):
     assertDoesNotCompile("Describe.derived[Int]")
+
+/** A user-supplied instance must win for scalar types too, not only for structured ones.
+  *
+  * `renderPrimitive` used to run ahead of `renderSummoned`, which made the built-in `String`, `Char`, `Boolean` and
+  * numeric renderings unoverridable while the README documented the opposite. These pin the documented contract.
+  */
+class ScalarOverrideSuite extends org.scalatest.funsuite.AnyFunSuite:
+
+  private given Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
+
+  test("a user supplied instance wins over the built in String rendering"):
+    given Describe[String] with
+      def describe(value: String)(using Configuration): String = s"<<$value>>"
+    final case class T(s: String, i: Int) derives Describe
+    assert(summon[Describe[T]].describe(T("v", 1)) == "T(s = <<v>>, i = 1)")
+
+  test("a user supplied instance wins over the built in Int rendering"):
+    given Describe[Int] with
+      def describe(value: Int)(using Configuration): String = s"#$value"
+    final case class T(i: Int, s: String) derives Describe
+    assert(summon[Describe[T]].describe(T(1, "v")) == """T(i = #1, s = "v")""")
+
+  test("a user supplied scalar instance also applies inside a collection"):
+    given Describe[String] with
+      def describe(value: String)(using Configuration): String = s"<<$value>>"
+    final case class T(xs: List[String]) derives Describe
+    assert(summon[Describe[T]].describe(T(List("a", "b"))) == "T(xs = [<<a>>, <<b>>])")
+
+  test("without a user instance the built in scalar rendering is unchanged"):
+    final case class T(s: String, i: Int) derives Describe
+    assert(summon[Describe[T]].describe(T("v", 1)) == """T(s = "v", i = 1)""")
