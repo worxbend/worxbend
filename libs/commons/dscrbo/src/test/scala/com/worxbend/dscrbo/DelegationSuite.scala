@@ -141,6 +141,41 @@ final class DelegationSuite extends AnyFunSuite:
   test("an ordinary recursive type still scans clean, because it does cycle"):
     assert(show(DelHoldsRecursive(DelRecursive(Nil))) == "DelHoldsRecursive(r = DelRecursive(List()))")
 
+  // ------------------------------- tuples are containers, not nested domain types
+
+  // A tuple is a case class, so the delegation rule would apply to it — but nobody can write `derives Describe` on
+  // Tuple2, so delegating would strip its structure permanently AND bypass the instances of its elements. Tuples are
+  // therefore expanded wherever they appear, like the collections they resemble.
+  test("a tuple field is expanded rather than handed to its own toString"):
+    assert(show(DelTupleHolder((1, "a"))) == """DelTupleHolder(p = Tuple2(_1 = 1, _2 = "a"))""")
+
+  test("a tuple's elements go back through the normal resolution, so element instances still apply"):
+    assert(show(DelTupleOfInstanced((1, DelInstanced(2, "v")))) ==
+      """DelTupleOfInstanced(p = Tuple2(_1 = 1, _2 = DelInstanced(a = 2, s = "v")))""")
+
+  test("an element without an instance still falls back to toString inside a tuple"):
+    assert(show(DelTupleOfPlain((1, DelPlain(2, "v")))) == "DelTupleOfPlain(p = Tuple2(_1 = 1, _2 = DelPlain(2,v)))")
+
+  test("a tuple hiding a redacting element is refused, not printed"):
+    val errors = typeCheckErrors("final case class H(p: (String, DelSecret)) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "a redacting element inside a tuple must not reach toString")
+
+  test("a three element tuple expands the same way"):
+    assert(show(DelTriple((1, "a", true))) == """DelTriple(t = Tuple3(_1 = 1, _2 = "a", _3 = true))""")
+
+  // ------------------------------- collections of case classes
+
+  test("a list of a case class with an instance renders each element structurally"):
+    assert(show(DelListInstanced(List(DelInstanced(1, "v")))) ==
+      """DelListInstanced(xs = [DelInstanced(a = 1, s = "v")])""")
+
+  test("a list of a case class without an instance renders each element with toString"):
+    assert(show(DelListPlain(List(DelPlain(1, "v")))) == "DelListPlain(xs = [DelPlain(1,v)])")
+
+  test("a map value keeps the same rule"):
+    assert(show(DelMapInstanced(Map("k" -> DelInstanced(1, "v")))) ==
+      """DelMapInstanced(m = ["k" -> DelInstanced(a = 1, s = "v")])""")
+
   // ------------------------------- shapes that still expand structurally
 
   test("a value class is still seen through, with no instance of its own"):
@@ -171,3 +206,11 @@ final case class DelGrowth[A](next: Option[DelGrowth[List[A]]], tag: String)
 // Ordinary recursion for contrast: this one does cycle, so it scans clean and delegates.
 final case class DelRecursive(children: List[DelRecursive])
 final case class DelHoldsRecursive(r: DelRecursive) derives Describe
+
+final case class DelTupleHolder(p: (Int, String)) derives Describe
+final case class DelTupleOfInstanced(p: (Int, DelInstanced)) derives Describe
+final case class DelTupleOfPlain(p: (Int, DelPlain)) derives Describe
+final case class DelTriple(t: (Int, String, Boolean)) derives Describe
+final case class DelListInstanced(xs: List[DelInstanced]) derives Describe
+final case class DelListPlain(xs: List[DelPlain]) derives Describe
+final case class DelMapInstanced(m: Map[String, DelInstanced]) derives Describe

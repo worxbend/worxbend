@@ -347,6 +347,20 @@ which has no instance of its own to delegate to.
 Anywhere else, a case-class-typed field is an ordinary typeclass dependency. It earns structured rendering
 by carrying its own `derives Describe`; without one it renders the way Scala already renders it.
 
+**Tuples are the exception**, because they are anonymous containers rather than domain types — you cannot
+write `derives Describe` on `Tuple2`, so delegating would strip their structure permanently *and* bypass the
+instances of the elements inside them. Tuples are expanded wherever they appear, like the collections they
+resemble, and their elements go back through the normal resolution:
+
+```scala
+final case class Holder(p: (Int, Inner)) derives Describe
+// Holder(p = Tuple2(_1 = 1, _2 = Inner(a = 1)))    <- Inner's own instance still applies
+```
+
+Collections follow the same principle: the container is always structural, and each **element** is resolved
+independently, so `List[Inner]` renders `[Inner(a = 1)]` when `Inner` has an instance and `[Inner(1)]` when it
+does not.
+
 ```scala
 final case class Inner(a: Int, s: String)                    // no instance
 final case class Outer(i: Inner) derives Describe

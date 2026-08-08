@@ -251,6 +251,17 @@ private[dscrbo] object DescribeMacro:
       val symbol = tpe.typeSymbol
       (symbol.flags.is(Flags.Sealed) || symbol.flags.is(Flags.Enum)) && symbol.children.nonEmpty
 
+    /** A tuple is a case class, but it is an anonymous container rather than a domain type.
+      *
+      * The delegation rule — "a nested case class supplies its own instance, or renders with toString" — has no
+      * meaning for `Tuple2`: nobody can write `derives Describe` on it, so delegating would permanently strip
+      * structure and, worse, bypass the instances of the elements *inside* it. Tuples are therefore expanded
+      * wherever they appear, exactly like the collections they resemble, and their elements go back through the
+      * normal resolution so element instances and redaction still apply.
+      */
+    private def isTuple(tpe: TypeRepr): Boolean =
+      defn.isTupleClass(tpe.typeSymbol)
+
     private def isCaseClass(tpe: TypeRepr): Boolean =
       tpe.typeSymbol.flags.is(Flags.Case) && !isModuleType(tpe)
 
@@ -539,7 +550,7 @@ private[dscrbo] object DescribeMacro:
       if isModuleType(tpe) then Some(nameExpr(namingSymbolOf(tpe)))
       else if isSealedParent(tpe) then Some(withinBudget(tpe, nesting)(renderSealed(tpe, term, nesting)))
       else if isValueClass(tpe) then Some(withinBudget(tpe, nesting)(renderValueClass(tpe, term, nesting)))
-      else if isCaseClass(tpe) && (nesting.types == 0 || nesting.branch) then
+      else if isCaseClass(tpe) && (nesting.types == 0 || nesting.branch || isTuple(tpe)) then
         Some(withinBudget(tpe, nesting)(renderProduct(tpe, term, nesting)))
       else if isCaseClass(tpe) then refuseIfItRedacts(tpe)
       else None

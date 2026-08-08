@@ -112,6 +112,18 @@ object Tck:
     TckCase("either-right", flat, """EitherHolder(e = Right(value = 1))""", "Either dispatches to Right"),
     TckCase("either-left", flat, """EitherHolder(e = Left(value = "e"))""", "Either dispatches to Left"),
     TckCase(
+      "tuple-scalars",
+      flat,
+      """TupleHolder(pair = Tuple2(_1 = 1, _2 = "a"))""",
+      "a tuple is expanded structurally, not handed to its own toString",
+    ),
+    TckCase(
+      "tuple-nested",
+      flat,
+      """TupleNestedHolder(pair = Tuple2(_1 = Inner(v = 1), _2 = "t"))""",
+      "a tuple's elements go back through the normal resolution, so an element's own instance still applies",
+    ),
+    TckCase(
       "deep-recursion",
       flat,
       "Node(v = 1, next = Some(Node(v = 2, next = Some(Node(v = 3, next = Some(Node(v = 4, next = None)))))))",
