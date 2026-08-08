@@ -1,7 +1,7 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
-import com.worxbend.dscrbo.annotations.Excluded
-import com.worxbend.dscrbo.annotations.Redacted
+import com.worxbend.reveal.annotations.Excluded
+import com.worxbend.reveal.annotations.Redacted
 
 import scala.deriving.Mirror
 import scala.quoted.*
@@ -16,7 +16,7 @@ import scala.quoted.*
   * The work itself lives in [[Expansion]], one instance per expanded root type, so that every step is an addressable
   * member with an explicit result type rather than a local definition buried in one long method.
   */
-private[dscrbo] object DescribeMacro:
+private[reveal] object DescribeMacro:
 
   /** Resolution of a single field. First match wins, evaluated exactly once per field at expansion time:
     *   1. `@Excluded` or `@transient` -> [[FieldRule.Omit]];

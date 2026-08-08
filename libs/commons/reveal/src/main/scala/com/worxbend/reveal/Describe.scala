@@ -1,4 +1,4 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
 /** Renders a value of `T` as a configurable, redaction-aware string.
   *
@@ -45,11 +45,11 @@ object Describe:
   */
 trait AutoToString:
 
-  protected given dscrboDescribe: Describe[this.type] = scala.compiletime.deferred
+  protected given revealDescribe: Describe[this.type] = scala.compiletime.deferred
 
-  protected given dscrboConfiguration: Configuration = scala.compiletime.deferred
+  protected given revealConfiguration: Configuration = scala.compiletime.deferred
 
-  override def toString: String = dscrboDescribe.describe(this)(using dscrboConfiguration)
+  override def toString: String = revealDescribe.describe(this)(using revealConfiguration)
 
 /** Low-ceremony shim for `override def toString: String = ToString.derived(this)`.
   *

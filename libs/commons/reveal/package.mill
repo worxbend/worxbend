@@ -1,4 +1,4 @@
-package build.libs.commons.dscrbo
+package build.libs.commons.reveal
 
 import mill._
 import mill.javalib._

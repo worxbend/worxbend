@@ -1,4 +1,4 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -16,7 +16,7 @@ class NamingAndGenericsSuite extends AnyFunSuite:
     given Configuration =
       Configuration(fullyQualifiedClassName = true, shortPackagePrefix = false, multilineIfFieldsAreGreaterOrEqual = -1)
     val actual          = summon[Describe[DivergenceHolder]].describe(DivergenceHolder(DivergenceColour.Red))
-    assert(actual == "com.worxbend.dscrbo.DivergenceHolder(c = com.worxbend.dscrbo.DivergenceColour.Red)")
+    assert(actual == "com.worxbend.reveal.DivergenceHolder(c = com.worxbend.reveal.DivergenceColour.Red)")
 
   test("an enum case's simple name carries no package or enum prefix"):
     assert(

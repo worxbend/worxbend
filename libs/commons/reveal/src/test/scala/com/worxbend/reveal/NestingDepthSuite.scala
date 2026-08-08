@@ -1,4 +1,4 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
 import scala.compiletime.testing.typeCheckErrors
 

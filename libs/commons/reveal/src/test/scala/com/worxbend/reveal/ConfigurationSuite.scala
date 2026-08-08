@@ -1,6 +1,6 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
-import com.worxbend.dscrbo.annotations.Excluded
+import com.worxbend.reveal.annotations.Excluded
 
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -43,25 +43,25 @@ final class ConfigurationSuite extends AnyFunSuite:
 
   test("fullyQualifiedClassName with shortPackagePrefix compresses leading package segments"):
     assert(
-      render(singleLine.copy(fullyQualifiedClassName = true)) == "c.w.d.CfgPair(alpha = \"x\", beta = 1)"
+      render(singleLine.copy(fullyQualifiedClassName = true)) == "c.w.r.CfgPair(alpha = \"x\", beta = 1)"
     )
 
   test("fullyQualifiedClassName without shortPackagePrefix spells the whole name"):
     assert(
       render(singleLine.copy(fullyQualifiedClassName = true, shortPackagePrefix = false)) ==
-        "com.worxbend.dscrbo.CfgPair(alpha = \"x\", beta = 1)"
+        "com.worxbend.reveal.CfgPair(alpha = \"x\", beta = 1)"
     )
 
   test("fullyQualifiedClassName also qualifies field type names"):
     assert(
       render(singleLine.copy(fullyQualifiedClassName = true, shortPackagePrefix = false, useTypeNames = true)) ==
-        "com.worxbend.dscrbo.CfgPair(alpha: java.lang.String = \"x\", beta: scala.Int = 1)"
+        "com.worxbend.reveal.CfgPair(alpha: java.lang.String = \"x\", beta: scala.Int = 1)"
     )
 
   test("shortPackagePrefix compresses field type names too"):
     assert(
       render(singleLine.copy(fullyQualifiedClassName = true, useTypeNames = true)) ==
-        "c.w.d.CfgPair(alpha: j.l.String = \"x\", beta: s.Int = 1)"
+        "c.w.r.CfgPair(alpha: j.l.String = \"x\", beta: s.Int = 1)"
     )
 
   test("fieldsSeparator is used verbatim on a single line"):

@@ -1,4 +1,4 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
 import java.time.Instant
 import java.time.LocalDate
@@ -51,7 +51,7 @@ final class TypeNameSuite extends AnyFunSuite:
     val configuration = typed.copy(fullyQualifiedClassName = true, shortPackagePrefix = false)
     assert(
       Describe[NamDeclared].describe(declared)(using configuration) ==
-        "com.worxbend.dscrbo.NamDeclared(text: java.lang.String = \"t\", number: scala.Int = 1, " +
+        "com.worxbend.reveal.NamDeclared(text: java.lang.String = \"t\", number: scala.Int = 1, " +
         "amount: scala.math.BigDecimal = 1.5, day: java.time.LocalDate = 2023-01-01, " +
         "at: java.time.Instant = 2023-01-01T00:00:00Z, items: scala.collection.immutable.List = [\"a\"], " +
         "lookup: scala.collection.immutable.Map = [\"k\" -> \"v\"], perhaps: scala.Option = Some(\"p\"))"
@@ -61,7 +61,7 @@ final class TypeNameSuite extends AnyFunSuite:
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1, fullyQualifiedClassName = true)
     assert(
       Describe[NamOuter.Inner].describe(NamOuter.Inner(1))(using configuration) ==
-        "c.w.d.NamOuter.Inner(value = 1)"
+        "c.w.r.NamOuter.Inner(value = 1)"
     )
 
   test("a generic case class renders its instantiated field types"):
@@ -72,10 +72,10 @@ final class TypeNameSuite extends AnyFunSuite:
     )
 
   test("package compression shortens leading lowercase segments only"):
-    assert(Rendering.compressPackages("com.worxbend.dscrbo.Fixture") == "c.w.d.Fixture")
+    assert(Rendering.compressPackages("com.worxbend.reveal.Fixture") == "c.w.r.Fixture")
 
   test("package compression leaves an unqualified name alone, with no leading dot"):
     assert(Rendering.compressPackages("Fixture") == "Fixture")
 
   test("package compression stops at the first capitalised segment"):
-    assert(Rendering.compressPackages("com.worxbend.dscrbo.Fixtures.Inner") == "c.w.d.Fixtures.Inner")
+    assert(Rendering.compressPackages("com.worxbend.reveal.Fixtures.Inner") == "c.w.r.Fixtures.Inner")

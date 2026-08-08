@@ -1,11 +1,11 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
 /** Runtime support for macro-generated code.
   *
   * This object is public only because the code emitted by [[Describe.derived]] and [[ToString.derived]] refers to it
   * from the user's compilation unit. It is not part of the intended user-facing API and carries no compatibility
   * promise beyond what the macro needs. Members the emitted code never names are narrowed accordingly: helpers used
-  * only from inside this object are `private`, and helpers evaluated at macro-expansion time are `private[dscrbo]`.
+  * only from inside this object are `private`, and helpers evaluated at macro-expansion time are `private[reveal]`.
   *
   * Everything here is total: no member throws, and every member renders a `null` argument as the four characters
   * `null`.
@@ -123,10 +123,10 @@ object Rendering:
 
   /** Compresses every leading segment whose first character is lowercase to that single character.
     *
-    * `com.worxbend.dscrbo.Fixture` becomes `c.w.d.Fixture`; a name without packages is returned unchanged, with no
+    * `com.worxbend.reveal.Fixture` becomes `c.w.d.Fixture`; a name without packages is returned unchanged, with no
     * leading dot. Evaluated at macro-expansion time, so the generated code only ever sees the result.
     */
-  private[dscrbo] def compressPackages(qualifiedName: String): String =
+  private[reveal] def compressPackages(qualifiedName: String): String =
     val (packageSegments, rest) =
       qualifiedName.split('.').toList.span(segment => segment.nonEmpty && segment.head.isLower)
     (packageSegments.map(segment => segment.head.toString) ++ rest).mkString(".")

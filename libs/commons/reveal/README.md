@@ -1,13 +1,13 @@
 <div align="center">
 
-# 🩻 dscrbo
+# 🩻 reveal
 
 **Configurable, redaction-aware `toString` for Scala 3 — with _zero_ runtime dependencies.**
 
 [![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
-[![Dependencies](https://img.shields.io/badge/runtime%20deps-0-success)](#-why-dscrbo)
+[![Dependencies](https://img.shields.io/badge/runtime%20deps-0-success)](#-why-reveal)
 [![Derivation](https://img.shields.io/badge/derivation-inline%20macro-blueviolet)](#-how-the-macro-works)
-[![Tests](https://img.shields.io/badge/tests-244-brightgreen)](#-testing-and-the-conformance-kit)
+[![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
 [![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
 
 _Print your case classes the way you want — and never print a secret by accident._
@@ -18,7 +18,7 @@ _Print your case classes the way you want — and never print a secret by accide
 
 ## 📑 Contents
 
-- [Why dscrbo](#-why-dscrbo)
+- [Why reveal](#-why-reveal)
 - [Install](#-install)
 - [Quick start](#-quick-start)
 - [Redaction and exclusion](#-redaction-and-exclusion)
@@ -27,18 +27,18 @@ _Print your case classes the way you want — and never print a secret by accide
 - [Ways to derive](#-ways-to-derive)
 - [How the macro works](#-how-the-macro-works)
 - [Limits](#-limits)
-- [dscrbo vs describo](#-dscrbo-vs-describo)
+- [reveal vs describo](#-reveal-vs-describo)
 - [Testing](#-testing)
 - [License](#-license)
 
 ---
 
-## 💡 Why dscrbo
+## 💡 Why reveal
 
 Scala's generated `toString` has two problems in a real service: it prints everything — including the
 password field — and it prints it in exactly one shape you cannot change.
 
-`dscrbo` fixes both, and does it **without putting anything on your classpath**.
+`reveal` fixes both, and does it **without putting anything on your classpath**.
 
 | | |
 | :-- | :-- |
@@ -53,7 +53,7 @@ password field — and it prints it in exactly one shape you cannot change.
 > The zero-dependency property is this module's entire reason to exist. If you already depend on
 > [magnolia](https://github.com/softwaremill/magnolia), prefer the sibling module
 > [`describo`](../describo) — it is smaller, composes as an ordinary typeclass, and handles a few shapes
-> `dscrbo` cannot. See [dscrbo vs describo](#-dscrbo-vs-describo).
+> `reveal` cannot. See [reveal vs describo](#-reveal-vs-describo).
 
 ---
 
@@ -62,24 +62,24 @@ password field — and it prints it in exactly one shape you cannot change.
 | | |
 | :-- | :-- |
 | **groupId** | `io.worxbend` |
-| **artifactId** | `dscrbo_3` |
-| **Scala package** | `com.worxbend.dscrbo` |
+| **artifactId** | `reveal_3` |
+| **Scala package** | `com.worxbend.reveal` |
 | **Scala version** | 3.8.4 |
 
 **Mill**
 
 ```scala
-def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.worxbend::dscrbo:0.1.0-SNAPSHOT")
+def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.worxbend::reveal:0.1.0-SNAPSHOT")
 ```
 
 **sbt**
 
 ```scala
-libraryDependencies += "io.worxbend" %% "dscrbo" % "0.1.0-SNAPSHOT"
+libraryDependencies += "io.worxbend" %% "reveal" % "0.1.0-SNAPSHOT"
 ```
 
 > [!NOTE]
-> The groupId is `io.worxbend` while the Scala package is `com.worxbend.dscrbo`. That is intentional and
+> The groupId is `io.worxbend` while the Scala package is `com.worxbend.reveal`. That is intentional and
 > not a mistake to be "fixed": `io.worxbend` is the established publishing organisation, and
 > `com.worxbend.<product>` is the mandated package prefix for new code. The sibling publishes as
 > `describo_3` under `com.worxbend.describo` — the leaf segments differ deliberately so both artifacts
@@ -90,8 +90,8 @@ libraryDependencies += "io.worxbend" %% "dscrbo" % "0.1.0-SNAPSHOT"
 ## 🚀 Quick start
 
 ```scala
-import com.worxbend.dscrbo.*
-import com.worxbend.dscrbo.annotations.*
+import com.worxbend.reveal.*
+import com.worxbend.reveal.annotations.*
 
 final case class Account(
     id:                 Long,
@@ -144,7 +144,7 @@ final case class T(@Redacted @Excluded both: String, tag: String) derives Descri
 When a field carries several `@Redacted`, the one written **first** wins.
 
 > [!TIP]
-> `@Excluded` is the intended spelling. `@transient` is a *serialization* marker that `dscrbo` honours
+> `@Excluded` is the intended spelling. `@transient` is a *serialization* marker that `reveal` honours
 > only so that existing code keeps working.
 
 ### Redaction composes 🪆
@@ -290,7 +290,7 @@ object Order:
 println(Order(1L))   // Order(id = 1)
 ```
 
-The mixin's members are prefixed (`dscrboDescribe`, `dscrboConfiguration`) precisely so they can never
+The mixin's members are prefixed (`revealDescribe`, `revealConfiguration`) precisely so they can never
 collide with your own field names — a case class with fields called `p` and `c` still compiles.
 
 > [!NOTE]
@@ -401,7 +401,7 @@ given Describe[ThatType] = ...   // teach it the type, or
 | :-- | :-- |
 | 🔁 **Nesting: 12 types** | only the shapes that still expand — sealed families, value classes, wrapper chains. Plain nested case classes do not nest at all |
 | 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Binds first: a sealed chain refuses at 11 levels |
-| 🧊 **Generic case classes** | `Box[A] derives Describe` compiles, but summoning it at `Box[Int]` needs a `given Describe[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-dscrbo-vs-describo) |
+| 🧊 **Generic case classes** | `Box[A] derives Describe` compiles, but summoning it at `Box[Int]` needs a `given Describe[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-reveal-vs-describo) |
 | 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
@@ -411,13 +411,13 @@ constant in `DescribeMacro.scala`.
 
 ---
 
-## 🔀 dscrbo vs describo
+## 🔀 reveal vs describo
 
 Two libraries solving the same problem by different means. **They are not required to produce identical
 output**, and they deliberately do not: each is free to make the choice that suits its own mechanism, and
 each pins its own behaviour in its own tests.
 
-| | 🩻 dscrbo | 🔎 [describo](../describo) |
+| | 🩻 reveal | 🔎 [describo](../describo) |
 | :-- | :-- | :-- |
 | Mechanism | inline macro, fully unrolled | magnolia typeclass derivation |
 | Runtime dependencies | **none** | magnolia |
@@ -427,12 +427,12 @@ each pins its own behaviour in its own tests.
 | Extension point | `given Describe[T]` | `given Printable[T]` or a factory |
 | Failure at the edges | compile error at 12 types / 20 layers | `StackOverflowError` at render time |
 
-**Choose `dscrbo`** if you cannot take the magnolia dependency.
+**Choose `reveal`** if you cannot take the magnolia dependency.
 **Choose `describo`** otherwise — it is smaller and easier to extend.
 
 ### Where they differ
 
-| | `dscrbo` | `describo` |
+| | `reveal` | `describo` |
 | :-- | :-- | :-- |
 | Nested case class, no instance | plain `toString` | auto-derived by magnolia |
 | Enum case, qualified name | `com.example.Colour.Red` | `com.example.Red` — magnolia's `TypeInfo` reports the package |
@@ -444,7 +444,7 @@ parent. The other two follow from the derivation mechanism each library uses.
 ## ✅ Testing
 
 ```bash
-./mill libs.commons.dscrbo.test        # this module
+./mill libs.commons.reveal.test        # this module
 ./mill libs.commons.__.checkFormat     # scalafmt
 ```
 

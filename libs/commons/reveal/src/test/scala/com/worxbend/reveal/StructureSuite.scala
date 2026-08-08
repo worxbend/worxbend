@@ -1,6 +1,6 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
-import com.worxbend.dscrbo.annotations.Excluded
+import com.worxbend.reveal.annotations.Excluded
 
 import org.scalatest.funsuite.AnyFunSuite
 

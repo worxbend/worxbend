@@ -1,7 +1,7 @@
-package com.worxbend.dscrbo
+package com.worxbend.reveal
 
-import com.worxbend.dscrbo.annotations.Excluded
-import com.worxbend.dscrbo.annotations.Redacted
+import com.worxbend.reveal.annotations.Excluded
+import com.worxbend.reveal.annotations.Redacted
 
 import scala.compiletime.testing.typeCheckErrors
 

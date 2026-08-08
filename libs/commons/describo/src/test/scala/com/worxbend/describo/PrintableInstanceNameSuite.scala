@@ -15,7 +15,7 @@ import org.scalatest.funsuite.AnyFunSuite
   *
   * These names are hand-written string literals that only surface under `useTypeNames` and `fullyQualifiedClassName`,
   * so a typo in one of them would otherwise ship unnoticed. The canonical rule is
-  * `TypeRepr.of[X].dealias.typeSymbol.fullName` with a trailing `$` stripped, which is also what the sibling `dscrbo`
+  * `TypeRepr.of[X].dealias.typeSymbol.fullName` with a trailing `$` stripped, which is also what the sibling `reveal`
   * macro computes; the table below is describo's side of that contract.
   *
   * The rows are data, but each becomes its own scalatest case, so a break names the one instance that drifted instead

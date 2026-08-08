@@ -77,7 +77,7 @@ class PrintableAnnotationsSuite extends AnyFunSuite:
     val actual = summon[Printable[AnnExcludedThenRedacted]].asString(AnnExcludedThenRedacted("s", "bob"))
     assert(actual == "AnnExcludedThenRedacted(name = \"bob\")")
 
-  // The rule is "the @Redacted written first in source order wins", which is what dscrbo's macro implements.
+  // The rule is "the @Redacted written first in source order wins", which is what reveal's macro implements.
   // Magnolia surfaces `param.annotations` in reverse source order, so FieldRule.of reverses before searching;
   // this test pins the agreed behaviour so the two modules cannot drift apart again.
   test("several @Redacted annotations on one field resolve to the one written first"):
