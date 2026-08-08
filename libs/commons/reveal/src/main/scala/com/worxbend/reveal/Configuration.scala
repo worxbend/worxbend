@@ -2,7 +2,7 @@ package com.worxbend.reveal
 
 /** Rendering options consumed by [[PrettyPrintable]].
   *
-  * Kept field-for-field identical with com.worxbend.describo.Configuration. Any change here must be mirrored there and
+  * Kept field-for-field identical with com.worxbend.prettyprinto.Configuration. Any change here must be mirrored there and
   * in both READMEs.
   *
   * This is a rendering-options DTO, always constructed with named arguments, which is the one shape where a flat record
@@ -83,7 +83,7 @@ object Configuration:
     *
     * Deliberately not also exposed as a `given`: an instance in `Configuration`'s implicit scope would always win
     * implicit search, which would make those default arguments unreachable, would make `AutoToString` behave
-    * differently here than in `com.worxbend.describo`, and would silently satisfy a downstream `using Configuration`
+    * differently here than in `com.worxbend.prettyprinto`, and would silently satisfy a downstream `using Configuration`
     * the caller forgot to provide.
     */
   val default: Configuration = Configuration()

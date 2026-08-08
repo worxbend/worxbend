@@ -27,7 +27,7 @@ _Print your case classes the way you want — and never print a secret by accide
 - [Ways to derive](#-ways-to-derive)
 - [How the macro works](#-how-the-macro-works)
 - [Limits](#-limits)
-- [reveal vs describo](#-reveal-vs-describo)
+- [reveal vs pretty-printo](#-reveal-vs-pretty-printo)
 - [Testing](#-testing)
 - [License](#-license)
 
@@ -52,8 +52,8 @@ password field — and it prints it in exactly one shape you cannot change.
 > [!IMPORTANT]
 > The zero-dependency property is this module's entire reason to exist. If you already depend on
 > [magnolia](https://github.com/softwaremill/magnolia), prefer the sibling module
-> [`describo`](../describo) — it is smaller, composes as an ordinary typeclass, and handles a few shapes
-> `reveal` cannot. See [reveal vs describo](#-reveal-vs-describo).
+> [`pretty-printo`](../pretty-printo) — it is smaller, composes as an ordinary typeclass, and handles a few shapes
+> `reveal` cannot. See [reveal vs pretty-printo](#-reveal-vs-pretty-printo).
 
 ---
 
@@ -61,7 +61,7 @@ password field — and it prints it in exactly one shape you cannot change.
 
 | | |
 | :-- | :-- |
-| **groupId** | `io.worxbend` |
+| **groupId** | `com.worxbend` |
 | **artifactId** | `reveal_3` |
 | **Scala package** | `com.worxbend.reveal` |
 | **Scala version** | 3.8.4 |
@@ -69,21 +69,14 @@ password field — and it prints it in exactly one shape you cannot change.
 **Mill**
 
 ```scala
-def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.worxbend::reveal:0.1.0-SNAPSHOT")
+def mvnDeps = super.mvnDeps() ++ Seq(mvn"com.worxbend::reveal:0.1.0-SNAPSHOT")
 ```
 
 **sbt**
 
 ```scala
-libraryDependencies += "io.worxbend" %% "reveal" % "0.1.0-SNAPSHOT"
+libraryDependencies += "com.worxbend" %% "reveal" % "0.1.0-SNAPSHOT"
 ```
-
-> [!NOTE]
-> The groupId is `io.worxbend` while the Scala package is `com.worxbend.reveal`. That is intentional and
-> not a mistake to be "fixed": `io.worxbend` is the established publishing organisation, and
-> `com.worxbend.<product>` is the mandated package prefix for new code. The sibling publishes as
-> `describo_3` under `com.worxbend.describo` — the leaf segments differ deliberately so both artifacts
-> can share a classpath without their `Configuration` and `annotations` classes colliding.
 
 ---
 
@@ -401,7 +394,7 @@ given PrettyPrintable[ThatType] = ...   // teach it the type, or
 | :-- | :-- |
 | 🔁 **Nesting: 12 types** | only the shapes that still expand — sealed families, value classes, wrapper chains. Plain nested case classes do not nest at all |
 | 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Binds first: a sealed chain refuses at 11 levels |
-| 🧊 **Generic case classes** | `Box[A] derives PrettyPrintable` compiles, but summoning it at `Box[Int]` needs a `given PrettyPrintable[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-reveal-vs-describo) |
+| 🧊 **Generic case classes** | `Box[A] derives PrettyPrintable` compiles, but summoning it at `Box[Int]` needs a `given PrettyPrintable[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-reveal-vs-pretty-printo) |
 | 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
@@ -411,13 +404,13 @@ constant in `PrettyPrintableMacro.scala`.
 
 ---
 
-## 🔀 reveal vs describo
+## 🔀 reveal vs pretty-printo
 
 Two libraries solving the same problem by different means. **They are independent and are not required
 to produce identical output** — each is free to make the choice that suits its mechanism, and each pins
 its own behaviour in its own tests.
 
-| | 🩻 reveal | 🔎 [describo](../describo) |
+| | 🩻 reveal | 🔎 [pretty-printo](../pretty-printo) |
 | :-- | :-- | :-- |
 | Mechanism | inline macro, expanded at the use site | Magnolia typeclass derivation |
 | Runtime dependencies | **none** | magnolia |
@@ -429,7 +422,7 @@ its own behaviour in its own tests.
 | Failure at the edges | compile-time refusal at its nesting caps | `StackOverflowError` at render time |
 
 **Choose `reveal`** when you cannot take the magnolia dependency, or when you want a derivation whose
-cost and failure modes are visible at compile time. **Choose `describo`** when you already have
+cost and failure modes are visible at compile time. **Choose `pretty-printo`** when you already have
 magnolia, want auto-derivation through nested types, or need generic case classes.
 
 The nested-case-class row is the design of this module rather than a shortfall: nested types are not
