@@ -413,39 +413,34 @@ constant in `DescribeMacro.scala`.
 
 ## 🔀 reveal vs describo
 
-Two libraries solving the same problem by different means. **They are not required to produce identical
-output**, and they deliberately do not: each is free to make the choice that suits its own mechanism, and
-each pins its own behaviour in its own tests.
+Two libraries solving the same problem by different means. **They are independent and are not required
+to produce identical output** — each is free to make the choice that suits its mechanism, and each pins
+its own behaviour in its own tests.
 
 | | 🩻 reveal | 🔎 [describo](../describo) |
 | :-- | :-- | :-- |
-| Mechanism | inline macro, fully unrolled | magnolia typeclass derivation |
+| Mechanism | inline macro, expanded at the use site | Magnolia typeclass derivation |
 | Runtime dependencies | **none** | magnolia |
-| Type coverage | open — any concrete class renders | closed — needs an instance per type |
-| Nested case classes | delegate to their own instance, else `toString` | auto-derived by magnolia |
-| Generic case classes | only with a `given` for the type argument | ✅ |
-| Extension point | `given Describe[T]` | `given Printable[T]` or a factory |
-| Failure at the edges | compile error at 12 types / 20 layers | `StackOverflowError` at render time |
+| Type coverage | open — any concrete class renders via `toString` | closed — an instance per type |
+| Nested case class, no instance | plain `toString`; never unrolled into the parent | auto-derived |
+| Generic case class | needs a `given` for the type argument | ✅ derives unaided |
+| Enum case, qualified name | `com.example.Colour.Red` | `com.example.Red` — Magnolia's `TypeInfo` reports the package |
+| Extension point | `given Describe[T]` | `given Printable[T]`, or one of four factories |
+| Failure at the edges | compile-time refusal at its nesting caps | `StackOverflowError` at render time |
 
-**Choose `reveal`** if you cannot take the magnolia dependency.
-**Choose `describo`** otherwise — it is smaller and easier to extend.
+**Choose `reveal`** when you cannot take the magnolia dependency, or when you want a derivation whose
+cost and failure modes are visible at compile time. **Choose `describo`** when you already have
+magnolia, want auto-derivation through nested types, or need generic case classes.
 
-### Where they differ
-
-| | `reveal` | `describo` |
-| :-- | :-- | :-- |
-| Nested case class, no instance | plain `toString` | auto-derived by magnolia |
-| Enum case, qualified name | `com.example.Colour.Red` | `com.example.Red` — magnolia's `TypeInfo` reports the package |
-| Generic case class | needs a `given` for the type argument | derives unaided |
-
-The first is the design of this module rather than a shortfall: nested types are not unrolled into their
-parent. The other two follow from the derivation mechanism each library uses.
+The nested-case-class row is the design of this module rather than a shortfall: nested types are not
+unrolled into their parent. The other differences follow from the derivation mechanism each library
+uses.
 
 ## ✅ Testing
 
 ```bash
-./mill libs.commons.reveal.test        # this module
-./mill libs.commons.__.checkFormat     # scalafmt
+./mill libs.commons.reveal.test          # 217 tests
+./mill libs.commons.reveal.checkFormat   # scalafmt
 ```
 
 Every test lives in this module. There is no shared conformance suite and no cross-library contract to

@@ -1,59 +1,121 @@
-# describo
+<div align="center">
 
-Configurable `toString` derivation for Scala 3, built on
-[Magnolia](https://github.com/softwaremill/magnolia). You describe *what* a value should look
-like with a `Configuration`, and describo derives the rendering from the type's structure — no
-hand-written `toString`, no reflection at render time, and no way for a `@Redacted` field to leak.
+# 🔎 describo
 
-- Scala 3 only (3.8.4).
-- One dependency: `com.softwaremill.magnolia1_3::magnolia`.
-- Sibling module [`reveal`](../reveal/README.md) solves the same problem with an inline macro and
-  *zero* dependencies. The two are **independent and are not required to render identically**. Pick
-  describo when you want typeclass composition and instances for third-party types; pick reveal when
-  you cannot take a dependency.
+**Configurable, redaction-aware `toString` derivation for Scala 3, built on [Magnolia](https://github.com/softwaremill/magnolia).**
 
-## Coordinates
+[![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
+[![Derivation](https://img.shields.io/badge/derivation-magnolia-8A2BE2)](https://github.com/softwaremill/magnolia)
+[![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
+[![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
+
+_You describe **what** a value should look like; describo works out **how** from the type's structure._
+
+</div>
+
+---
+
+## 📑 Contents
+
+- [Why describo](#-why-describo)
+- [Install](#-install)
+- [Quick start](#-quick-start)
+- [Redaction and exclusion](#-redaction-and-exclusion)
+- [Configuration](#️-configuration)
+- [Output reference](#-output-reference)
+- [Supported types](#-supported-types)
+- [Writing your own instance](#-writing-your-own-instance)
+- [Value classes](#-value-classes)
+- [Limits](#-limits)
+- [describo vs reveal](#-describo-vs-reveal)
+- [Testing](#-testing)
+- [Compatibility](#-compatibility)
+- [Design notes](#-design-notes)
+- [License](#-license)
+
+---
+
+## 💡 Why describo
+
+Scala's generated `toString` has two problems in a real service: it prints **everything** — including
+the password field — and it prints it in exactly **one shape** you cannot change.
+
+| | |
+| :-- | :-- |
+| 🔐 **Secrets stay secret** | `@Redacted` and `@Excluded` fields are never dereferenced, and redaction **composes through nesting** — a secret inside a `Map` inside an `Option` is still redacted |
+| 🧬 **Ordinary typeclass** | `Printable[A]` composes like any other. Give a third-party type an instance and every model that reaches it renders properly |
+| 🪆 **Auto-derivation** | Nested case classes are derived implicitly; you write `derives Printable` once at the top |
+| 🎨 **16 formatting knobs** | Field names, type names, separators, affixes, qualified names, multiline layout |
+| 🛡️ **No reflection at render time** | Type names come from the typeclass, not from `getClass`, so a `null` or redacted field is never touched |
+| 🧩 **Generic case classes** | `Box[A] derives Printable` derives at the instantiated type with no ceremony |
+
+> [!TIP]
+> If you **cannot take the magnolia dependency**, the sibling module [`reveal`](../reveal) solves the
+> same problem with a hand-written inline macro and *zero* runtime dependencies. The two are
+> independent — see [describo vs reveal](#-describo-vs-reveal).
+
+---
+
+## 📦 Install
+
+| | |
+| :-- | :-- |
+| **groupId** | `io.worxbend` |
+| **artifactId** | `describo_3` |
+| **Scala package** | `com.worxbend.describo` |
+| **Scala version** | 3.8.4 |
+| **Dependency** | `com.softwaremill.magnolia1_3::magnolia` |
+
+**Mill**
 
 ```scala
-mvn"io.worxbend::describo:0.1.0-SNAPSHOT"   // groupId io.worxbend
-import com.worxbend.describo.*              // Scala package com.worxbend.describo
+def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.worxbend::describo:0.1.0-SNAPSHOT")
 ```
 
-The publishing organization is `io.worxbend` while the Scala package is `com.worxbend.describo`.
-That is intentional, not an oversight: `io.worxbend` is this repository's established groupId, and
-`com.worxbend.<product>.<concept>` is the mandated package prefix for new code. Please do not
-"fix" one to match the other.
+**sbt**
 
-`reveal` deliberately lives in a **different leaf package**, `com.worxbend.reveal`. Both artifacts
-define `Configuration`, `annotations.Redacted` and `annotations.Excluded`, so distinct leaf
-packages are what makes the two co-installable on one classpath.
+```scala
+libraryDependencies += "io.worxbend" %% "describo" % "0.1.0-SNAPSHOT"
+```
 
-## Usage
+> [!NOTE]
+> The groupId is `io.worxbend` while the Scala package is `com.worxbend.describo`. That is intentional
+> and not a mistake to be "fixed": `io.worxbend` is the established publishing organisation, and
+> `com.worxbend.<product>` is the mandated package prefix for new code. `reveal` deliberately lives in
+> a **different leaf package** — both artifacts define `Configuration` and `annotations.*`, so distinct
+> leaf packages are what makes them co-installable.
 
-### The typeclass
+---
+
+## 🚀 Quick start
 
 ```scala
 import com.worxbend.describo.*
 import com.worxbend.describo.annotations.*
 
 final case class Account(
+    id:                 Long,
+    email:              String,
     @Redacted password: String,
-    @Excluded internalId: Long,
-    name: String,
-    roles: List[String],
+    @Excluded internal: String,
+    roles:              List[String],
 ) derives Printable
 
-val account = Account("hunter2", 17L, "Ada", List("Admin", "User"))
-
-summon[Printable[Account]].asString(account)
-// Account(password = <redacted>, name = "Ada", roles = ["Admin", "User"])
-
-summon[Printable[Account]].asString(account)(using Configuration(useTypeNames = true))
-// Account(password: String = <redacted>, name: String = "Ada", roles: List = ["Admin", "User"])
+summon[Printable[Account]].asString(
+  Account(7L, "ada@example.com", "hunter2", "scratch", List("admin"))
+)
 ```
 
-`asString` takes the configuration as a `using` parameter that defaults to `Configuration.default`.
-Pass one explicitly, or put a `given Configuration` in scope.
+```text
+Account(
+  id = 7,
+  email = "ada@example.com",
+  password = <redacted>,
+  roles = ["admin"]
+)
+```
+
+The password is replaced, the internal field is gone, and neither value was ever read. 🎉
 
 ### The `AutoToString` mixin
 
@@ -64,170 +126,178 @@ final case class Account(@Redacted password: String, name: String)
     extends AutoToString derives Printable
 
 println(Account("hunter2", "Ada"))
-// Account(
-//   password = <redacted>,
-//   name = "Ada"
-// )
 ```
 
-The mixin's `Configuration` is `scala.compiletime.deferred`: it is resolved **once, at the
-class-definition site**. A type that mixes in `AutoToString` therefore renders with one fixed
-configuration for its whole life. To vary the configuration per call, call the typeclass directly.
+> [!NOTE]
+> The mixin's `Configuration` is `scala.compiletime.deferred`, so it is resolved **once, at the
+> class-definition site** — a type that mixes it in renders with one fixed configuration for life. To
+> vary configuration per call, use the typeclass directly.
+>
+> Both members are named `describoPrintable` and `describoConfiguration` and are `protected`. They
+> share a namespace with your fields, so short names are not safe: an earlier version declared
+> `given p` and `given c`, and any case class with a field named `p` or `c` failed to compile.
 
-Both mixin members are named `describoPrintable` and `describoConfiguration` and are `protected`.
-They share a namespace with your fields, so short names are not safe: an earlier version declared
-`given p` and `given c`, and any case class with a field named `p` or `c` failed to compile.
+---
 
-## Annotations
+## 🔐 Redaction and exclusion
 
-| Annotation                        | Effect                                                        |
-| --------------------------------- | ------------------------------------------------------------- |
-| `@Redacted`                       | Prints `<redacted>` instead of the value.                      |
-| `@Redacted(replacement = "***")`  | Prints `***` instead of the value.                             |
-| `@Excluded`                       | Omits the field entirely.                                      |
-| `@transient`                      | Exact alias of `@Excluded`, kept for backwards compatibility.  |
+| Annotation | Effect | Value read? |
+| :-- | :-- | :-- |
+| `@Redacted` | renders a replacement — `<redacted>` by default | ❌ never |
+| `@Redacted("***")` | renders your replacement instead | ❌ never |
+| `@Excluded` | the field disappears entirely | ❌ never |
+| `@transient` | alias of `@Excluded`, kept for compatibility | ❌ never |
 
-Resolution is a single ordered decision per field, evaluated once when the instance is derived:
+### Precedence — exclusion always wins 🥇
 
-1. `@Excluded` **or** `@transient` → the field is omitted;
-2. otherwise `@Redacted` → the replacement is printed;
-3. otherwise → the value is rendered.
+Resolved once per field, first match wins:
 
-Consequences, all of them deliberate:
+1. `@Excluded` **or** `@transient` → the field is **omitted**
+2. `@Redacted` → the field renders its **replacement**
+3. otherwise → the field renders **normally**
 
-- **Exclusion beats redaction.** `@Redacted @Excluded both: String` disappears; it does not print a
-  replacement. The source order of the two annotations is irrelevant — precedence is by rule, not
-  by position.
-- **An omitted or redacted field is never dereferenced.** Not for its value, not for its type name,
-  not for a null check. A `null` `@Redacted` field prints its replacement instead of throwing.
-- **The declared type is still printed** for a redacted field under `useTypeNames`, because the type
-  comes from the typeclass instance rather than from the value.
-- `@transient` is a *serialization* marker. describo honours it only because earlier versions did;
-  `@Excluded` is the intended spelling for new code.
-- Several `@Redacted` annotations on one field are not an error: **the one written first in source
-  order wins**. Magnolia surfaces `param.annotations` in reverse source order, so `FieldRule.of`
-  reverses before searching; without that, this module and `reveal` — whose macro sorts by
-  `pos.start` and takes the head — would disagree on the same input. Deterministic, and identical in
-  both modules.
+So `@Redacted @Excluded both: String` is omitted, not redacted, and the source order of the two
+annotations is irrelevant.
 
-## Configuration reference
+When a field carries several `@Redacted`, **the one written first in source order wins**. Magnolia
+surfaces `param.annotations` in reverse source order, so `FieldRule.of` reverses before searching.
 
-`Configuration` is a flat, sixteen-field options record. Every field has a default, so you set only
-what you care about with named arguments:
+> [!TIP]
+> `@transient` is a *serialization* marker. describo honours it only because earlier versions did;
+> `@Excluded` is the intended spelling for new code.
+
+### Redaction composes 🪆
 
 ```scala
-Configuration(multiline = true, useTypeNames = true)
+final case class Inner(@Redacted secret: String) derives Printable
+final case class Outer(inner: Inner, xs: List[Inner], o: Option[Inner]) derives Printable
+
+// Outer(inner = Inner(secret = <redacted>), xs = [Inner(secret = <redacted>)], o = Some(Inner(secret = <redacted>)))
 ```
 
-| Field | Default | Meaning |
-| ----- | ------- | ------- |
-| `useFieldNames` | `true` | Render `field = value` rather than a bare `value`. Also suppresses type names when `false`. |
-| `useTypeNames` | `false` | Render each field's declared type. |
-| `fullyQualifiedClassName` | `false` | Use fully qualified names for the type and for field types. |
-| `shortPackagePrefix` | `true` | With the above, compress leading lowercase segments: `c.w.d.Account`. |
-| `fieldsSeparator` | `", "` | Inter-**field** separator. Used verbatim on one line; trailing-stripped in multiline. |
-| `fieldNamePrefix` | `""` | Inserted before each field name. |
-| `fieldNameSuffix` | `""` | Inserted after each field name. |
-| `fieldNameAndValueSeparator` | `" = "` | Between the name (or type) and the value. |
-| `fieldNameAndTypeNameSeparator` | `": "` | Between the field name and the type name. |
-| `typeNamePrefix` | `""` | Inserted before each type name. |
-| `typeNameSuffix` | `""` | Inserted after each type name. |
-| `valuePrefix` | `""` | Inserted before each rendered value, `null` included. |
-| `valueSuffix` | `""` | Inserted after each rendered value, `null` included. |
-| `multiline` | `false` | Always render one field per line. |
-| `multilineIndent` | `"  "` | Per-field indentation in multiline layout. |
-| `multilineIfFieldsAreGreaterOrEqual` | `5` | Switch to multiline at this many rendered fields. **`<= 0` disables the threshold entirely.** |
+---
 
-### `multilineIfFieldsAreGreaterOrEqual`
+## ⚙️ Configuration
 
-This is the one non-obvious knob. The layout is chosen once per render:
+Every field renders as:
 
-```
-Multiline  iff  multiline
-             || (multilineIfFieldsAreGreaterOrEqual > 0
-                 && renderedFieldCount >= multilineIfFieldsAreGreaterOrEqual)
+```text
+fieldNamePrefix name fieldNameSuffix
+  [ fieldNameAndTypeNameSeparator typeNamePrefix Type typeNameSuffix ]
+  fieldNameAndValueSeparator valuePrefix value valueSuffix
 ```
 
-- `renderedFieldCount` is counted **after** exclusion, so `@Excluded` fields do not push a type over
-  the threshold.
-- **Any value `<= 0` disables the threshold.** `0` and `-1` behave identically; neither means "always
-  multiline". Set `multiline = true` for that.
-- If nothing at all is rendered — an empty case class, or one whose fields are all excluded — the
-  layout collapses to a single line and you get `T()`, even under `multiline = true`.
+The bracketed group appears only under `useTypeNames`; the whole name group is dropped when
+`useFieldNames` is off.
 
-### `fieldsSeparator`
+| Option | Default | What it does |
+| :-- | :-- | :-- |
+| `useFieldNames` | `true` | render `name = value` instead of a bare `value` |
+| `useTypeNames` | `false` | render each field's **declared** type |
+| `fullyQualifiedClassName` | `false` | qualified names instead of simple ones |
+| `shortPackagePrefix` | `true` | compress `com.worxbend.example.Order` → `c.w.e.Order` |
+| `fieldsSeparator` | `", "` | between fields; used verbatim on one line |
+| `fieldNamePrefix` | `""` | before each field name |
+| `fieldNameSuffix` | `""` | after each field name |
+| `fieldNameAndValueSeparator` | `" = "` | between the name group and the value |
+| `fieldNameAndTypeNameSeparator` | `": "` | between name and type |
+| `typeNamePrefix` | `""` | before each type name |
+| `typeNameSuffix` | `""` | after each type name |
+| `valuePrefix` | `""` | before every value |
+| `valueSuffix` | `""` | after every value |
+| `multiline` | `false` | force one field per line |
+| `multilineIndent` | `"  "` | per-field indent when multiline |
+| `multilineIfFieldsAreGreaterOrEqual` | `5` | switch to multiline at this many fields |
 
-- **Single line:** fields are joined with the separator *verbatim*. `" | "` gives `a = 1 | b = 2`.
-- **Multiline:** each field is prefixed with `multilineIndent` and joined with
-  `fieldsSeparator.stripTrailing() + "\n"`. Only *trailing* whitespace is dropped, and only here,
-  because it would otherwise be invisible whitespace at the end of every line. Leading whitespace
-  survives, so `" | "` ends each line with ` |`.
-- With no rendered fields the separator is not used at all.
+### 🔢 The multiline threshold and its sentinel
 
-The separator is an inter-**field** knob. Collection elements and map entries always use `", "`.
+The layout goes multiline when `multiline` is set **or** when the number of **rendered** fields
+reaches `multilineIfFieldsAreGreaterOrEqual`. Excluded and transient fields do not count.
 
-## Output format
+> [!WARNING]
+> Any value `<= 0` **disables** the threshold — it does not mean "always multiline". Use
+> `multiline = true` for that. `Configuration(multilineIfFieldsAreGreaterOrEqual = -1)` is the
+> idiomatic way to force a single line.
 
-| Shape | Rendering |
-| ----- | --------- |
-| String | `"text"`, escaped |
-| Char | `'c'`, escaped |
-| Numbers, `Boolean`, `java.time.*` | their own `toString`, unquoted |
-| `null` | the four characters `null`, unquoted, in every position |
-| `List`, `Vector`, `Set`, `Seq`, `IndexedSeq`, `Iterable`, `Array` | `["a", "b"]` |
-| `java.util.List` / `ArrayList` / `LinkedList` / `Set` / `HashSet` | `["a", "b"]` |
-| `Map`, `java.util.Map`, `java.util.HashMap` | `["key" -> "value"]` |
-| `Option` | `Some("payload")` / `None` |
-| Case class | `Name(field = value, ...)` |
-| Empty or fully excluded case class | `Name()` |
-| Case object, parameterless enum case | `Name`, no parentheses |
-| Value class | its payload's rendering |
+### ✂️ fieldsSeparator
 
-Escaping, applied at every position (top-level field, collection element, map key, map value,
-`Option` payload), in this order: `\` → `\\`, `"` → `\"`, newline → `\n`, carriage return → `\r`,
-tab → `\t`, and additionally `'` → `\'` inside a `Char`. Nothing else is escaped — no unicode
-escapes, no control characters — so the two modules stay trivially identical.
+Used **verbatim** on a single line, so `" | "` really produces `a = 1 | b = 2`. In multiline its
+trailing whitespace is stripped before the newline, so `", "` yields `",\n"` rather than a trailing
+space on every line.
 
-### `null`
+---
 
-A `null` renders as `null` in every position: top-level field, `Option` payload, collection element,
-map key, map value. Never `"null"`, never `None`, never `[]`, never an empty string, never an
-exception. `valuePrefix`/`valueSuffix` still apply, so with `valuePrefix = "["` a null field renders
-`[null]`. Nullness has no effect on the printed type: `name: String = null`.
+## 🎨 Output reference
 
-### Type names
+| Shape | Renders as |
+| :-- | :-- |
+| `String` | `"quoted"` |
+| `Char` | `'q'` |
+| numbers, `Boolean` | bare — `1`, `2.5`, `true` |
+| `BigDecimal` | keeps its scale — `1000.50` |
+| `List` / `Vector` / `Set` / `Seq` / `Array` | `[a, b]` |
+| `Map` | `["k" -> "v"]` |
+| `Option` | `Some(x)` / `None` |
+| tuple | `Tuple2(_1 = 1, _2 = "a")` — an ordinary product to Magnolia |
+| `java.util.*` collections and maps | identical to their Scala counterparts |
+| nested case class | inline, through the same rules |
+| case object / parameterless enum case | its bare name |
+| value class | unwrapped to its payload |
+| `null` (anything) | `null` |
 
-Under `useTypeNames`, describo prints the **declared** type, dealiased and widened, with type
-arguments dropped: `Int`, `String`, `List`, `Map`, `Option`, `BigDecimal`, `LocalDate`. It never
-prints a runtime class, so you will not see `Integer`, `Some`, `$colon$colon` or `Map2`. The type
-comes from the typeclass instance (`Printable.printedType`), which is also why redacted, excluded
-and null fields can be typed without being touched.
+### Escaping
 
-Fully qualified spellings follow `TypeRepr.of[X].dealias.typeSymbol.fullName`, for example
-`scala.Int`, `java.lang.String`, `scala.collection.immutable.List`, `scala.math.BigDecimal`.
-Package compression shortens every *leading* lowercase segment to one character and leaves the rest
-alone: `com.worxbend.describo.Account` → `c.w.d.Account`, `Account` → `Account` (no leading dot),
-`com.worxbend.describo.Fixtures.Inner` → `c.w.d.Fixtures.Inner`.
+`\`, `"`, `\n`, `\t` and `\r` are escaped inside strings — backslash first — at **every** level, so a
+value containing a comma or a parenthesis can never be confused with structure.
 
-## Supported types
+### `null` 🕳️
 
-Instances ship for: `String`, `Char`, `Int`, `Long`, `Short`, `Byte`, `Double`, `Float`, `Boolean`,
-`BigInt`, `BigDecimal`, `java.lang.Integer`, `java.lang.Character`, `java.time.{LocalDate,
-LocalTime, Instant, Duration, Period, ZonedDateTime, OffsetDateTime, OffsetTime}`, `Option`,
-`Iterable`, `Seq`, `IndexedSeq`, `List`, `Vector`, `Set`, `Array`, `Map`, and `java.util.{List,
-ArrayList, LinkedList, Set, HashSet, Map, HashMap}`.
+Renders as the bare word `null` in **every** position — field, `Option` payload, collection element,
+map key, map value. Never `"null"`, never `None`, never an exception. A `null` collection is `null`,
+not `[]`; a `null` `Option` is `null`, not `None`. A `null` in a `@Redacted` field still renders the
+replacement, because the value is never read.
 
-The typeclass is **invariant**, which is what guarantees that a field declared `List[String]` picks
-the `List` instance and not the `Iterable` one. The flip side is that only the exact declared type
-resolves: a field declared as some other type (`ArrayDeque`, `TreeMap`, `UUID`, …) needs its own
-instance.
+### Type names 🏷️
 
-### Writing your own instance
+Under `useTypeNames` the **declared** type is printed, carried on the typeclass rather than read from
+`getClass`:
 
-`Printable` has two members — the `printedType` and the `asString` extension — but you do not have
-to implement them by hand. Four public factories fill both in and give you this module's escaping,
-`null` handling and element separator for free. Each takes the simple and the fully qualified name
-of the type, which is what `useTypeNames` and `fullyQualifiedClassName` print.
+```text
+roles: List   = ["admin"]      ✅   not  roles: $colon$colon
+meta:  Map    = ["k" -> "v"]   ✅   not  meta: Map1
+opt:   Option = Some("v")      ✅   not  opt: Some
+count: Int    = 1              ✅   not  count: Integer
+```
+
+That is also what makes redaction safe: rendering a field's type never requires dereferencing it.
+
+---
+
+## 🧱 Supported types
+
+Instances ship for `String`, `Char`, `Int`, `Long`, `Short`, `Byte`, `Double`, `Float`, `Boolean`,
+`BigInt`, `BigDecimal`, `java.lang.Integer`, `java.lang.Character`, `java.time.{LocalDate, LocalTime,
+Instant, Duration, Period, ZonedDateTime, OffsetDateTime, OffsetTime}`, `Option`, `Iterable`, `Seq`,
+`IndexedSeq`, `List`, `Vector`, `Set`, `Array`, `Map`, and `java.util.{List, ArrayList, LinkedList,
+Set, HashSet, Map, HashMap}`.
+
+> [!IMPORTANT]
+> The typeclass is **invariant**. That is what guarantees a field declared `List[String]` picks the
+> `List` instance and not the `Iterable` one — but it also means only the *exact declared type*
+> resolves. A field typed `ArrayDeque`, `TreeMap` or `UUID` needs its own instance.
+>
+> This is a **closed** type set, which is the main ergonomic difference from `reveal`. For example
+> `scala.util.Try` does not compile out of the box, because `Failure` reaches `Throwable` and nothing
+> supplies an instance for it — one line fixes that, and `PrintableCompositionSuite` pins both halves.
+
+---
+
+## 🔧 Writing your own instance
+
+`Printable` has two members — `printedType` and the `asString` extension — but you rarely implement
+them by hand. Four factories fill both in and give you this module's escaping, `null` handling and
+element separator for free. Each takes the simple and the fully qualified name, which is what
+`useTypeNames` and `fullyQualifiedClassName` print.
 
 ```scala
 import com.worxbend.describo.*
@@ -238,7 +308,7 @@ import scala.jdk.CollectionConverters.*
 given Printable[java.util.UUID] =
   Printable.instance("UUID", "java.util.UUID")(_.toString)
 
-// A container rendered as [a, b, c]; the elements go through their own instance.
+// A container rendered as [a, b, c]; elements go through their own instances.
 given Printable[java.util.ArrayDeque[String]] =
   Printable.collection("ArrayDeque", "java.util.ArrayDeque")(_.asScala.iterator)
 
@@ -251,13 +321,14 @@ given Printable[UserId] =
   Printable.valueClass("UserId", "com.example.UserId")(_.value)
 ```
 
-`PrintableFactorySuite` in this module's tests is exactly the code above, so the snippet cannot rot.
+`PrintableFactorySuite` is exactly the code above, so the snippet cannot rot.
 
-### Value classes
+---
 
-Scala 3 synthesises no `Mirror` for a value class, so `derives Printable` cannot be used on one —
-Magnolia never sees it, and `final case class UserId(value: String) extends AnyVal derives Printable`
-does not compile. Give it an instance explicitly:
+## 💎 Value classes
+
+Scala 3 synthesises no `Mirror` for a value class, so **`derives Printable` cannot be used on one** —
+Magnolia never sees it. Give it an instance explicitly:
 
 ```scala
 final case class UserId(value: String) extends AnyVal
@@ -265,67 +336,75 @@ object UserId:
   given Printable[UserId] = Printable.valueClass("UserId", "com.example.UserId")(_.value)
 ```
 
-The wrapper renders as its payload (`"u1"`), but is *named* after the wrapper, so a field of type
-`UserId` prints `id: UserId = "u1"` under `useTypeNames`. `@Redacted` on a *field* of value-class
-type is honoured without unwrapping.
+The wrapper renders as its payload (`"u1"`) but is *named* after the wrapper, so a `UserId` field
+prints `id: UserId = "u1"` under `useTypeNames`. `@Redacted` on a *field* of value-class type is
+honoured without unwrapping.
 
-Because the instance reads the payload directly, nothing ever inspects the value class's own
-parameter: an `@Excluded`, `@transient` or `@Redacted` written **on that parameter** has no effect.
-Annotations belong on the fields of the enclosing case class. This is also why `@Excluded` on a sole
-value-class parameter cannot omit anything — there would be nothing left to print.
+> [!WARNING]
+> Because the instance reads the payload directly, nothing inspects the value class's **own
+> parameter**: an `@Excluded`, `@transient` or `@Redacted` written there has **no effect**.
+> Annotations belong on the fields of the enclosing case class.
 
-## Known limitations
+---
 
-- **Nested renders are not re-indented.** In multiline layout a nested case class is inserted
-  verbatim, so its own lines are not indented relative to the parent. Use a single-line
-  configuration for deeply nested values.
-- **Nesting depth is bounded by the stack.** Rendering is a recursive descent, one JVM frame per
-  level, so a value nested a few hundred levels deep throws `StackOverflowError` — at roughly the
-  same depth the case class's own generated `toString` would. Breadth is unaffected: a collection of
-  any size renders iteratively. There is no configurable depth cap; if you render arbitrarily deep
-  recursive structures, bound them yourself before rendering.
-- **Value classes cannot be auto-derived** (see above), so `Printable.valueClass` is the supported
-  route. `join` carries no value-class branch, because Scala 3 gives a value class no `Mirror` and
-  Magnolia therefore never hands `join` one; `PrintableStructureSuite` pins that with an
-  `assertDoesNotCompile`, so the day it changes the test fails rather than the behaviour drifting.
-- **Enum cases under `fullyQualifiedClassName`** carry Magnolia's `TypeInfo`, which reports the
-  enclosing *package* rather than the enclosing enum, so `Colour.Red` prints as
-  `com.example.Red`. Simple names are unaffected. `reveal` spells this differently — its macro reads
-  the case symbol directly and prints `com.example.Colour.Red`, which is the more useful of the two —
-  but the libraries are independent, so neither is obliged to follow the other. Fixing it here would mean threading the
-  parent's name through `split` into every child instance — a change to the `Printable` interface for a
-  spelling that only appears under a non-default flag. Both behaviours are pinned by
-  `NamingAndGenericsSuite`.
-- **Set and Map iteration order** is the insertion order only up to four elements; beyond that
-  Scala switches to a hashed representation. Sort before rendering if you need stable output.
+## 🚧 Limits
 
-## How this module differs from `reveal`
+| Limit | Detail |
+| :-- | :-- |
+| 📐 **Nested multiline isn't re-indented** | A nested case class is inserted verbatim, so its lines are not indented relative to the parent. Use a single-line configuration for deeply nested values |
+| 🔁 **Depth is bounded by the stack** | Recursive descent, one JVM frame per level, so a value nested a few hundred levels deep throws `StackOverflowError` — roughly where the generated `toString` would. Breadth is unaffected; collections render iteratively. There is no configurable cap |
+| 💎 **Value classes need an explicit instance** | See above. `PrintableStructureSuite` pins this with an `assertDoesNotCompile`, so the day Scala changes it a test fails rather than the behaviour drifting |
+| 🏷️ **Enum cases under `fullyQualifiedClassName`** | Magnolia's `TypeInfo` reports the enclosing *package*, not the enclosing enum, so `Colour.Red` prints `com.example.Red`. Simple names are unaffected |
+| 🔀 **Set and Map iteration order** | Insertion order only up to four elements; beyond that Scala switches to a hashed representation. Sort before rendering if you need stable output |
 
-The two are independent implementations and are **not** held to identical output. The differences worth
-knowing about:
+---
 
-| | `describo` | `reveal` |
+## 🔀 describo vs reveal
+
+Two libraries solving the same problem by different means. **They are independent and are not
+required to produce identical output** — each is free to make the choice that suits its mechanism,
+and each pins its own behaviour in its own tests.
+
+| | 🔎 describo | 🩻 [reveal](../reveal) |
 | :-- | :-- | :-- |
-| Nested case class, no instance | auto-derived by magnolia | plain `toString`; nested types are never unrolled |
+| Mechanism | Magnolia typeclass derivation | inline macro, expanded at the use site |
+| Runtime dependencies | magnolia | **none** |
+| Type coverage | closed — an instance per type | open — any concrete class renders via `toString` |
+| Nested case class, no instance | auto-derived | plain `toString`; never unrolled into the parent |
+| Generic case class | ✅ derives unaided | needs a `given` for the type argument |
 | Enum case, qualified name | `com.example.Red` | `com.example.Colour.Red` |
-| Generic case class | derives unaided | needs a `given` for the type argument |
+| Failure at the edges | `StackOverflowError` at render time | compile-time refusal at its nesting caps |
 
-Each library pins its own behaviour in its own tests; there is no shared suite and no contract between
-them.
+**Choose `describo`** when you already have magnolia, want typeclass composition, or need instances
+for third-party types. **Choose `reveal`** when you cannot take the dependency.
 
-## Compatibility
+---
+
+## ✅ Testing
+
+```bash
+./mill libs.commons.describo.test          # 217 tests
+./mill libs.commons.describo.checkFormat   # scalafmt
+```
+
+Every test lives in this module. There is no shared suite and no cross-library contract: the two
+renderers are independent, so each one's behaviour is pinned where that behaviour is implemented.
+
+---
+
+## 🔄 Compatibility
 
 Version `0.1.0-SNAPSHOT` has never been published, and the following source-breaking changes were
 made together, on purpose, before the first release:
 
 - The package moved from `io.worxbend.describo` to `com.worxbend.describo`.
-- `Configuration` and `annotations.{Redacted, Excluded}` moved out of `object Printable` and into
-  the package (`com.worxbend.describo.Configuration`, `com.worxbend.describo.annotations.Redacted`).
+- `Configuration` and `annotations.{Redacted, Excluded}` moved out of `object Printable` into the
+  package.
 - `Printable.TypeAliases` was **deleted**. It mapped runtime class names such as `$colon$colon` and
-  `Map2` back to friendly names; type names are now taken from the declared type, so there is
-  nothing left to map.
+  `Map2` back to friendly names; type names now come from the declared type, so there is nothing left
+  to map.
 - `Printable` gained an abstract member, `printedType`. Hand-written instances must supply it — the
-  four factories under "Writing your own instance" supply it for you.
+  four factories supply it for you.
 - `Configuration.fieldsSeparator`'s default changed from `","` to `", "`. The field is now actually
   read; the old default only looked correct because single-line joining was hardcoded to `", "`.
 - `Char` now renders as `'c'` rather than bare `c`.
@@ -333,20 +412,25 @@ made together, on purpose, before the first release:
 - The `AutoToString` members `p` and `c` were renamed to `describoPrintable` and
   `describoConfiguration` and made `protected`.
 
-## Design notes
+---
 
-- `Configuration` is a flat case class with default arguments, which is the single, narrow, reviewed
-  exception to this repository's `noDefaultArgs` guidance. It is an options DTO consumed with named
-  arguments — the one shape where booleans are self-documenting at the call site — and a sixteen-field
-  record without defaults would be unusable. It is also duplicated field-for-field in
-  `com.worxbend.reveal`, which cannot depend on this module; any ADT would have to be duplicated too.
-  **Any change to `Configuration` must be mirrored in reveal and in both READMEs.**
-- The genuine decisions are modelled as ADTs, privately: `FieldRule` (`Omit` / `Redact` / `Render`)
-  and `Layout` (`SingleLine` / `Multiline`). The `<= 0` sentinel of
-  `multilineIfFieldsAreGreaterOrEqual` is laundered into a `Layout` at one place rather than being
-  reinterpreted in scattered conditionals.
-- Annotation scanning happens once per typeclass instance, at derivation time, and is materialised
-  as a `Vector` — not a lazy `View` whose filter re-runs on every `size` and every `map`.
-- The build enables `-Wunused:all -deprecation -feature` and mixes in Mill's `ScalafmtModule`, the
-  same as `reveal`, so dead code and hand-formatting are caught by `./mill libs.commons.describo.compile`
-  and `./mill libs.commons.describo.checkFormat` rather than by review.
+## 🏗️ Design notes
+
+- **`Configuration` is a flat case class with default arguments**, the single narrow exception to this
+  repository's `noDefaultArgs` guidance. It is an options DTO consumed with named arguments — the one
+  shape where booleans are self-documenting at the call site — and a sixteen-field record without
+  defaults would be unusable. It is duplicated field-for-field in `com.worxbend.reveal`, which cannot
+  depend on this module. **Any change must be mirrored there and in both READMEs.**
+- **The genuine decisions are ADTs**, privately: `FieldRule` (`Omit` / `Redact` / `Render`) and
+  `Layout` (`SingleLine` / `Multiline`). The `<= 0` sentinel is laundered into a `Layout` in one place
+  rather than reinterpreted in scattered conditionals.
+- **Annotation scanning happens once per typeclass instance**, at derivation time, materialised as a
+  `Vector` — not a lazy `View` whose filter re-runs on every `size` and every `map`.
+- **The build enables `-Wunused:all -deprecation -feature`** and mixes in Mill's `ScalafmtModule`, so
+  dead code and hand-formatting are caught by the build rather than by review.
+
+---
+
+## 📄 License
+
+MIT. See [LICENSE](../../../LICENSE).
