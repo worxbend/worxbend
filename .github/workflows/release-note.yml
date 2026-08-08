@@ -2,18 +2,39 @@ name: Release-Notes-Preview
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   issue_comment:
-    types: [ edited ]
+    types: [edited]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          git fetch --prune --unshallow --tags
+      - uses: actions/checkout@v4
+        with:
+          # Full history + tags. `git fetch --unshallow` fails outright on a
+          # non-shallow clone, so fetch depth 0 here instead.
+          fetch-depth: 0
+
+      # The action shells out to `git describe`, which aborts the whole run
+      # with "fatal: No names found, cannot describe anything" on a repo that
+      # has never been tagged.
+      - name: Check for release tags
+        id: tags
+        run: |
+          if [ -z "$(git tag -l)" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No git tags in this repository — skipping release-notes preview."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: snyk/release-notes-preview@v1.6.2
+        if: steps.tags.outputs.found == 'true'
         with:
           releaseBranch: main
         env:
