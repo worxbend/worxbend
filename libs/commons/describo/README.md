@@ -103,9 +103,11 @@ Consequences, all of them deliberate:
   comes from the typeclass instance rather than from the value.
 - `@transient` is a *serialization* marker. describo honours it only because earlier versions did;
   `@Excluded` is the intended spelling for new code.
-- Several `@Redacted` annotations on one field are not an error: the first in `param.annotations`
-  order wins. Scala surfaces field annotations in reverse source order, so in practice that is the
-  one written last. Deterministic, and identical in both modules.
+- Several `@Redacted` annotations on one field are not an error: **the one written first in source
+  order wins**. Magnolia surfaces `param.annotations` in reverse source order, so `FieldRule.of`
+  reverses before searching; without that, this module and `dscrbo` — whose macro sorts by
+  `pos.start` and takes the head — would disagree on the same input. Deterministic, and identical in
+  both modules.
 
 ## Configuration reference
 

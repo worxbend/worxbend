@@ -80,6 +80,22 @@ private[dscrbo] object DescribeMacro:
     */
   private val MaxEmittedLayers: Int = 20
 
+  /** How deep the redaction-reachability scan follows a type graph before it gives up and refuses.
+    *
+    * The scan cuts cycles by remembering the types already on the path, which is enough for any shape whose type
+    * graph is finite. It is not enough for a type whose arguments grow at every step:
+    *
+    * {{{
+    * final case class Growth[A](next: Option[Growth[List[A]]])
+    * // Growth[Int] -> Growth[List[Int]] -> Growth[List[List[Int]]] -> ...
+    * }}}
+    *
+    * No two of those are `=:=`, so there is no cycle to detect and the walk never terminates — it hangs the compiler
+    * rather than failing it. This bound is what makes the scan total. It is deliberately far above any real model:
+    * the deepest shape in this repository's own tests reaches 16.
+    */
+  private val MaxScanDepth: Int = 64
+
   def describeImpl[T: Type](using Quotes): Expr[Describe[T]] =
     '{
       lazy val instance: Describe[T] =
@@ -141,6 +157,17 @@ private[dscrbo] object DescribeMacro:
       quotes: Quotes):
 
     import quotes.reflect.*
+
+    /** What the redaction-reachability scan concluded about a type it is about to hand to `toString`.
+      *
+      * `Unprovable` is not the same as `Clean`: it means the walk hit [[MaxScanDepth]] without deciding, and for a
+      * library whose job is to not print secrets that has to be treated as a refusal rather than an all-clear.
+      */
+    private enum Reachability:
+
+      case Clean
+      case Annotated(owner: TypeRepr, field: Symbol)
+      case Unprovable(at: TypeRepr)
 
     // --------------------------------------------------------------- nesting
 
@@ -537,37 +564,60 @@ private[dscrbo] object DescribeMacro:
       * Returning `None` for everything else is what lets [[renderOpaque]] answer.
       */
     private def refuseIfItRedacts(tpe: TypeRepr): Option[Expr[String]] =
-      annotatedWithin(tpe, Nil).map { (owner, field) =>
-        val where =
-          if owner =:= tpe then s"it declares `${field.name}`"
-          else s"${owner.show}, reachable from it, declares `${field.name}`"
-        report.errorAndAbort(
-          s"Describe will not render ${tpe.show} with toString: $where as @Redacted or @Excluded, and toString " +
-            s"ignores both at every depth, so the value would be printed in the clear. Nested case classes are not " +
-            s"unrolled into their parent, so add `derives Describe` to ${tpe.show}, provide a " +
-            s"`given Describe[${tpe.show}]`, or mark the field @Excluded here."
-        )
-      }
+      annotatedWithin(tpe, Nil, 0) match
+        case Reachability.Clean => None
+
+        case Reachability.Annotated(owner, field) =>
+          val where =
+            if owner =:= tpe then s"it declares `${field.name}`"
+            else s"${owner.show}, reachable from it, declares `${field.name}`"
+          Some(
+            report.errorAndAbort(
+              s"Describe will not render ${tpe.show} with toString: $where as @Redacted or @Excluded, and toString " +
+                s"ignores both at every depth, so the value would be printed in the clear. Nested case classes are " +
+                s"not unrolled into their parent, so add `derives Describe` to ${tpe.show}, provide a " +
+                s"`given Describe[${tpe.show}]`, or mark the field @Excluded here."
+            )
+          )
+
+        case Reachability.Unprovable(at) =>
+          Some(
+            report.errorAndAbort(
+              s"Describe cannot prove that rendering ${tpe.show} with toString would not print a @Redacted field: " +
+                s"its type graph is still growing at ${at.show} after $MaxScanDepth levels, which happens when a " +
+                "recursive type applies a wrapper to its own parameter. Rather than guess, it refuses. Add " +
+                s"`derives Describe` to ${tpe.show}, provide a `given Describe[${tpe.show}]`, or mark the field " +
+                "@Excluded here."
+            )
+          )
 
     /** The first `@Redacted` or `@Excluded` field reachable from `tpe`, with the type that declares it.
       *
       * Reachability follows case-class fields, the type arguments of applied types — so a `List[Secret]` is caught —
-      * and the branches of sealed families. `seen` makes a recursive model terminate; a type already on the path
-      * cannot introduce an annotation that has not been examined at its first occurrence.
+      * and the branches of sealed families. `seen` makes an ordinary recursive model terminate; a type already on the
+      * path cannot introduce an annotation that has not been examined at its first occurrence. `depth` handles the
+      * case `seen` cannot: a type whose arguments grow at every step never repeats, so there is no cycle to detect
+      * and the walk would otherwise hang the compiler. See [[MaxScanDepth]].
       *
       * Note that a reachable type having its own `Describe` instance does not make it safe here. Once the outermost
       * type is rendered by `toString`, every instance below it is bypassed too.
       */
-    private def annotatedWithin(tpe: TypeRepr, seen: List[TypeRepr]): Option[(TypeRepr, Symbol)] =
-      if seen.exists(_ =:= tpe) then None
+    private def annotatedWithin(tpe: TypeRepr, seen: List[TypeRepr], depth: Int): Reachability =
+      if seen.exists(_ =:= tpe) then Reachability.Clean
+      else if depth > MaxScanDepth then Reachability.Unprovable(tpe)
       else
         val declaredHere =
           if isCaseClass(tpe) || isModuleType(tpe) then
             tpe.typeSymbol.caseFields.find(field => ruleOf(field) != FieldRule.Render).map(field => (tpe, field))
           else None
-        declaredHere.orElse:
-          val next = tpe :: seen
-          reachableFrom(tpe).view.flatMap(candidate => annotatedWithin(candidate, next)).headOption
+        declaredHere match
+          case Some((owner, field)) => Reachability.Annotated(owner, field)
+          case None                 =>
+            val next = tpe :: seen
+            // Keeps the first non-Clean answer and stops recursing once one is found.
+            reachableFrom(tpe).foldLeft(Reachability.Clean: Reachability):
+              case (Reachability.Clean, candidate) => annotatedWithin(candidate, next, depth + 1)
+              case (decided, _)                    => decided
 
     /** Types whose annotations `toString` on `tpe` would also expose: its fields, its type arguments, its branches. */
     private def reachableFrom(tpe: TypeRepr): List[TypeRepr] =

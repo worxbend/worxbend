@@ -120,6 +120,27 @@ final class DelegationSuite extends AnyFunSuite:
   test("a type with nothing annotated anywhere below it still delegates"):
     assert(show(DelHoldsPlain(DelPlain(1, "v"))) == "DelHoldsPlain(inner = DelPlain(1,v))")
 
+  // Regression: the scan cuts cycles by remembering types already on the path, which is enough only when the type
+  // graph is finite. `Growth[Int]` -> `Growth[List[Int]]` -> `Growth[List[List[Int]]]` never repeats, so there is no
+  // cycle to find; before the depth bound this hung the compiler outright rather than failing it.
+  test("a type whose arguments grow at every step is refused instead of hanging the compiler"):
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    assert(errors.nonEmpty, "an argument-growing recursive type must terminate the scan")
+    assert(errors.exists(_.contains("cannot prove")), errors.mkString("\n"))
+
+  test("the refusal explains that the shape is unprovable rather than annotated"):
+    val errors = typeCheckErrors("final case class H(g: DelGrowth[Int]) derives Describe").map(_.message)
+    assert(errors.exists(_.contains("still growing")), errors.mkString("\n"))
+    assert(errors.exists(_.contains("derives Describe")), errors.mkString("\n"))
+
+  test("giving the growing type an instance breaks the scan out of it"):
+    given Describe[DelGrowth[Int]] = Describe.FromFunction((v, _) => "grown")
+    final case class H(g: DelGrowth[Int]) derives Describe
+    assert(Describe.derived[H].describe(H(DelGrowth(None, "t"))) == "H(g = grown)")
+
+  test("an ordinary recursive type still scans clean, because it does cycle"):
+    assert(show(DelHoldsRecursive(DelRecursive(Nil))) == "DelHoldsRecursive(r = DelRecursive(List()))")
+
   // ------------------------------- shapes that still expand structurally
 
   test("a value class is still seen through, with no instance of its own"):
@@ -142,3 +163,11 @@ final case class DelDeepExcludingMiddle(s: DelExcluding)
 sealed trait DelSealedSecret
 final case class DelSealedBranch(@Redacted token: String) extends DelSealedSecret
 final case class DelSealedMiddle(s: DelSealedSecret)
+
+// Argument-growing recursion: each step applies List to the parameter, so no two instantiations are ever equal and
+// there is no cycle for the scan to detect. Bounded by MaxScanDepth rather than by cycle detection.
+final case class DelGrowth[A](next: Option[DelGrowth[List[A]]], tag: String)
+
+// Ordinary recursion for contrast: this one does cycle, so it scans clean and delegates.
+final case class DelRecursive(children: List[DelRecursive])
+final case class DelHoldsRecursive(r: DelRecursive) derives Describe
