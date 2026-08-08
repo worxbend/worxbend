@@ -26,7 +26,7 @@ private object FieldRule:
     * the alias from drifting.
     *
     * Several `@Redacted` annotations on one field are not an error: the one written FIRST in source order wins, which
-    * is the rule dscrbo's macro implements too. Magnolia surfaces `param.annotations` in reverse source order, so the
+    * is the rule reveal's macro implements too. Magnolia surfaces `param.annotations` in reverse source order, so the
     * array is reversed before the search — without that, the two modules disagree on the same input.
     */
   def of(annotations: IArray[Any]): FieldRule =

@@ -2,7 +2,7 @@ package com.worxbend.describo
 
 /** Rendering options for [[Printable]].
   *
-  * Kept field-for-field identical with com.worxbend.dscrbo.Configuration. Any change here must be mirrored there and in
+  * Kept field-for-field identical with com.worxbend.reveal.Configuration. Any change here must be mirrored there and in
   * both READMEs.
   *
   * This is a rendering-options DTO that is always consumed with named arguments, which is the one shape where boolean

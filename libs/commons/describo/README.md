@@ -7,9 +7,10 @@ hand-written `toString`, no reflection at render time, and no way for a `@Redact
 
 - Scala 3 only (3.8.4).
 - One dependency: `com.softwaremill.magnolia1_3::magnolia`.
-- Sibling module [`dscrbo`](../dscrbo/README.md) produces **byte-identical output** from an inline
-  macro with *zero* dependencies. Pick describo when you want typeclass composition and instances
-  for third-party types; pick dscrbo when you cannot take a dependency.
+- Sibling module [`reveal`](../reveal/README.md) solves the same problem with an inline macro and
+  *zero* dependencies. The two are **independent and are not required to render identically**. Pick
+  describo when you want typeclass composition and instances for third-party types; pick reveal when
+  you cannot take a dependency.
 
 ## Coordinates
 
@@ -23,7 +24,7 @@ That is intentional, not an oversight: `io.worxbend` is this repository's establ
 `com.worxbend.<product>.<concept>` is the mandated package prefix for new code. Please do not
 "fix" one to match the other.
 
-`dscrbo` deliberately lives in a **different leaf package**, `com.worxbend.dscrbo`. Both artifacts
+`reveal` deliberately lives in a **different leaf package**, `com.worxbend.reveal`. Both artifacts
 define `Configuration`, `annotations.Redacted` and `annotations.Excluded`, so distinct leaf
 packages are what makes the two co-installable on one classpath.
 
@@ -105,7 +106,7 @@ Consequences, all of them deliberate:
   `@Excluded` is the intended spelling for new code.
 - Several `@Redacted` annotations on one field are not an error: **the one written first in source
   order wins**. Magnolia surfaces `param.annotations` in reverse source order, so `FieldRule.of`
-  reverses before searching; without that, this module and `dscrbo` — whose macro sorts by
+  reverses before searching; without that, this module and `reveal` — whose macro sorts by
   `pos.start` and takes the head — would disagree on the same input. Deterministic, and identical in
   both modules.
 
@@ -289,37 +290,28 @@ value-class parameter cannot omit anything — there would be nothing left to pr
   `assertDoesNotCompile`, so the day it changes the test fails rather than the behaviour drifting.
 - **Enum cases under `fullyQualifiedClassName`** carry Magnolia's `TypeInfo`, which reports the
   enclosing *package* rather than the enclosing enum, so `Colour.Red` prints as
-  `com.example.Red`. Simple names are unaffected. **This is one of the two places `describo` and
-  `dscrbo` disagree**: the sibling macro reads the case symbol directly and prints
-  `com.example.Colour.Red`, which is the more useful spelling. Fixing it here would mean threading the
+  `com.example.Red`. Simple names are unaffected. `reveal` spells this differently — its macro reads
+  the case symbol directly and prints `com.example.Colour.Red`, which is the more useful of the two —
+  but the libraries are independent, so neither is obliged to follow the other. Fixing it here would mean threading the
   parent's name through `split` into every child instance — a change to the `Printable` interface for a
   spelling that only appears under a non-default flag. Both behaviours are pinned by
-  `KnownDivergenceSuite` in each module.
+  `NamingAndGenericsSuite`.
 - **Set and Map iteration order** is the insertion order only up to four elements; beyond that
   Scala switches to a hashed representation. Sort before rendering if you need stable output.
 
-## Parity with `dscrbo`, and the two places it stops
+## How this module differs from `reveal`
 
-`describo` and [`dscrbo`](../dscrbo) are two implementations of one specification. For the same input
-and an equivalent `Configuration` they produce **byte-identical** output, and that is enforced rather
-than promised: `libs/commons/describo-tck` holds the specification as data — a catalogue of
-`(fixture, configuration, expected string)` obligations — and both modules run it through a thin
-adapter. Neither *main* module depends on the kit, so `dscrbo`'s zero-dependency guarantee is intact.
+The two are independent implementations and are **not** held to identical output. The differences worth
+knowing about:
 
-Two differences are deliberate and are pinned by `KnownDivergenceSuite` on both sides, so neither can
-quietly become three:
+| | `describo` | `reveal` |
+| :-- | :-- | :-- |
+| Nested case class, no instance | auto-derived by magnolia | plain `toString`; nested types are never unrolled |
+| Enum case, qualified name | `com.example.Red` | `com.example.Colour.Red` |
+| Generic case class | derives unaided | needs a `given` for the type argument |
 
-1. **Enum case qualified names.** `describo` prints `com.example.Red`, `dscrbo` prints
-   `com.example.Colour.Red`. See [Known limitations](#known-limitations). Simple names agree.
-2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable` without
-   ceremony, because its typeclass has real instances for the built-in types a type parameter resolves
-   to. `dscrbo` cannot: its synthesised `derived$Describe[A]` needs a `Describe[A]`, and that module
-   ships no per-type instances by design. **This is a capability `describo` has and `dscrbo` does
-   not.**
-
-Everything else — escaping, `null`, collection and map brackets, `Option`, annotation precedence
-including repeated `@Redacted`, value classes, case objects, sealed families, the multiline threshold
-and every formatting knob — is covered by the shared catalogue and must match exactly.
+Each library pins its own behaviour in its own tests; there is no shared suite and no contract between
+them.
 
 ## Compatibility
 
@@ -347,19 +339,14 @@ made together, on purpose, before the first release:
   exception to this repository's `noDefaultArgs` guidance. It is an options DTO consumed with named
   arguments — the one shape where booleans are self-documenting at the call site — and a sixteen-field
   record without defaults would be unusable. It is also duplicated field-for-field in
-  `com.worxbend.dscrbo`, which cannot depend on this module; any ADT would have to be duplicated too.
-  **Any change to `Configuration` must be mirrored in dscrbo and in both READMEs.**
+  `com.worxbend.reveal`, which cannot depend on this module; any ADT would have to be duplicated too.
+  **Any change to `Configuration` must be mirrored in reveal and in both READMEs.**
 - The genuine decisions are modelled as ADTs, privately: `FieldRule` (`Omit` / `Redact` / `Render`)
   and `Layout` (`SingleLine` / `Multiline`). The `<= 0` sentinel of
   `multilineIfFieldsAreGreaterOrEqual` is laundered into a `Layout` at one place rather than being
   reinterpreted in scattered conditionals.
 - Annotation scanning happens once per typeclass instance, at derivation time, and is materialised
   as a `Vector` — not a lazy `View` whose filter re-runs on every `size` and every `map`.
-- Byte-for-byte parity with `dscrbo` is a test, not a promise. `PrintableParitySuite` here and
-  `DescribeParitySuite` there declare the same fourteen-field `TestedType` with the same values and
-  assert the same three strings under the same three configurations. Changing one module's output
-  without changing the other's breaks both suites, which is the point — keep the fixture name, the
-  fields, the values and the expected strings identical, or the comparison silently stops comparing.
 - The build enables `-Wunused:all -deprecation -feature` and mixes in Mill's `ScalafmtModule`, the
-  same as `dscrbo`, so dead code and hand-formatting are caught by `./mill libs.commons.describo.compile`
+  same as `reveal`, so dead code and hand-formatting are caught by `./mill libs.commons.describo.compile`
   and `./mill libs.commons.describo.checkFormat` rather than by review.

@@ -139,3 +139,25 @@ class PrintableStructureSuite extends AnyFunSuite:
       summon[Printable[StructNode]].asString(deep)(using Configuration(multilineIfFieldsAreGreaterOrEqual = -1))
     // Each of the 64 wrappers opens `StructNode(` and `Some(`; the leaf opens only `StructNode(`.
     assert(rendered.count(_ == '(') == 64 * 2 + 1)
+
+  // Magnolia treats a tuple as an ordinary product, so it renders structurally with its synthetic _1/_2 field names
+  // and its elements go through their own instances. Pinned here because nothing else in this module covers tuples.
+  test("a tuple field renders structurally, through magnolia's product derivation"):
+    assert(
+      summon[Printable[StructTupleHolder]].asString(StructTupleHolder((1, "a")))(using
+        Configuration(multilineIfFieldsAreGreaterOrEqual =
+          -1
+        )) == """StructTupleHolder(pair = Tuple2(_1 = 1, _2 = "a"))"""
+    )
+
+  test("a tuple's elements are rendered by their own instances, not by toString"):
+    assert(
+      summon[Printable[StructTupleNestedHolder]].asString(StructTupleNestedHolder((StructLeaf(1), "t")))(using
+        Configuration(multilineIfFieldsAreGreaterOrEqual =
+          -1
+        )) == """StructTupleNestedHolder(pair = Tuple2(_1 = StructLeaf(v = 1), _2 = "t"))"""
+    )
+
+final case class StructLeaf(v: Int) derives Printable
+final case class StructTupleHolder(pair: (Int, String)) derives Printable
+final case class StructTupleNestedHolder(pair: (StructLeaf, String)) derives Printable
