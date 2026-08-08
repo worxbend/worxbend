@@ -32,7 +32,13 @@ final case class AnnOptionHolder(entry: Option[AnnNestedSecret]) derives Describ
 
 final case class AnnMapHolder(entries: Map[String, AnnNestedSecret]) derives Describe
 
-/** Recursive and deliberately without an instance: it can only be rendered as a root, never inlined into a parent. */
+/** Recursive and deliberately without an instance.
+  *
+  * Recursion used to be a hazard here, because a nested case class was unrolled into its parent and a cycle had to be
+  * detected and refused. Nested case classes are no longer unrolled, so this is now unremarkable: as a root it expands,
+  * and as somebody's field it renders with its own `toString`. It carries no `@Redacted`, so there is nothing to
+  * protect and nothing to refuse.
+  */
 final case class AnnUnrenderable(children: List[AnnUnrenderable])
 
 final case class AnnUnrenderableHolder(child: AnnUnrenderable)
@@ -146,8 +152,13 @@ final class AnnotationsSuite extends AnyFunSuite:
         "AnnNeverDereferenced(secret = <redacted>, name = \"bob\")"
     )
 
-  test("a nested recursive type with no instance is rejected at compile time rather than inlined forever"):
-    assertDoesNotCompile("Describe.derived[AnnUnrenderableHolder]")
+  test("a nested recursive type with no instance renders with toString rather than recursing"):
+    assert(
+      Describe
+        .derived[AnnUnrenderableHolder]
+        .describe(AnnUnrenderableHolder(AnnUnrenderable(List(AnnUnrenderable(Nil)))))(using singleLine) ==
+        "AnnUnrenderableHolder(child = AnnUnrenderable(List(AnnUnrenderable(List()))))"
+    )
 
   test("the same recursive type still derives when it is the root"):
     assertCompiles("Describe.derived[AnnUnrenderable]")

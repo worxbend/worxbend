@@ -8,8 +8,13 @@ import scala.util.Try
 
 import org.scalatest.funsuite.AnyFunSuite
 
-/** Deliberately without its own instance, so the family below has to inline it structurally. */
-final case class GenSecret(@Redacted token: String, tag: String)
+/** Carries its own instance, because nested case classes are not inlined into their parent.
+  *
+  * It used to be declared without one, back when the macro unrolled everything it could reach. Now a redacting case
+  * class reached as a field is a compile error rather than a silent `toString`, so the annotation is what forces the
+  * `derives` here — which is exactly the pressure the design intends.
+  */
+final case class GenSecret(@Redacted token: String, tag: String) derives Describe
 
 final case class GenEitherHolder(value: Either[String, GenSecret]) derives Describe
 

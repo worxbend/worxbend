@@ -150,17 +150,23 @@ private[dscrbo] object DescribeMacro:
       * reason about. `layers` counts every layer of generated code, wrappers included, and exists only to keep the tree
       * handed to the staging phase shallow enough for a default compiler stack. `open` holds the types already being
       * expanded further up, which is what detects a cycle.
+      *
+      * `branch` says the expansion is positioned on the children of a sealed family. It is what distinguishes the two
+      * kinds of case class this macro treats differently: a sealed branch is expanded structurally wherever it occurs,
+      * because it has no instance of its own to delegate to, while an ordinary nested case class is not expanded at
+      * all. Depth alone cannot tell them apart — a sealed family reached through a field is already one type deep, and
+      * its branches must still expand.
       */
-    final private case class Nesting(types: Int, layers: Int, open: List[TypeRepr]):
+    final private case class Nesting(types: Int, layers: Int, open: List[TypeRepr], branch: Boolean):
 
       /** Descending through a wrapper: an `Option`, a collection, a map or an array. */
-      def wrapped: Nesting = copy(layers = layers + 1)
+      def wrapped: Nesting = copy(layers = layers + 1, branch = false)
 
       /** Descending into the fields of `tpe`. */
-      def inside(tpe: TypeRepr): Nesting = Nesting(types + 1, layers + 1, tpe :: open)
+      def inside(tpe: TypeRepr): Nesting = Nesting(types + 1, layers + 1, tpe :: open, branch = false)
 
       /** Descending through a dispatch on the branches of the sealed family `tpe`. */
-      def dispatching(tpe: TypeRepr): Nesting = Nesting(types, layers + 1, tpe :: open)
+      def dispatching(tpe: TypeRepr): Nesting = Nesting(types, layers + 1, tpe :: open, branch = true)
 
       /** True when `tpe` is already being expanded further up, so inlining it again would not terminate. */
       def isOpen(tpe: TypeRepr): Boolean = open.exists(_ =:= tpe)
@@ -483,12 +489,55 @@ private[dscrbo] object DescribeMacro:
             s"`given Describe[${tpe.show}]`, seal the hierarchy, or mark the field @Excluded."
         )
 
+    /** Which shapes this macro expands structurally, and which it delegates.
+      *
+      * '''A nested case class is never unrolled into its parent.''' A case class is expanded in exactly two
+      * positions: at the root, the type the user actually wrote `derives Describe` on; and as a branch of a sealed
+      * family being dispatched, which has no instance of its own to delegate to. Anywhere else, a case-class-typed
+      * field has
+      * already been offered to [[renderSelf]] and [[renderSummoned]], so reaching here means it has no instance of its
+      * own, and the answer is `toString` via [[renderOpaque]] rather than another level of inlining.
+      *
+      * This is the composition story a typeclass is supposed to have: a nested type earns structured rendering by
+      * carrying its own `derives Describe`. Unrolling it instead made one derivation's emitted expression grow with
+      * the whole reachable object graph, which is what forced [[MaxNestedTypes]], [[MaxEmittedLayers]] and a cycle
+      * stack into existence, and what put wide-and-deep models within reach of the JVM's 65,535-byte per-method
+      * `Code` limit. Delegating measured 1.51x faster and 13.5x smaller at depth 12.
+      *
+      * Enums, sealed families, case objects and value classes keep their structural treatment: for those, inlining is
+      * the point — a sealed branch has no instance of its own to delegate to, and a value class exists precisely to
+      * be seen through.
+      */
     private def renderStructure(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
       if isModuleType(tpe) then Some(nameExpr(namingSymbolOf(tpe)))
       else if isSealedParent(tpe) then Some(withinBudget(tpe, nesting)(renderSealed(tpe, term, nesting)))
       else if isValueClass(tpe) then Some(withinBudget(tpe, nesting)(renderValueClass(tpe, term, nesting)))
-      else if isCaseClass(tpe) then Some(withinBudget(tpe, nesting)(renderProduct(tpe, term, nesting)))
+      else if isCaseClass(tpe) && (nesting.types == 0 || nesting.branch) then
+        Some(withinBudget(tpe, nesting)(renderProduct(tpe, term, nesting)))
+      else if isCaseClass(tpe) then refuseIfItRedacts(tpe)
       else None
+
+    /** The one case where falling back to `toString` would betray the library's purpose.
+      *
+      * A nested case class without an instance renders with its own `toString`. That is the intended design — but if
+      * the type carries `@Redacted` or `@Excluded` on any field, its `toString` is exactly the thing those
+      * annotations exist to prevent, and silently printing the secret would be the worst possible reading of
+      * "delegate to `toString`". The annotations are visible here without expanding anything, so the mistake is
+      * caught at compile time and named.
+      *
+      * Returning `None` for every other case class is what lets [[renderOpaque]] answer.
+      */
+    private def refuseIfItRedacts(tpe: TypeRepr): Option[Expr[String]] =
+      val annotated = tpe.typeSymbol.caseFields.filter(field => ruleOf(field) != FieldRule.Render)
+      Option.when(annotated.nonEmpty)(
+        report.errorAndAbort(
+          s"Describe will not render ${tpe.show} with toString: it declares " +
+            annotated.map(field => s"`${field.name}`").mkString(", ") +
+            " as @Redacted or @Excluded, and toString would print them in the clear. Nested case classes are not " +
+            s"unrolled into their parent, so add `derives Describe` to ${tpe.show}, provide a " +
+            s"`given Describe[${tpe.show}]`, or mark the field @Excluded here."
+        )
+      )
 
     /** Both caps name the type that is actually too deep, and prescribe a remedy implicit search really does honour. */
     private def withinBudget(tpe: TypeRepr, nesting: Nesting)(rendered: => Expr[String]): Expr[String] =
@@ -707,7 +756,7 @@ private[dscrbo] object DescribeMacro:
     // ------------------------------------------------------------------- root
 
     def renderRoot(root: Expr[T]): Expr[String] =
-      renderStructure(rootType, root.asTerm, Nesting(0, 0, Nil))
+      renderStructure(rootType, root.asTerm, Nesting(0, 0, Nil, branch = false))
         .getOrElse(
           report.errorAndAbort(
             s"${rootType.show} is not a case class, case object, sealed trait or enum, " +

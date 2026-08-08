@@ -5,13 +5,16 @@
 
 These two libraries are separate implementations of the single specification written down here. For
 the same input and an equivalent `Configuration` they must produce **byte-identical** output — with
-exactly two carved-out exceptions, listed under [Known divergences](#known-divergences) and pinned by
+exactly three carved-out exceptions, listed under [Known divergences](#known-divergences) and pinned by
 `KnownDivergenceSuite` in each module:
 
 1. an enum case's **qualified** name (simple names agree);
-2. generic case classes, which `describo` derives and `dscrbo` cannot.
+2. generic case classes, which `describo` derives and `dscrbo` cannot;
+3. **nested case classes with no instance of their own** — `describo` auto-derives them through magnolia,
+   `dscrbo` renders them with plain `toString`. Where the nested type carries its own instance the two agree,
+   which is the case every obligation below is written against.
 
-Outside those two, any difference is a bug in whichever engine deviates. The parity claim is
+Outside those three, any difference is a bug in whichever engine deviates. The parity claim is
 deliberately narrow rather than aspirational: a contract with unlisted exceptions is not a contract.
 
 This page is the source of truth for the rules below. Each module's README covers how to *use* that
@@ -128,7 +131,8 @@ would be nothing left to render.
 | `Option` | `Some(x)` / `None` |
 | `java.util` lists, sets, maps | identical to their Scala counterparts — maps in `[...]`, never `{...}` |
 | `java.time` values | their own `toString` |
-| nested case class | inline, through these same rules |
+| nested case class **with its own instance** | through that instance, by these same rules |
+| nested case class **without an instance** | `describo`: auto-derived. `dscrbo`: its own `toString` — see divergence 3 |
 | case object, parameterless enum case | its bare name, no parentheses |
 | value class | unwrapped to its payload |
 | empty product, or one whose fields are all omitted | `Name()` |
@@ -206,12 +210,18 @@ one of them.
 
 ## Known divergences
 
-Two, deliberate, pinned by `KnownDivergenceSuite` in both modules so neither can quietly become three.
+Three, deliberate, pinned by `KnownDivergenceSuite` in both modules so none can quietly become four.
 
 | | `describo` | `dscrbo` |
 | :-- | :-- | :-- |
 | **Enum case, qualified name** | `com.example.Red` — magnolia's `TypeInfo` reports the enclosing *package* | `com.example.Colour.Red` — the macro reads the case symbol |
 | **Generic case class** | ✅ derives at the instantiated type | ❌ `derived$Describe[A]` needs a `Describe[A]`, and the module ships no per-type instances by design |
+| **Nested case class, no instance** | auto-derived structurally by magnolia | plain `toString`; nested types are never unrolled into their parent |
+
+On the third: `dscrbo` treats a nested case class as an ordinary typeclass dependency. It earns structured
+rendering by carrying `derives Describe`, and without one it renders the way Scala already renders it. The one
+exception is a nested type that declares `@Redacted` or `@Excluded` and has no instance: delegating *that* to
+`toString` would print exactly what the annotation exists to hide, so it is a compile error naming the field.
 
 Enum **simple** names agree; only `fullyQualifiedClassName` is affected.
 

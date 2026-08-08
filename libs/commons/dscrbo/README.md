@@ -336,12 +336,42 @@ There is no `productElementNames` walk, no per-call `Map`, and no reflection.
 
 **Resolution order for a field's type:**
 
-1. a user-supplied `given Describe[T]` in scope 🥇
-2. a built-in shape — `String`, `Char`, primitives, `Option`, collections, `Map`, `Array`, `java.util.*`
-3. a case class, value class or case object → inlined structurally
-4. a sealed family or enum → a dispatch over its children
+1. the instance being derived, if the field is the root type itself
+2. a user-supplied `given Describe[T]` in scope 🥇
+3. a built-in shape — `String`, `Char`, primitives, `Option`, collections, `Map`, `Array`, `java.util.*`
+4. a sealed family, enum, case object or value class → **expanded structurally**
 5. an abstractly-typed field → **compile error** (see below)
-6. any other concrete final class → its own `toString`
+6. **a nested case class → its own `toString`** (see below)
+7. any other concrete class → its own `toString`
+
+### 🪆 Nested case classes are not unrolled
+
+This is the design decision that shapes everything else. A case class is expanded structurally in exactly
+two positions: **at the root**, where you wrote `derives Describe`, and **as a branch of a sealed family**,
+which has no instance of its own to delegate to.
+
+Anywhere else, a case-class-typed field is an ordinary typeclass dependency. It earns structured rendering
+by carrying its own `derives Describe`; without one it renders the way Scala already renders it.
+
+```scala
+final case class Inner(a: Int, s: String)                    // no instance
+final case class Outer(i: Inner) derives Describe
+Outer(Inner(1, "v")).asString                                // Outer(i = Inner(1,v))     <- Inner's own toString
+
+final case class Inner(a: Int, s: String) derives Describe   // has one
+Outer(Inner(1, "v")).asString                                // Outer(i = Inner(a = 1, s = "v"))
+```
+
+Why: unrolling made one derivation's emitted expression grow with the entire reachable object graph. That
+is what forced the two depth caps, a cycle detector, and exposure to the JVM's per-method bytecode limit —
+and delegating measured **1.51× faster and 13.5× smaller** at depth 12. Enums, sealed families and value
+classes keep their structural treatment, because for those inlining is the whole point.
+
+> [!WARNING]
+> One exception, and it is a compile error rather than a surprise. A nested case class that declares
+> `@Redacted` or `@Excluded` but has **no instance** is refused: delegating *that* to `toString` would print
+> exactly what the annotation exists to hide. The error names the field and tells you to add
+> `derives Describe` to it.
 
 ### 🛡️ Fail closed
 
@@ -361,10 +391,10 @@ given Describe[ThatType] = ...   // teach it the type, or
 
 | Limit | Detail |
 | :-- | :-- |
-| 🔁 **Nesting: 12 types** | case classes, value classes and sealed families below the root. Wrappers don't count |
-| 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Keeps the compiler's staging stack from overflowing |
+| 🔁 **Nesting: 12 types** | only the shapes that still expand — sealed families, value classes, wrapper chains. Plain nested case classes do not nest at all |
+| 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Binds first: a sealed chain refuses at 11 levels |
 | 🧊 **Generic case classes** | `Box[A] derives Describe` compiles but cannot be summoned at `Box[Int]` — see [below](#-dscrbo-vs-describo) |
-| 📏 **64 KB class limit** | a model both very wide and very deep can exceed the JVM class-size limit. Inherent to unrolled inlining |
+| 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
 Both nesting caps produce a **refusal with a remedy**, never a `StackOverflowError` in your build. The
@@ -383,6 +413,7 @@ produce **byte-identical** output — enforced by a shared conformance kit, not 
 | Mechanism | inline macro, fully unrolled | magnolia typeclass derivation |
 | Runtime dependencies | **none** | magnolia |
 | Type coverage | open — any concrete class renders | closed — needs an instance per type |
+| Nested case classes | delegate to their own instance, else `toString` | auto-derived by magnolia |
 | Generic case classes | ❌ | ✅ |
 | Extension point | `given Describe[T]` | `given Printable[T]` or a factory |
 | Failure at the edges | compile error at 12 types / 20 layers | `StackOverflowError` at render time |
@@ -392,7 +423,7 @@ produce **byte-identical** output — enforced by a shared conformance kit, not 
 
 ### Known divergences
 
-Two, both pinned by `KnownDivergenceSuite` in each module so neither can quietly become three:
+Three, all pinned by `KnownDivergenceSuite` in each module so none can quietly become four:
 
 1. **Enum case qualified names.** `dscrbo` prints `com.example.Colour.Red`; `describo` prints
    `com.example.Red`, because that is what magnolia's `TypeInfo` reports. Simple names agree — only
@@ -400,6 +431,9 @@ Two, both pinned by `KnownDivergenceSuite` in each module so neither can quietly
 2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable`. `dscrbo`
    cannot: its synthesised `derived$Describe[A]` needs a `Describe[A]`, and this module ships no
    per-type instances by design.
+3. **Nested case classes with no instance.** `describo` auto-derives them through magnolia; `dscrbo`
+   renders them with plain `toString`, as described above. Where the nested type carries its own
+   instance the two agree — which is every fixture in the shared conformance kit.
 
 ---
 

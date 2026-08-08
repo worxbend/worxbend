@@ -45,6 +45,29 @@ class KnownDivergenceSuite extends AnyFunSuite:
       "t",
     )) == "DivergenceConcrete(value = 1, tag = \"t\")")
 
+  // Divergence 3 — nested case classes without their own instance.
+  //
+  // This module does not unroll a nested case class into its parent: it delegates to that type's own instance, and
+  // renders with plain `toString` when there is none. describo, built on magnolia's AutoDerivation, derives the
+  // nested type implicitly and renders it structurally. Both are deliberate; this one is the design of this module.
+  // Shapes where the nested type *does* carry an instance agree, which is why the shared conformance kit still holds.
+  test("a nested case class without its own instance renders with toString, unlike describo"):
+    assert(
+      summon[Describe[DivergenceHolder2]].describe(DivergenceHolder2(DivergencePlain(1, "v"))) ==
+        "DivergenceHolder2(p = DivergencePlain(1,v))"
+    )
+
+  test("the same nested type renders structurally once it has an instance, which is where parity resumes"):
+    given Describe[DivergencePlain] = Describe.derived[DivergencePlain]
+    assert(
+      Describe.derived[DivergenceHolder2].describe(DivergenceHolder2(DivergencePlain(1, "v"))) ==
+        "DivergenceHolder2(p = DivergencePlain(a = 1, s = \"v\"))"
+    )
+
+final case class DivergencePlain(a: Int, s: String)
+
+final case class DivergenceHolder2(p: DivergencePlain) derives Describe
+
 enum DivergenceColour derives Describe:
 
   case Red

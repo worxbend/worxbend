@@ -60,25 +60,29 @@ near zero, and only rises after the first release.
 
 Two implementations of one specification
 ([`tostring-rendering-spec.md`](tostring-rendering-spec.md)) producing byte-identical output for
-everything except two documented divergences, enforced by `libs/commons/describo-tck`.
+everything except three documented divergences, enforced by `libs/commons/describo-tck`.
 
 | | `dscrbo` (primary) | `describo` (secondary) |
 | :-- | :-- | :-- |
-| Mechanism | Scala 3 inline macro, fully unrolled | magnolia `AutoDerivation` |
+| Mechanism | Scala 3 inline macro; expands the root, sealed families, enums and value classes, and delegates the rest | magnolia `AutoDerivation` |
 | Runtime dependencies | **none** | magnolia |
 | Main source | ~890 lines / 5 files | ~570 lines / 9 files |
 | Type coverage | open — any concrete class renders via its own `toString` | closed — needs an instance per type |
 | Generic case classes | ❌ | ✅ |
 | Extension point | a `given Describe[T]` | a `given Printable[T]`, or one of four factories |
-| Failure at the edges | compile-time refusal at 12 nested types / 20 emitted layers; separately, very wide-and-deep models can exceed the JVM's per-method bytecode limit | `StackOverflowError` at render time, unbounded |
+| Nested case classes | delegate to their own instance, else plain `toString` | auto-derived by magnolia |
+| Failure at the edges | compile-time refusal at 12 nested types / 20 emitted layers, now reachable only through sealed/value/wrapper chains | `StackOverflowError` at render time, unbounded |
 | Compile cost | unrolled emission per derived type | ordinary implicit search |
 
 ### On the size limit
 
 `dscrbo`'s hard ceiling is the JVM's **65,535-byte `Code` attribute limit, which applies per method**,
-not a class-size limit. A single derived rendering is emitted as one unrolled expression inside one
-method, so a model that is both very wide and very deep can exceed it; Scala 3.8.4 reports this as a
-"Method too large" error at emission.
+not a class-size limit. Scala 3.8.4 reports it as a "Method too large" error at emission.
+
+It used to be genuinely reachable, because a derived rendering grew with the whole reachable object
+graph. Now that nested case classes delegate rather than unroll, a derivation's size is bounded by one
+type's own fields plus whatever sealed families and value classes it reaches, so only a single very
+wide product comes close.
 
 That boundary is imposed by the JVM and is distinct from the library's own two caps
 (`MaxNestedTypes = 12`, `MaxEmittedLayers = 20`), which are fixed constants chosen to keep the
@@ -90,13 +94,17 @@ because bytecode size depends on field count and width as well as depth.
 ## Consequences of choosing `dscrbo` as primary
 
 1. **Its remaining capability gaps are now defects, not acceptable limitations.** Generic case-class
-   derivation is the notable one: `describo` handles `Box[A] derives Printable`, `dscrbo` does not,
+   derivation is the notable one — note this is a *capability* gap, unlike the nested-case-class
+   difference, which is a deliberate design choice rather than a shortfall: `describo` handles `Box[A] derives Printable`, `dscrbo` does not,
    because its synthesised `derived$Describe[A]` needs a `Describe[A]` and the module ships no
    per-type instances. Closing that is worth real effort.
-2. **The per-method bytecode ceiling deserves engineering attention**, not just documentation. Full
-   unrolling is what causes it, and the Scala 3 documentation independently advises avoiding large
-   generated methods for JIT reasons. Emitting shared or recursive helpers instead of one flat
-   expression would address both at once.
+2. ~~**The per-method bytecode ceiling deserves engineering attention.**~~ **Done.** Nested case
+   classes are no longer unrolled into their parent: a case-class-typed field resolves to that type's
+   own `Describe` instance, or renders with plain `toString` when it has none. Expansion is now
+   confined to the root, sealed families, enums and value classes. That removes the unbounded growth
+   that made the ceiling reachable, and matches the Scala 3 documentation's advice against large
+   generated methods. The two depth caps survive but now bind only on the shapes that still expand —
+   a sealed chain refuses at 11 levels.
 3. **The conformance kit stays**, and `describo` stays with it. Parity is what keeps the primary
    library honest.
 

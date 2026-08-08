@@ -53,6 +53,22 @@ class KnownDivergenceSuite extends AnyFunSuite:
       )) == "DivergenceBox(value = \"v\", tag = \"t\")"
     )
 
+  // Divergence 3 — nested case classes without their own instance.
+  //
+  // Magnolia's AutoDerivation derives a nested case class implicitly, so this module renders it structurally whether
+  // or not the author asked for an instance. The sibling macro deliberately does not: it delegates to the nested
+  // type's own instance and falls back to plain `toString` when there is none. Shapes where the nested type does
+  // carry an instance agree, which is what keeps the shared conformance kit meaningful.
+  test("a nested case class without its own instance is still auto-derived, unlike dscrbo"):
+    assert(
+      summon[Printable[DivergenceHolder2]].asString(DivergenceHolder2(DivergencePlain(1, "v"))) ==
+        "DivergenceHolder2(p = DivergencePlain(a = 1, s = \"v\"))"
+    )
+
+final case class DivergencePlain(a: Int, s: String)
+
+final case class DivergenceHolder2(p: DivergencePlain) derives Printable
+
 enum DivergenceColour derives Printable:
 
   case Red
