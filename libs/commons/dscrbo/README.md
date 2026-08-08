@@ -7,7 +7,7 @@
 [![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
 [![Dependencies](https://img.shields.io/badge/runtime%20deps-0-success)](#-why-dscrbo)
 [![Derivation](https://img.shields.io/badge/derivation-inline%20macro-blueviolet)](#-how-the-macro-works)
-[![Tests](https://img.shields.io/badge/tests-243-brightgreen)](#-testing-and-the-conformance-kit)
+[![Tests](https://img.shields.io/badge/tests-244-brightgreen)](#-testing-and-the-conformance-kit)
 [![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
 
 _Print your case classes the way you want — and never print a secret by accident._
@@ -162,6 +162,12 @@ Outer(Inner("s"), List(Inner("s")), Some(Inner("s"))).asString
 ---
 
 ## ⚙️ Configuration
+
+> [!NOTE]
+> This section is the practical reference. The **normative** specification shared with `describo` —
+> and the one the conformance kit enforces — lives in
+> [`docs/libraries/tostring-rendering-spec.md`](../../../docs/libraries/tostring-rendering-spec.md).
+> If the two ever disagree, that page wins and this one is a bug.
 
 Every field renders as:
 
@@ -400,7 +406,7 @@ Two, both pinned by `KnownDivergenceSuite` in each module so neither can quietly
 ## ✅ Testing and the conformance kit
 
 ```bash
-./mill libs.commons.dscrbo.test        # 243 tests
+./mill libs.commons.dscrbo.test        # 244 tests
 ./mill libs.commons.__.test            # both modules
 ./mill libs.commons.__.checkFormat     # scalafmt
 ```

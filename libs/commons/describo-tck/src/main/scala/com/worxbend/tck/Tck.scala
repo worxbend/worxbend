@@ -111,6 +111,13 @@ object Tck:
     TckCase("enum-fields", flat, """EnumFieldsHolder(e = Sized(n = 2))""", "an enum case with fields is structural"),
     TckCase("either-right", flat, """EitherHolder(e = Right(value = 1))""", "Either dispatches to Right"),
     TckCase("either-left", flat, """EitherHolder(e = Left(value = "e"))""", "Either dispatches to Left"),
+    TckCase(
+      "deep-recursion",
+      flat,
+      "Node(v = 1, next = Some(Node(v = 2, next = Some(Node(v = 3, next = Some(Node(v = 4, next = None)))))))",
+      "a self-recursive type renders to arbitrary runtime depth through its own instance; depth parity is cheap to " +
+        "pin now that the fixtures are data, and neither engine caps it at render time",
+    ),
   )
 
   /** Annotation semantics — the reason the libraries exist. */

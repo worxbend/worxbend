@@ -79,132 +79,52 @@ They share a namespace with your fields, so short names are not safe: an earlier
 
 ## Annotations
 
-| Annotation                        | Effect                                                        |
-| --------------------------------- | ------------------------------------------------------------- |
-| `@Redacted`                       | Prints `<redacted>` instead of the value.                      |
-| `@Redacted(replacement = "***")`  | Prints `***` instead of the value.                             |
-| `@Excluded`                       | Omits the field entirely.                                      |
-| `@transient`                      | Exact alias of `@Excluded`, kept for backwards compatibility.  |
+`@Redacted`, `@Redacted("custom")`, `@Excluded` and `@transient` (an alias of `@Excluded`, kept for
+compatibility). Exclusion beats redaction; the value of an omitted or redacted field is never
+dereferenced, so a `null` secret is safe.
 
-Resolution is a single ordered decision per field, evaluated once when the instance is derived:
+```scala
+final case class Account(
+    id:                 Long,
+    @Redacted password: String,
+    @Excluded internal: String,
+) derives Printable
+// Account(id = 1, password = <redacted>)
+```
 
-1. `@Excluded` **or** `@transient` → the field is omitted;
-2. otherwise `@Redacted` → the replacement is printed;
-3. otherwise → the value is rendered.
-
-Consequences, all of them deliberate:
-
-- **Exclusion beats redaction.** `@Redacted @Excluded both: String` disappears; it does not print a
-  replacement. The source order of the two annotations is irrelevant — precedence is by rule, not
-  by position.
-- **An omitted or redacted field is never dereferenced.** Not for its value, not for its type name,
-  not for a null check. A `null` `@Redacted` field prints its replacement instead of throwing.
-- **The declared type is still printed** for a redacted field under `useTypeNames`, because the type
-  comes from the typeclass instance rather than from the value.
-- `@transient` is a *serialization* marker. describo honours it only because earlier versions did;
-  `@Excluded` is the intended spelling for new code.
-- Several `@Redacted` annotations on one field are not an error: the first in `param.annotations`
-  order wins. Scala surfaces field annotations in reverse source order, so in practice that is the
-  one written last. Deterministic, and identical in both modules.
+> **The full annotation semantics — precedence, repeated `@Redacted`, value classes — are specified in
+> [`docs/libraries/tostring-rendering-spec.md`](../../../docs/libraries/tostring-rendering-spec.md).**
 
 ## Configuration reference
 
-`Configuration` is a flat, sixteen-field options record. Every field has a default, so you set only
-what you care about with named arguments:
+`Configuration` carries sixteen options: field names, type names, qualified names, the five affixes,
+three separators, and the multiline layout with its threshold.
 
 ```scala
-Configuration(multiline = true, useTypeNames = true)
+given Configuration = Configuration(multiline = true, useTypeNames = true)
 ```
 
-| Field | Default | Meaning |
-| ----- | ------- | ------- |
-| `useFieldNames` | `true` | Render `field = value` rather than a bare `value`. Also suppresses type names when `false`. |
-| `useTypeNames` | `false` | Render each field's declared type. |
-| `fullyQualifiedClassName` | `false` | Use fully qualified names for the type and for field types. |
-| `shortPackagePrefix` | `true` | With the above, compress leading lowercase segments: `c.w.d.Account`. |
-| `fieldsSeparator` | `", "` | Inter-**field** separator. Used verbatim on one line; trailing-stripped in multiline. |
-| `fieldNamePrefix` | `""` | Inserted before each field name. |
-| `fieldNameSuffix` | `""` | Inserted after each field name. |
-| `fieldNameAndValueSeparator` | `" = "` | Between the name (or type) and the value. |
-| `fieldNameAndTypeNameSeparator` | `": "` | Between the field name and the type name. |
-| `typeNamePrefix` | `""` | Inserted before each type name. |
-| `typeNameSuffix` | `""` | Inserted after each type name. |
-| `valuePrefix` | `""` | Inserted before each rendered value, `null` included. |
-| `valueSuffix` | `""` | Inserted after each rendered value, `null` included. |
-| `multiline` | `false` | Always render one field per line. |
-| `multilineIndent` | `"  "` | Per-field indentation in multiline layout. |
-| `multilineIfFieldsAreGreaterOrEqual` | `5` | Switch to multiline at this many rendered fields. **`<= 0` disables the threshold entirely.** |
+Two that surprise people:
 
-### `multilineIfFieldsAreGreaterOrEqual`
+- **`multilineIfFieldsAreGreaterOrEqual <= 0` disables the threshold** — it does not mean "always
+  multiline". Use `multiline = true` for that, and `-1` as the idiomatic "always one line".
+- **`fieldsSeparator` is used verbatim** on a single line; in multiline its trailing whitespace is
+  stripped before the newline.
 
-This is the one non-obvious knob. The layout is chosen once per render:
-
-```
-Multiline  iff  multiline
-             || (multilineIfFieldsAreGreaterOrEqual > 0
-                 && renderedFieldCount >= multilineIfFieldsAreGreaterOrEqual)
-```
-
-- `renderedFieldCount` is counted **after** exclusion, so `@Excluded` fields do not push a type over
-  the threshold.
-- **Any value `<= 0` disables the threshold.** `0` and `-1` behave identically; neither means "always
-  multiline". Set `multiline = true` for that.
-- If nothing at all is rendered — an empty case class, or one whose fields are all excluded — the
-  layout collapses to a single line and you get `T()`, even under `multiline = true`.
-
-### `fieldsSeparator`
-
-- **Single line:** fields are joined with the separator *verbatim*. `" | "` gives `a = 1 | b = 2`.
-- **Multiline:** each field is prefixed with `multilineIndent` and joined with
-  `fieldsSeparator.stripTrailing() + "\n"`. Only *trailing* whitespace is dropped, and only here,
-  because it would otherwise be invisible whitespace at the end of every line. Leading whitespace
-  survives, so `" | "` ends each line with ` |`.
-- With no rendered fields the separator is not used at all.
-
-The separator is an inter-**field** knob. Collection elements and map entries always use `", "`.
+> **The full option table with defaults and the field layout formula are specified in
+> [`docs/libraries/tostring-rendering-spec.md`](../../../docs/libraries/tostring-rendering-spec.md).**
+> That page is normative: this README describes how to *use* `describo`, not what the output is.
 
 ## Output format
 
-| Shape | Rendering |
-| ----- | --------- |
-| String | `"text"`, escaped |
-| Char | `'c'`, escaped |
-| Numbers, `Boolean`, `java.time.*` | their own `toString`, unquoted |
-| `null` | the four characters `null`, unquoted, in every position |
-| `List`, `Vector`, `Set`, `Seq`, `IndexedSeq`, `Iterable`, `Array` | `["a", "b"]` |
-| `java.util.List` / `ArrayList` / `LinkedList` / `Set` / `HashSet` | `["a", "b"]` |
-| `Map`, `java.util.Map`, `java.util.HashMap` | `["key" -> "value"]` |
-| `Option` | `Some("payload")` / `None` |
-| Case class | `Name(field = value, ...)` |
-| Empty or fully excluded case class | `Name()` |
-| Case object, parameterless enum case | `Name`, no parentheses |
-| Value class | its payload's rendering |
+Strings are quoted and escaped, collections render as `[a, b]`, maps as `["k" -> "v"]`, `Option` as
+`Some(x)`/`None`, and `null` as the bare word `null` everywhere — including as a collection element, a
+map key or an `Option` payload. Under `useTypeNames` the **declared** type is printed, never the
+runtime class, so a `List` field reports `List` and not `$colon$colon`.
 
-Escaping, applied at every position (top-level field, collection element, map key, map value,
-`Option` payload), in this order: `\` → `\\`, `"` → `\"`, newline → `\n`, carriage return → `\r`,
-tab → `\t`, and additionally `'` → `\'` inside a `Char`. Nothing else is escaped — no unicode
-escapes, no control characters — so the two modules stay trivially identical.
-
-### `null`
-
-A `null` renders as `null` in every position: top-level field, `Option` payload, collection element,
-map key, map value. Never `"null"`, never `None`, never `[]`, never an empty string, never an
-exception. `valuePrefix`/`valueSuffix` still apply, so with `valuePrefix = "["` a null field renders
-`[null]`. Nullness has no effect on the printed type: `name: String = null`.
-
-### Type names
-
-Under `useTypeNames`, describo prints the **declared** type, dealiased and widened, with type
-arguments dropped: `Int`, `String`, `List`, `Map`, `Option`, `BigDecimal`, `LocalDate`. It never
-prints a runtime class, so you will not see `Integer`, `Some`, `$colon$colon` or `Map2`. The type
-comes from the typeclass instance (`Printable.printedType`), which is also why redacted, excluded
-and null fields can be typed without being touched.
-
-Fully qualified spellings follow `TypeRepr.of[X].dealias.typeSymbol.fullName`, for example
-`scala.Int`, `java.lang.String`, `scala.collection.immutable.List`, `scala.math.BigDecimal`.
-Package compression shortens every *leading* lowercase segment to one character and leaves the rest
-alone: `com.worxbend.describo.Account` → `c.w.d.Account`, `Account` → `Account` (no leading dot),
-`com.worxbend.describo.Fixtures.Inner` → `c.w.d.Fixtures.Inner`.
+> **The complete value, escaping, `null`, type-name and layout rules are specified in
+> [`docs/libraries/tostring-rendering-spec.md`](../../../docs/libraries/tostring-rendering-spec.md),
+> and enforced for both engines by `libs/commons/describo-tck`.**
 
 ## Supported types
 

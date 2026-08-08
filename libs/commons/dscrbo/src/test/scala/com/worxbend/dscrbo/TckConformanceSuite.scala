@@ -44,6 +44,7 @@ private object TckFixtures:
   final case class EnumFieldsHolder(e: Colour) derives Describe
   final case class EitherHolder(e: Either[String, Int]) derives Describe
   final case class Pair(a: Int, b: Int) derives Describe
+  final case class Node(v: Int, next: Option[Node]) derives Describe
 
   final case class Secretish(@Redacted secret: String, tag: String) derives Describe
   final case class SecretCustom(@Redacted(replacement = "***") secret: String, tag: String) derives Describe
@@ -147,6 +148,7 @@ private object DscrboTckAdapter extends TckAdapter:
       case "enum-fields"           => show(EnumFieldsHolder(Colour.Sized(2)))
       case "either-right"          => show(EitherHolder(Right(1)))
       case "either-left"           => show(EitherHolder(Left("e")))
+      case "deep-recursion"        => show(Node(1, Some(Node(2, Some(Node(3, Some(Node(4, None))))))))
       case "layout-threshold"      => show(Pair(1, 2))
       case "redacted-default"      => show(Secretish("s", "t"))
       case "redacted-custom"       => show(SecretCustom("s", "t"))
