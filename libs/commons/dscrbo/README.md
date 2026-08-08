@@ -28,7 +28,7 @@ _Print your case classes the way you want — and never print a secret by accide
 - [How the macro works](#-how-the-macro-works)
 - [Limits](#-limits)
 - [dscrbo vs describo](#-dscrbo-vs-describo)
-- [Testing and the conformance kit](#-testing-and-the-conformance-kit)
+- [Testing](#-testing)
 - [License](#-license)
 
 ---
@@ -413,9 +413,9 @@ constant in `DescribeMacro.scala`.
 
 ## 🔀 dscrbo vs describo
 
-Two implementations of **one specification**. For the same input and an equivalent `Configuration` they
-produce **byte-identical** output, apart from the three divergences listed below — and that is enforced
-by a shared conformance kit rather than by convention.
+Two libraries solving the same problem by different means. **They are not required to produce identical
+output**, and they deliberately do not: each is free to make the choice that suits its own mechanism, and
+each pins its own behaviour in its own tests.
 
 | | 🩻 dscrbo | 🔎 [describo](../describo) |
 | :-- | :-- | :-- |
@@ -430,42 +430,27 @@ by a shared conformance kit rather than by convention.
 **Choose `dscrbo`** if you cannot take the magnolia dependency.
 **Choose `describo`** otherwise — it is smaller and easier to extend.
 
-### Known divergences
+### Where they differ
 
-Three, all pinned by `KnownDivergenceSuite` in each module so none can quietly become four:
+| | `dscrbo` | `describo` |
+| :-- | :-- | :-- |
+| Nested case class, no instance | plain `toString` | auto-derived by magnolia |
+| Enum case, qualified name | `com.example.Colour.Red` | `com.example.Red` — magnolia's `TypeInfo` reports the package |
+| Generic case class | needs a `given` for the type argument | derives unaided |
 
-1. **Enum case qualified names.** `dscrbo` prints `com.example.Colour.Red`; `describo` prints
-   `com.example.Red`, because that is what magnolia's `TypeInfo` reports. Simple names agree — only
-   `fullyQualifiedClassName` is affected.
-2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable` with no
-   ceremony. `dscrbo`'s synthesised `derived$Describe[A]` asks for a `Describe[A]`, and this module
-   ships no per-type instances by design — so `Box[Int]` fails until you put a `given Describe[Int]`
-   in scope, after which it works. The limitation is the missing instance, not the generic itself.
-3. **Nested case classes with no instance.** `describo` auto-derives them through magnolia; `dscrbo`
-   renders them with plain `toString`, as described above. Where the nested type carries its own
-   instance the two agree — which is every fixture in the shared conformance kit.
+The first is the design of this module rather than a shortfall: nested types are not unrolled into their
+parent. The other two follow from the derivation mechanism each library uses.
 
-All three are conditional rather than absolute: supply the missing instance and `dscrbo` matches
-`describo` in each case except the enum qualified name, which is a naming difference with no remedy.
-
----
-
-## ✅ Testing and the conformance kit
+## ✅ Testing
 
 ```bash
-./mill libs.commons.dscrbo.test        # 244 tests
-./mill libs.commons.__.test            # both modules
+./mill libs.commons.dscrbo.test        # this module
 ./mill libs.commons.__.checkFormat     # scalafmt
 ```
 
-Parity with `describo` is enforced by `libs/commons/describo-tck`, a test-only module holding the
-specification **as data** — a catalogue of `(fixture, configuration, expected string)` obligations that
-both renderers must satisfy exactly. Each module supplies a thin adapter; neither *main* module depends
-on the kit, so the zero-dependency guarantee is untouched.
-
-Adding a case to the catalogue breaks every renderer that doesn't satisfy it. That is the point: before
-the kit existed, the two engines silently disagreed on repeated `@Redacted` while both test suites
-stayed green.
+Every test lives in this module. There is no shared conformance suite and no cross-library contract to
+satisfy: the two renderers are independent, so each one's behaviour is pinned where that behaviour is
+implemented.
 
 ---
 
