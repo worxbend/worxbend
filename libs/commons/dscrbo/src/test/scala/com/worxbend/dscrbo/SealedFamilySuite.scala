@@ -91,7 +91,15 @@ final class SealedFamilySuite extends AnyFunSuite:
         "GenTryHolder(value = Success(value = 1))"
     )
 
-  test("Try dispatches to Failure, whose payload is a concrete class rendered by toString"):
+  // `Throwable` is concrete but NOT final, so this is the acceptance rule at its weakest point: the macro renders any
+  // non-abstract type by `toString`, and `isAbstractlyTyped` tests only for abstract types, traits, abstract classes
+  // and the universal types. Finality is not checked anywhere, so a non-final class is accepted here on the strength
+  // of being concrete alone — not, as an earlier comment claimed, because nothing can be substituted for it.
+  //
+  // The gap that leaves is recorded on `isAbstractlyTyped` itself: a subtype carrying `@Redacted` would have its
+  // annotation ignored by `toString`. Closing it means refusing every non-final class, which would refuse `Throwable`
+  // and take `Try`'s Failure payload with it, so it is a specification decision rather than an oversight.
+  test("Try dispatches to Failure, whose payload is a concrete non-final class rendered by toString"):
     assert(
       Describe[GenTryHolder].describe(GenTryHolder(Failure(RuntimeException("boom"))))(using singleLine) ==
         "GenTryHolder(value = Failure(exception = java.lang.RuntimeException: boom))"

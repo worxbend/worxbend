@@ -29,15 +29,25 @@ class KnownDivergenceSuite extends AnyFunSuite:
       summon[Describe[DivergenceHolder]].describe(DivergenceHolder(DivergenceColour.Red)) == "DivergenceHolder(c = Red)"
     )
 
-  // Divergence 2 — generic case classes.
+  // Divergence 2 — generic case classes, and the exact condition under which they diverge.
   //
-  // `derives Describe` on a generic type compiles, but the instance cannot be summoned at an instantiated type: the
-  // synthesised `derived$Describe[A]` asks for a `Describe[A]`, and this module ships no per-type instances by design
-  // — primitives are handled structurally inside the macro, so there is no `Describe[Int]` to find. describo, whose
-  // typeclass has real instances for primitives, handles the same shape. Fixing this would mean giving dscrbo an
-  // instance per built-in type, which is the design it exists to avoid.
-  test("a generic case class cannot be summoned at an instantiated type"):
+  // `derives Describe` on a generic type compiles. Summoning it at an instantiated type asks for a `Describe[A]`, and
+  // this module ships no per-type instances by design — primitives are handled structurally inside the macro, so
+  // there is no `Describe[Int]` to find and `DivergenceBox[Int]` fails. describo, whose typeclass has real instances
+  // for primitives, handles the same shape unaided.
+  //
+  // The divergence is therefore the *missing instance*, not the generic. Supply one and the shape works, which the
+  // second test pins so that nobody records this as a blanket incapability.
+  test("a generic case class cannot be summoned at an instantiated type without an instance for the argument"):
     assertDoesNotCompile("summon[Describe[DivergenceBox[Int]]]")
+
+  test("supplying an instance for the type argument makes the same generic shape work"):
+    given Describe[Int] with
+      def describe(value: Int)(using Configuration): String = value.toString
+    assert(summon[Describe[DivergenceBox[Int]]].describe(DivergenceBox(
+      1,
+      "t",
+    )) == """DivergenceBox(value = 1, tag = "t")""")
 
   test("the same shape works once the type parameter is gone"):
     assert(summon[Describe[DivergenceConcrete]].describe(DivergenceConcrete(
