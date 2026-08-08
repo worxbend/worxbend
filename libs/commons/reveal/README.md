@@ -314,6 +314,11 @@ given PrettyPrintable[Money] with
 
 ## 🧠 How the macro works
 
+> [!TIP]
+> This section is the summary. [**ARCHITECTURE.md**](ARCHITECTURE.md) is the full developer
+> documentation — the compile-time/runtime split, the resolution chain, the safety model and the
+> nesting budgets, with diagrams.
+
 Everything decidable from declared types is decided **once, at expansion time**: which fields are
 omitted, which are redacted and with what replacement, how each type is spelled, which renderer each
 field needs. What survives into your bytecode is straight-line string assembly plus the `Configuration`
