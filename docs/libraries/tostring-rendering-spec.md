@@ -4,7 +4,15 @@
 [`dscrbo`](../../libs/commons/dscrbo).**
 
 These two libraries are separate implementations of the single specification written down here. For
-the same input and an equivalent `Configuration` they must produce **byte-identical** output.
+the same input and an equivalent `Configuration` they must produce **byte-identical** output — with
+exactly two carved-out exceptions, listed under [Known divergences](#known-divergences) and pinned by
+`KnownDivergenceSuite` in each module:
+
+1. an enum case's **qualified** name (simple names agree);
+2. generic case classes, which `describo` derives and `dscrbo` cannot.
+
+Outside those two, any difference is a bug in whichever engine deviates. The parity claim is
+deliberately narrow rather than aspirational: a contract with unlisted exceptions is not a contract.
 
 This page is the source of truth for the rules below. Each module's README covers how to *use* that
 module — installation, derivation styles, macro or magnolia specifics — and defers to this page for
