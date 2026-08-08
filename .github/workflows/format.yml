@@ -61,22 +61,49 @@ jobs:
         with:
           node-version: 22
 
+      # Only the files this PR touches, mirroring scalafmt's --mode diff.
+      # A repo-wide sweep would drag hundreds of unrelated reformats into
+      # every PR's auto-commit.
+      - name: Collect changed files
+        id: changed
+        run: |
+          git diff --name-only --diff-filter=d \
+            "origin/${{ github.base_ref }}...HEAD" > /tmp/changed.txt
+          echo "Changed files:"
+          cat /tmp/changed.txt
+
       - name: Run prettier (YAML + JSON)
         run: |
-          npx --yes prettier@3 --write \
-            "**/*.{yml,yaml}" \
-            "**/*.json"
+          mapfile -t files < <(grep -E '\.(ya?ml|json)$' /tmp/changed.txt || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No YAML/JSON changed — skipping."
+          else
+            npx --yes prettier@3 --write "${files[@]}"
+          fi
 
       # ── TOML: taplo ──────────────────────────────────────────────────────
       - name: Run taplo (TOML)
-        run: npx --yes @taplo/cli@0.7 format "**/*.toml"
+        run: |
+          mapfile -t files < <(grep -E '\.toml$' /tmp/changed.txt || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No TOML changed — skipping."
+          else
+            npx --yes @taplo/cli@0.7 format "${files[@]}"
+          fi
 
       # ── Justfile ─────────────────────────────────────────────────────────
       - name: Setup just
         uses: extractions/setup-just@v2
 
+      # `just --fmt` takes the target via --justfile; a bare positional is
+      # parsed as a recipe name and rejected.
       - name: Run just --fmt
-        run: just --fmt --unstable justfile
+        run: |
+          if grep -qx 'justfile' /tmp/changed.txt; then
+            just --fmt --unstable --justfile justfile
+          else
+            echo "justfile unchanged — skipping."
+          fi
 
       # ── Commit any formatting changes back to the PR branch ──────────────
       - name: Commit formatted files
