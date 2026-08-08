@@ -64,17 +64,24 @@ jobs:
       # Only the files this PR touches, mirroring scalafmt's --mode diff.
       # A repo-wide sweep would drag hundreds of unrelated reformats into
       # every PR's auto-commit.
+      # NUL-delimited: a path containing a space, a quote or a newline is legal
+      # in git and would otherwise be split into several bogus filenames, so the
+      # formatters would either miss it or be handed garbage. The base ref goes
+      # through the environment rather than being interpolated into the script.
       - name: Collect changed files
         id: changed
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git diff --name-only --diff-filter=d \
-            "origin/${{ github.base_ref }}...HEAD" > /tmp/changed.txt
+          set -euo pipefail
+          git diff -z --name-only --diff-filter=d \
+            "origin/${BASE_REF}...HEAD" > /tmp/changed.txt
           echo "Changed files:"
-          cat /tmp/changed.txt
+          tr '\0' '\n' < /tmp/changed.txt
 
       - name: Run prettier (YAML + JSON)
         run: |
-          mapfile -t files < <(grep -E '\.(ya?ml|json)$' /tmp/changed.txt || true)
+          mapfile -t -d '' files < <(grep -zE '\.(ya?ml|json)$' /tmp/changed.txt || true)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No YAML/JSON changed — skipping."
           else
@@ -84,7 +91,7 @@ jobs:
       # ── TOML: taplo ──────────────────────────────────────────────────────
       - name: Run taplo (TOML)
         run: |
-          mapfile -t files < <(grep -E '\.toml$' /tmp/changed.txt || true)
+          mapfile -t -d '' files < <(grep -zE '\.toml$' /tmp/changed.txt || true)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No TOML changed — skipping."
           else
@@ -99,7 +106,7 @@ jobs:
       # parsed as a recipe name and rejected.
       - name: Run just --fmt
         run: |
-          if grep -qx 'justfile' /tmp/changed.txt; then
+          if grep -qzx 'justfile' /tmp/changed.txt; then
             just --fmt --unstable --justfile justfile
           else
             echo "justfile unchanged — skipping."

@@ -21,14 +21,26 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      # SONAR_TOKEN is not configured on this repository (and is never
-      # available to forked-PR runs), so skip instead of failing the check.
       - name: SonarCloud Scan
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
 
-      - name: Skip notice
-        if: env.SONAR_TOKEN == ''
-        run: echo "SONAR_TOKEN is not set — skipping SonarCloud analysis."
+      # A forked PR genuinely cannot receive secrets, so skipping is the only
+      # option there and the check passes without analysis by necessity.
+      - name: Skip notice (fork pull request)
+        if: env.SONAR_TOKEN == '' && github.event.pull_request.head.repo.fork
+        run: |
+          echo "::notice::Forked pull request cannot access SONAR_TOKEN — SonarCloud analysis skipped."
+
+      # Anywhere a secret *could* have been provided, a missing token means the
+      # quality gate did not run. Passing here would let branch protection
+      # accept an unanalysed change, so fail loudly instead.
+      - name: Fail when the token is missing on a trusted run
+        if: env.SONAR_TOKEN == '' && !github.event.pull_request.head.repo.fork
+        run: |
+          echo "::error::SONAR_TOKEN is not configured, so no SonarCloud analysis ran."
+          echo "A green check here would mean the quality gate was bypassed, not that it passed."
+          echo "Set the SONAR_TOKEN repository secret, or remove this workflow if SonarCloud is not in use."
+          exit 1
