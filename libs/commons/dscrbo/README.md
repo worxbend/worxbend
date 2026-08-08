@@ -163,12 +163,6 @@ Outer(Inner("s"), List(Inner("s")), Some(Inner("s"))).asString
 
 ## ⚙️ Configuration
 
-> [!NOTE]
-> This section is the practical reference. The **normative** specification shared with `describo` —
-> and the one the conformance kit enforces — lives in
-> [`docs/libraries/tostring-rendering-spec.md`](../../../docs/libraries/tostring-rendering-spec.md).
-> If the two ever disagree, that page wins and this one is a bug.
-
 Every field renders as:
 
 ```text
@@ -393,7 +387,7 @@ given Describe[ThatType] = ...   // teach it the type, or
 | :-- | :-- |
 | 🔁 **Nesting: 12 types** | only the shapes that still expand — sealed families, value classes, wrapper chains. Plain nested case classes do not nest at all |
 | 📚 **Nesting: 20 layers** | every layer of emitted code, wrappers included. Binds first: a sealed chain refuses at 11 levels |
-| 🧊 **Generic case classes** | `Box[A] derives Describe` compiles but cannot be summoned at `Box[Int]` — see [below](#-dscrbo-vs-describo) |
+| 🧊 **Generic case classes** | `Box[A] derives Describe` compiles, but summoning it at `Box[Int]` needs a `given Describe[Int]` in scope. This module ships no per-type instances, so it fails out of the box for built-in element types and works as soon as you supply one — see [below](#-dscrbo-vs-describo) |
 | 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
@@ -406,7 +400,8 @@ constant in `DescribeMacro.scala`.
 ## 🔀 dscrbo vs describo
 
 Two implementations of **one specification**. For the same input and an equivalent `Configuration` they
-produce **byte-identical** output — enforced by a shared conformance kit, not by convention.
+produce **byte-identical** output, apart from the three divergences listed below — and that is enforced
+by a shared conformance kit rather than by convention.
 
 | | 🩻 dscrbo | 🔎 [describo](../describo) |
 | :-- | :-- | :-- |
@@ -414,7 +409,7 @@ produce **byte-identical** output — enforced by a shared conformance kit, not 
 | Runtime dependencies | **none** | magnolia |
 | Type coverage | open — any concrete class renders | closed — needs an instance per type |
 | Nested case classes | delegate to their own instance, else `toString` | auto-derived by magnolia |
-| Generic case classes | ❌ | ✅ |
+| Generic case classes | only with a `given` for the type argument | ✅ |
 | Extension point | `given Describe[T]` | `given Printable[T]` or a factory |
 | Failure at the edges | compile error at 12 types / 20 layers | `StackOverflowError` at render time |
 
@@ -428,12 +423,16 @@ Three, all pinned by `KnownDivergenceSuite` in each module so none can quietly b
 1. **Enum case qualified names.** `dscrbo` prints `com.example.Colour.Red`; `describo` prints
    `com.example.Red`, because that is what magnolia's `TypeInfo` reports. Simple names agree — only
    `fullyQualifiedClassName` is affected.
-2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable`. `dscrbo`
-   cannot: its synthesised `derived$Describe[A]` needs a `Describe[A]`, and this module ships no
-   per-type instances by design.
+2. **Generic case classes.** `describo` derives `Box[Int]` from `Box[A] derives Printable` with no
+   ceremony. `dscrbo`'s synthesised `derived$Describe[A]` asks for a `Describe[A]`, and this module
+   ships no per-type instances by design — so `Box[Int]` fails until you put a `given Describe[Int]`
+   in scope, after which it works. The limitation is the missing instance, not the generic itself.
 3. **Nested case classes with no instance.** `describo` auto-derives them through magnolia; `dscrbo`
    renders them with plain `toString`, as described above. Where the nested type carries its own
    instance the two agree — which is every fixture in the shared conformance kit.
+
+All three are conditional rather than absolute: supply the missing instance and `dscrbo` matches
+`describo` in each case except the enum qualified name, which is a naming difference with no remedy.
 
 ---
 
