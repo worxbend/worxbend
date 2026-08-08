@@ -1,0 +1,3 @@
+# ZAP baseline scan rule configuration.
+# Format: <rule id>\t<WARN|IGNORE|FAIL>\t<optional comment>
+# Empty by default — every rule keeps its built-in threshold.

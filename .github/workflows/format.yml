@@ -23,19 +23,34 @@ jobs:
         with:
           # Check out the actual PR head branch so we can push back to it.
           ref: ${{ github.head_ref }}
+          # Full history: scalafmt --mode diff needs the base branch present.
+          fetch-depth: 0
           # A PAT is required if you want the auto-commit to trigger further
           # CI runs. With the default GITHUB_TOKEN the commit is still pushed
           # but will not re-trigger workflows (avoids infinite loops).
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # ── Scala: scalafmt ──────────────────────────────────────────────────
-      # coursier/cache-action also installs the `cs` binary on PATH.
+      # setup-action installs a JVM plus the requested apps on PATH.
+      # coursier/cache-action alone only restores ~/.cache/coursier — it does
+      # not provide the `cs` binary, which is why this step is required.
+      - name: Setup Coursier + scalafmt
+        uses: coursier/setup-action@v3
+        with:
+          jvm: temurin:21
+          apps: scalafmt:3.9.0
+
       - name: Cache Coursier
         uses: coursier/cache-action@v6
 
+      - name: Fetch base branch
+        run: |
+          git fetch --no-tags origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
       - name: Run scalafmt
         run: |
-          cs launch org.scalameta:scalafmt-cli_2.13:3.9.0 -- \
+          scalafmt \
             --non-interactive \
             --mode diff \
             --diff-branch origin/${{ github.base_ref }}
