@@ -38,21 +38,23 @@ final class DerivationSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
+  private final val derPointRendered = "DerPoint(x = 1, y = 2)"
+
   test("derives PrettyPrintable puts an instance in the companion"):
-    assert(summon[PrettyPrintable[DerPoint]].describe(DerPoint(1, 2))(using singleLine) == "DerPoint(x = 1, y = 2)")
+    assert(summon[PrettyPrintable[DerPoint]].describe(DerPoint(1, 2))(using singleLine) == derPointRendered)
 
   test("the asString extension renders with an explicit configuration"):
-    assert(PrettyPrintable[DerPoint].asString(DerPoint(1, 2))(using singleLine) == "DerPoint(x = 1, y = 2)")
+    assert(PrettyPrintable[DerPoint].asString(DerPoint(1, 2))(using singleLine) == derPointRendered)
 
   test("the asString extension picks up an ambient configuration"):
     given configuration: Configuration = Configuration(fieldNameAndValueSeparator = ": ")
     assert(DerPoint(1, 2).asString == "DerPoint(x: 1, y: 2)")
 
   test("the asString extension falls back to the default configuration argument"):
-    assert(DerPoint(1, 2).asString == "DerPoint(x = 1, y = 2)")
+    assert(DerPoint(1, 2).asString == derPointRendered)
 
   test("the ToString shim falls back to the default configuration argument"):
-    assert(ToString.derived(DerPoint(1, 2)) == "DerPoint(x = 1, y = 2)")
+    assert(ToString.derived(DerPoint(1, 2)) == derPointRendered)
 
   test("Configuration's companion holds no given, so implicit search really can fail"):
     assertDoesNotCompile("summon[Configuration]")

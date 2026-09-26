@@ -14,6 +14,8 @@ class PrettyPrintableConfigurationSuite extends AnyFunSuite:
 
   private val pair: ConfigPair = ConfigPair(1, "x")
 
+  private final val singleLineTriple = "ConfigTriple(alpha = 1, beta = 2, gamma = 3)"
+
   private def render(conf: Configuration): String = summon[PrettyPrintable[ConfigPair]].asString(pair)(using conf)
 
   private def renderTriple(conf: Configuration): String =
@@ -106,15 +108,15 @@ class PrettyPrintableConfigurationSuite extends AnyFunSuite:
 
   test("multilineIfFieldsAreGreaterOrEqual stays single line one field below the threshold"):
     val actual = renderTriple(Configuration(multilineIfFieldsAreGreaterOrEqual = 4))
-    assert(actual == "ConfigTriple(alpha = 1, beta = 2, gamma = 3)")
+    assert(actual == singleLineTriple)
 
   test("multilineIfFieldsAreGreaterOrEqual = 0 disables the threshold"):
     val actual = renderTriple(Configuration(multilineIfFieldsAreGreaterOrEqual = 0))
-    assert(actual == "ConfigTriple(alpha = 1, beta = 2, gamma = 3)")
+    assert(actual == singleLineTriple)
 
   test("a negative multilineIfFieldsAreGreaterOrEqual disables the threshold"):
     val actual = renderTriple(Configuration(multilineIfFieldsAreGreaterOrEqual = -1))
-    assert(actual == "ConfigTriple(alpha = 1, beta = 2, gamma = 3)")
+    assert(actual == singleLineTriple)
 
   test("the disabled threshold does not override an explicit multiline = true"):
     val expected =

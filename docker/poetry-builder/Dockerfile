@@ -2,13 +2,7 @@ FROM python:3.11-slim
 
 # keeps Python from buffering our standard output stream,
 # which means that logs can be delivered to the user quickly.
-ENV PYTHONUNBUFFERED 1
-
-# DEBIAN_FRONTEND=noninteractive prevents the installer from waiting for user input
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Poetry installation path
-ENV POETRY_HOME=/opt/poetry
+ENV PYTHONUNBUFFERED=1
 
 # The temporary directory used by pip during the installation process is not needed after the installation is complete.
 ENV PIP_NO_CACHE_DIR=off \
@@ -17,20 +11,15 @@ ENV PIP_NO_CACHE_DIR=off \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1
 
-RUN apt-get update && \
-    apt-get -y install --no-install-recommends curl
+# Install Poetry from PyPI with pip — pip downloads over HTTPS and verifies the
+# artifacts it installs — instead of piping a downloaded installer script
+# straight into the interpreter.
+ARG POETRY_VERSION=2.5.1
+RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}" && \
+    useradd --create-home --uid 1000 poetry
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# Add poetry to PATH
-ENV PATH="${PATH}:$POETRY_HOME/bin"
-
-# Remove unused packages
-RUN apt-cache purge curl -y && \
-    apt-cache autoremove -y && \
-    apt-cache autoclean -y
+# Run as an unprivileged user by default.
+USER poetry
 
 # Validate installation
 RUN poetry --version
-
-RUN rm -rf /tmp/pip-tmp

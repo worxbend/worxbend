@@ -35,13 +35,13 @@ jobs:
       # coursier/cache-action alone only restores ~/.cache/coursier — it does
       # not provide the `cs` binary, which is why this step is required.
       - name: Setup Coursier + scalafmt
-        uses: coursier/setup-action@v3
+        uses: coursier/setup-action@3174df5c784a0c8724f06b7924b849551c40c39e # v3
         with:
           jvm: temurin:21
           apps: scalafmt:3.9.0
 
       - name: Cache Coursier
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@4e2615869d13561d626ed48655e1a39e5b192b3c # v6
 
       - name: Fetch base branch
         run: |
@@ -100,7 +100,7 @@ jobs:
 
       # ── Justfile ─────────────────────────────────────────────────────────
       - name: Setup just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
 
       # `just --fmt` takes the target via --justfile; a bare positional is
       # parsed as a recipe name and rejected.
@@ -114,7 +114,7 @@ jobs:
 
       # ── Commit any formatting changes back to the PR branch ──────────────
       - name: Commit formatted files
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
         with:
           commit_message: "chore: auto-format (scalafmt, prettier, taplo, just)"
           commit_user_name: "github-actions[bot]"

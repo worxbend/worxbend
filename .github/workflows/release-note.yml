@@ -33,7 +33,7 @@ jobs:
             echo "found=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: snyk/release-notes-preview@v1.6.2
+      - uses: snyk/release-notes-preview@1334fa3ad89f324bd05948b9c9b68a91df95e9be # v1.6.2
         if: steps.tags.outputs.found == 'true'
         with:
           releaseBranch: main

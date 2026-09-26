@@ -59,6 +59,8 @@ final class NestingDepthSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
+  private final val sealed06Derivation = "PrettyPrintable.derived[Sealed06]"
+
   // ---------------------------------------------------- plain case classes
 
   test("a fourteen deep chain of plain case classes derives, because none of it is nested into the root"):
@@ -81,17 +83,17 @@ final class NestingDepthSuite extends AnyFunSuite:
     assertCompiles("PrettyPrintable.derived[Sealed07]")
 
   test("eleven levels of sealed dispatch are refused"):
-    assert(typeCheckErrors("PrettyPrintable.derived[Sealed06]").nonEmpty)
+    assert(typeCheckErrors(sealed06Derivation).nonEmpty)
 
   // The refusal names the branch it stopped at rather than the sealed trait above it, because the branch is the type
   // being expanded when the budget runs out and is therefore the one an instance has to be attached to.
   test("the sealed refusal is the layer cap, and it names the branch it stopped at"):
-    val errors = typeCheckErrors("PrettyPrintable.derived[Sealed06]").map(_.message)
+    val errors = typeCheckErrors(sealed06Derivation).map(_.message)
     assert(errors.exists(message => message.contains("layers of generated code")), errors.mkString("\n"))
     assert(errors.exists(message => message.contains("Branch")), errors.mkString("\n"))
 
   test("the sealed refusal prescribes a remedy implicit search really honours"):
-    val errors = typeCheckErrors("PrettyPrintable.derived[Sealed06]").map(_.message)
+    val errors = typeCheckErrors(sealed06Derivation).map(_.message)
     assert(errors.exists(message => message.contains("derives PrettyPrintable")), errors.mkString("\n"))
 
   test("giving one link of a too deep sealed chain its own instance breaks the chain"):

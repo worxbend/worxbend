@@ -52,7 +52,7 @@ jobs:
       # Caches ~/.cache/coursier and ~/.ivy2/cache keyed by dependency
       # declarations across all *.mill files.
       - name: Cache Coursier / Ivy
-        uses: coursier/cache-action@v6
+        uses: coursier/cache-action@4e2615869d13561d626ed48655e1a39e5b192b3c # v6
 
       # Restore Mill's incremental build outputs (zinc, task results).
       # Primary key includes the commit SHA so pushes to main always write

@@ -12,6 +12,10 @@ import scala.concurrent.duration.*
 
 class IntegrationSuite extends FunSuite:
 
+  private val measuresPath      = "/measures/current"
+  private val contentTypeHeader = "Content-Type"
+  private val jsonContentType   = "application/json"
+
   private val samplePayload =
     """{"wifi":{"rssi":-72},"pm01":1.1,"pm02":1.5,"pm10":1.6,"pm003Count":120,"atmp":22.5,"rhum":55}"""
 
@@ -35,11 +39,11 @@ class IntegrationSuite extends FunSuite:
 
   test("fetchCurrentMeasures: returns snapshot for valid 200 JSON response") {
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody(samplePayload)
         )
     )
@@ -57,7 +61,7 @@ class IntegrationSuite extends FunSuite:
 
   test("fetchCurrentMeasures: returns BadStatus for 5xx response") {
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(aResponse().withStatus(500).withBody("internal error"))
     )
 
@@ -70,11 +74,11 @@ class IntegrationSuite extends FunSuite:
 
   test("fetchCurrentMeasures: returns InvalidJson for malformed response") {
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody("not json!")
         )
     )
@@ -91,11 +95,11 @@ class IntegrationSuite extends FunSuite:
     val client = makeClient(wireMock.port())
 
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody(samplePayload)
         )
     )
@@ -106,11 +110,11 @@ class IntegrationSuite extends FunSuite:
     val previousPayload = new String(store.get().snapshot.get.payload, "UTF-8")
 
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody("{bad json")
         )
     )
@@ -133,11 +137,11 @@ class IntegrationSuite extends FunSuite:
     val client = makeClient(wireMock.port())
 
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody(samplePayload)
         )
     )
@@ -151,11 +155,11 @@ class IntegrationSuite extends FunSuite:
   test("unknown JSON fields are preserved in response body") {
     val jsonWithUnknown = """{"pm01":1.0,"firmware_version_v99":"3.1.4","nested":{"x":1}}"""
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody(jsonWithUnknown)
         )
     )
@@ -168,11 +172,11 @@ class IntegrationSuite extends FunSuite:
   test("multiple client fetches do not increase upstream call count beyond poll count") {
     wireMock.resetRequests()
     wireMock.stubFor(
-      get(urlEqualTo("/measures/current"))
+      get(urlEqualTo(measuresPath))
         .willReturn(
           aResponse()
             .withStatus(200)
-            .withHeader("Content-Type", "application/json")
+            .withHeader(contentTypeHeader, jsonContentType)
             .withBody(samplePayload)
         )
     )
@@ -185,5 +189,5 @@ class IntegrationSuite extends FunSuite:
     for _ <- 1 to 100 do
       assert(store.get().snapshot.isDefined)
 
-    wireMock.verify(1, getRequestedFor(urlEqualTo("/measures/current")))
+    wireMock.verify(1, getRequestedFor(urlEqualTo(measuresPath)))
   }

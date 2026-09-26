@@ -63,6 +63,8 @@ final class OpaqueTypeSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
+  private final val abstractTypeRefusal = "the declared type is abstract"
+
   test("a field typed as a non sealed trait is refused rather than rendered with toString"):
     assertDoesNotCompile("PrettyPrintable.derived[OpqAnimalHolder]")
 
@@ -101,15 +103,15 @@ final class OpaqueTypeSuite extends AnyFunSuite:
   // leak un-pinned. These assert the refusal is the fail-closed one, so the gate is what is being tested.
   test("the intersection refusal is the fail closed one, not an unrelated compile error"):
     val errors = typeCheckErrors("PrettyPrintable.derived[OpqIntersectionHolder]")
-    assert(errors.exists(error => error.message.contains("the declared type is abstract")))
+    assert(errors.exists(error => error.message.contains(abstractTypeRefusal)))
 
   test("the union refusal is the fail closed one, not an unrelated compile error"):
     val errors = typeCheckErrors("PrettyPrintable.derived[OpqUnionHolder]")
-    assert(errors.exists(error => error.message.contains("the declared type is abstract")))
+    assert(errors.exists(error => error.message.contains(abstractTypeRefusal)))
 
   test("the refinement refusal is the fail closed one, not an unrelated compile error"):
     val errors = typeCheckErrors("PrettyPrintable.derived[OpqRefinementHolder]")
-    assert(errors.exists(error => error.message.contains("the declared type is abstract")))
+    assert(errors.exists(error => error.message.contains(abstractTypeRefusal)))
 
   test("a concrete final class is still rendered by its own toString"):
     assert(
