@@ -13,9 +13,10 @@ ENV PIP_NO_CACHE_DIR=off \
 
 # Install Poetry from PyPI with pip — pip downloads over HTTPS and verifies the
 # artifacts it installs — instead of piping a downloaded installer script
-# straight into the interpreter.
+# straight into the interpreter. --only-binary :all: restricts pip to wheels, so
+# no package setup script runs at build time.
 ARG POETRY_VERSION=2.5.1
-RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}" && \
+RUN pip install --no-cache-dir --only-binary :all: "poetry==${POETRY_VERSION}" && \
     useradd --create-home --uid 1000 poetry
 
 # Run as an unprivileged user by default.
