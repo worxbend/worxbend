@@ -7,8 +7,7 @@ package com.worxbend.reveal
   * promise beyond what the macro needs. Members the emitted code never names are narrowed accordingly: helpers used
   * only from inside this object are `private`, and helpers evaluated at macro-expansion time are `private[reveal]`.
   *
-  * Everything here is total: no member throws, and every member renders a `null` argument as the four characters
-  * `null`.
+  * Value renderers accept null. User renderers, iterators, and `toString` calls may throw; failures propagate.
   */
 object Rendering:
 

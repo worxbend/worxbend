@@ -134,7 +134,7 @@ flowchart TB
   D --> DI["PrettyPrintableMacro.deriveImpl[T]"]
   TS --> TI["PrettyPrintableMacro.toStringImpl[T]"]
   DI --> E1["lazy val instance =<br/>FromFunction((value, conf) => ...)"]
-  TI --> E2["val configuration = conf<br/>then render in place"]
+  TI --> E2["val configuration = conf<br/>val root = value<br/>then render in place"]
   E1 --> EX["Expansion[T](conf, Some(instance))"]
   E2 --> EX2["Expansion[T](configuration, None)"]
   EX --> R["renderRoot(value)"]
@@ -161,7 +161,7 @@ flowchart TB
   RS -->|"not a product,<br/>sealed family or enum"| ERR["errorAndAbort:<br/>cannot derive"]
   RS -->|"product"| RP["renderProduct"]
   RS -->|"sealed / enum"| RSE["renderSealed"]
-  RS -->|"case object"| NAME["nameExpr"]
+  RS -->|"case object"| NAME["null check + nameExpr"]
   RS -->|"value class"| RVC["renderValueClass"]
 
   RP --> NULL["emit Rendering.nullOr"]
@@ -226,7 +226,7 @@ parent.**
 ```mermaid
 flowchart TB
   IN(["renderStructure(tpe, term, nesting)"]) --> M{"case object /<br/>module type?"}
-  M -->|yes| MO["render its bare name"]
+  M -->|yes| MO["null check, then bare name"]
   M -->|no| SL{"sealed trait or enum<br/>with children?"}
   SL -->|yes| SLO["renderSealed — dispatch over branches"]
   SL -->|no| VC{"value class?"}
@@ -237,16 +237,16 @@ flowchart TB
   POS -->|yes| EXP["renderProduct — expand structurally"]
   POS -->|no| SCAN["refuseIfItRedacts"]
   SCAN -->|"clean"| NONE
-  SCAN -->|"annotated / unprovable"| REF["errorAndAbort"]
+  SCAN -->|"annotated / unresolved / unprovable"| REF["errorAndAbort"]
 ```
 
 | Shape | Expanded? | Why |
 | :-- | :-- | :-- |
 | the root type | ✅ | it is what you wrote `derives` on |
-| a sealed branch | ✅ | it has no instance of its own to delegate to |
+| a sealed branch | ✅ when no instance exists | supplied instances take precedence |
 | a **tuple** | ✅ | nobody can write `derives` on `Tuple2`, so it could never earn structure back |
 | a value class | ✅ | seeing through it is the entire point |
-| a case object / enum case | ✅ | rendered by name |
+| a case object / enum case | ✅ when no instance exists | custom singleton instances win; otherwise null-safe name |
 | **any other nested case class** | ❌ | delegates to its own instance, else plain `toString` |
 
 Delegating keeps a derivation's emitted size bounded by *one type's own fields*, rather than growing
@@ -288,7 +288,9 @@ flowchart TB
   C2 -->|yes| UNPROV["Reachability.Unprovable<br/>⚠️ refuse — cannot prove it is safe"]
   C2 -->|no| C3{"any own caseField<br/>annotated?"}
   C3 -->|yes| ANN["Reachability.Annotated(owner, field)<br/>❌ refuse, naming the field"]
-  C3 -->|no| REACH["reachableFrom(tpe)"]
+  C3 -->|no| C4{"unresolved open type?"}
+  C4 -->|yes| UNKNOWN["Reachability.Unresolved: refuse"]
+  C4 -->|no| REACH["reachableFrom(tpe)"]
   REACH --> W["fields ∪ type arguments ∪ sealed branches"]
   W --> REC["recurse on each"]
   REC --> C1
@@ -296,9 +298,9 @@ flowchart TB
 
 Two things this gets right that a naive version does not:
 
-- **Abstract types are deliberately not filtered out.** A `List[Secret]` field and a sealed-trait field
-  are both abstract at the top; skipping them would hide exactly the descendants the scan exists to
-  find. Their type arguments and branches are the interesting part.
+- **Unknown descendants are refused.** `Any`, open traits, unresolved type parameters, and wildcards can
+  hide annotated values. Known containers expose their payload types; sealed children use substituted
+  type arguments. A descendant's own instance does not help an enclosing ordinary `toString`.
 - **`seen` alone is not enough.** A type whose arguments grow at every step never repeats:
 
   ```scala
@@ -439,7 +441,7 @@ sequenceDiagram
   Q-->>EX: symbols and types
   EX->>EX: ruleOf per field
   EX->>EX: renderValue per rendered field (recursive)
-  Note over EX: budgets checked at every product,<br/>value class and sealed dispatch
+  Note over EX: budgets checked at every product,<br/>value class, wrapper and sealed dispatch
   EX-->>M: Expr[String]
   M-->>PP: Expr[PrettyPrintable[T]]
   PP-->>SC: typed tree
@@ -465,7 +467,7 @@ shape → sealed shape → root.
 ### Working on it
 
 ```bash
-./mill libs.commons.reveal.test          # 217 tests
+./mill libs.commons.reveal.test          # ScalaTest
 ./mill libs.commons.reveal.checkFormat   # scalafmt
 ```
 
@@ -476,3 +478,5 @@ It validates the trees the macro hand-builds and catches scope extrusion.
 > The `-Xcheck-macros` guard is **partial**. It catches an `Expr` that escapes its splice — which is why
 > the sealed-dispatch path is clean — but not one laundered through `.asTerm`, which is the shape the
 > product path uses. A regression on the product side would compile silently.
+
+Current compiler contracts and source links: [Scala and macro notes](SCALA.md).

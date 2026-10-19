@@ -59,7 +59,7 @@ final class NestingDepthSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private final val sealed06Derivation = "PrettyPrintable.derived[Sealed06]"
+  final private val sealed06Derivation = "PrettyPrintable.derived[Sealed06]"
 
   // ---------------------------------------------------- plain case classes
 

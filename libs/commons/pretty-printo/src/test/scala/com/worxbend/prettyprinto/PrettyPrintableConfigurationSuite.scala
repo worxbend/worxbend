@@ -14,7 +14,7 @@ class PrettyPrintableConfigurationSuite extends AnyFunSuite:
 
   private val pair: ConfigPair = ConfigPair(1, "x")
 
-  private final val singleLineTriple = "ConfigTriple(alpha = 1, beta = 2, gamma = 3)"
+  final private val singleLineTriple = "ConfigTriple(alpha = 1, beta = 2, gamma = 3)"
 
   private def render(conf: Configuration): String = summon[PrettyPrintable[ConfigPair]].asString(pair)(using conf)
 

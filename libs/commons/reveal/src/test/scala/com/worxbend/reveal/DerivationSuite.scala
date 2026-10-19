@@ -38,7 +38,7 @@ final class DerivationSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private final val derPointRendered = "DerPoint(x = 1, y = 2)"
+  final private val derPointRendered = "DerPoint(x = 1, y = 2)"
 
   test("derives PrettyPrintable puts an instance in the companion"):
     assert(summon[PrettyPrintable[DerPoint]].describe(DerPoint(1, 2))(using singleLine) == derPointRendered)

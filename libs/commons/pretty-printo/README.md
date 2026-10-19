@@ -4,10 +4,10 @@
 
 **Configurable, redaction-aware `toString` derivation for Scala 3, built on [Magnolia](https://github.com/softwaremill/magnolia).**
 
-[![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
+[![Scala](https://img.shields.io/badge/Scala-3.10.0-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
 [![Derivation](https://img.shields.io/badge/derivation-magnolia-8A2BE2)](https://github.com/softwaremill/magnolia)
 [![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
-[![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--2.0-blue)](../../../LICENSE)
 
 _You describe **what** a value should look like; pretty-printo works out **how** from the type's structure._
 
@@ -77,8 +77,10 @@ costume.
 | **groupId** | `com.worxbend` |
 | **artifactId** | `pretty-printo_3` |
 | **Scala package** | `com.worxbend.prettyprinto` |
-| **Scala version** | 3.8.4 |
+| **Scala version** | 3.10.0 |
 | **Dependency** | `com.softwaremill.magnolia1_3::magnolia` |
+
+The artifacts are built with Scala 3.10. Consuming projects need Scala 3.10.0 or newer.
 
 **Mill**
 
@@ -260,7 +262,7 @@ value containing a comma or a parenthesis can never be confused with structure.
 ### `null` 🕳️
 
 Renders as the bare word `null` in **every** position — field, `Option` payload, collection element,
-map key, map value. Never `"null"`, never `None`, never an exception. A `null` collection is `null`,
+map key, map value. Built-in null handling does not call user renderers. A `null` collection is `null`,
 not `[]`; a `null` `Option` is `null`, not `None`. A `null` in a `@Redacted` field still renders the
 replacement, because the value is never read.
 
@@ -390,7 +392,7 @@ for third-party types. **Choose `reveal`** when you cannot take the dependency.
 ## ✅ Testing
 
 ```bash
-./mill libs.commons.pretty-printo.test          # 217 tests
+./mill libs.commons.pretty-printo.test          # ScalaTest
 ./mill libs.commons.pretty-printo.checkFormat   # scalafmt
 ```
 
@@ -434,11 +436,24 @@ made together, on purpose, before the first release:
   rather than reinterpreted in scattered conditionals.
 - **Annotation scanning happens once per typeclass instance**, at derivation time, materialised as a
   `Vector` — not a lazy `View` whose filter re-runs on every `size` and every `map`.
-- **The build enables `-Wunused:all -deprecation -feature`** and mixes in Mill's `ScalafmtModule`, so
+- **The build enables `-Wunused:all -deprecation -feature -Werror`** and mixes in Mill's `ScalafmtModule`, so
   dead code and hand-formatting are caught by the build rather than by review.
 
 ---
 
 ## 📄 License
 
-MIT. See [LICENSE](../../../LICENSE).
+GPL-2.0. See [LICENSE](../../../LICENSE).
+
+## Scala maintenance
+
+Warnings fail the build.
+Renovate follows stable Scala 3 releases, including non-LTS releases. Dependency PRs require review.
+
+[Scala and macro notes](../reveal/SCALA.md). [Performance benchmarks](../renderer-benchmarks/README.md).
+
+### Direct null inputs
+
+Derived, built-in, and factory instances return `null` before dereferencing fields or invoking callbacks.
+This applies to direct `asString` calls too. Empty collections, `None`, and `Some(null)` stay distinct.
+Handwritten instances own their direct-call null behavior. Non-null callback failures propagate.

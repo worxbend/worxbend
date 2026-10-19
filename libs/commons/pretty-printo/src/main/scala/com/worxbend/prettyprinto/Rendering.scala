@@ -26,7 +26,11 @@ private object Rendering:
     * what makes the null / redaction / omission ordering auditable.
     */
   def value[A](element: A)(using printable: PrettyPrintable[A])(using Configuration): String =
-    if element == null then nullLiteral else printable.asString(element)
+    nullOr(element)(printable.asString(element))
+
+  /** Null short-circuits before field access, branch selection, or a user callback. */
+  def nullOr[A](element: A)(rendered: => String): String =
+    if element == null then nullLiteral else rendered
 
   /** `[a, b, c]` over an already-null-checked container. */
   def elements[A](iterator: Iterator[A])(using PrettyPrintable[A])(using Configuration): String =
