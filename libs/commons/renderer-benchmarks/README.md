@@ -31,3 +31,5 @@ Compare identical fixtures and configuration. Libraries have distinct semantics;
 
 Runtime benchmarks exclude compilation and derivation. Reveal's separate `checkConsumer` command verifies
 compiler-stack boundaries; it does not measure compiler throughput. No timing threshold in CI: shared runners vary.
+
+[Recorded local run](RESULTS.md): timings, allocations, environment, and limitations.
