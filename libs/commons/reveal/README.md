@@ -4,11 +4,11 @@
 
 **Configurable, redaction-aware `toString` for Scala 3 — with _zero_ runtime dependencies.**
 
-[![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
+[![Scala](https://img.shields.io/badge/Scala-3.10.0-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
 [![Dependencies](https://img.shields.io/badge/runtime%20deps-0-success)](#-why-reveal)
 [![Derivation](https://img.shields.io/badge/derivation-inline%20macro-blueviolet)](#-how-the-macro-works)
 [![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
-[![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--2.0-blue)](../../../LICENSE)
 
 _Print your case classes the way you want — and never print a secret by accident._
 
@@ -64,7 +64,9 @@ password field — and it prints it in exactly one shape you cannot change.
 | **groupId** | `com.worxbend` |
 | **artifactId** | `reveal_3` |
 | **Scala package** | `com.worxbend.reveal` |
-| **Scala version** | 3.8.4 |
+| **Scala version** | 3.10.0 |
+
+The artifacts are built with Scala 3.10. Consuming projects need Scala 3.10.0 or newer.
 
 **Mill**
 
@@ -233,7 +235,7 @@ StringHolder("a,b)c").asString   // StringHolder(s = "a,b)c")
 ### `null` 🕳️
 
 A `null` renders as the bare word `null` in **every** position — field, `Option` payload, collection
-element, map key, map value. Never `"null"`, never `None`, never an exception. A `null` collection is
+element, map key, map value. Built-in null handling does not call user renderers. A `null` collection is
 `null`, not `[]`; a `null` `Option` is `null`, not `None`.
 
 A `null` in a `@Redacted` field still renders the replacement, because the value is never read.
@@ -403,9 +405,8 @@ given PrettyPrintable[ThatType] = ...   // teach it the type, or
 | 📏 **Per-method bytecode limit** | the JVM's 65,535-byte `Code` attribute, per method. Far harder to reach now that nesting delegates, but a single very wide product can still approach it |
 | 📐 **Nested multiline isn't re-indented** | a nested value is inserted verbatim, so its closing paren sits at the outer indent |
 
-Both nesting caps produce a **refusal with a remedy**, never a `StackOverflowError` in your build. The
-layer cap is a measured floor, not a derivation; the procedure to re-derive it is documented next to the
-constant in `PrettyPrintableMacro.scala`.
+Over-budget expansion produces a compile error with a remedy. Caps bound generated depth, not compiler
+resources for every possible type. The small-stack consumer check covers wrapper boundaries on the current compiler.
 
 ---
 
@@ -437,7 +438,7 @@ uses.
 ## ✅ Testing
 
 ```bash
-./mill libs.commons.reveal.test          # 217 tests
+./mill libs.commons.reveal.test          # ScalaTest
 ./mill libs.commons.reveal.checkFormat   # scalafmt
 ```
 
@@ -449,4 +450,32 @@ implemented.
 
 ## 📄 License
 
-MIT. See [LICENSE](../../../LICENSE).
+GPL-2.0. See [LICENSE](../../../LICENSE).
+
+## Scala maintenance
+
+Warnings fail the build.
+Renovate follows stable Scala 3 releases, including non-LTS releases. Dependency PRs require review.
+
+[Scala and macro notes](../reveal/SCALA.md). [Performance benchmarks](../renderer-benchmarks/README.md).
+
+### Redaction boundary
+
+Ordinary nested `toString` cannot honor annotations. Reveal refuses annotated or unresolved descendants,
+including `Any` and open traits. The scan follows declared type arguments, inherited container payloads,
+case-class fields, and applied children of user-defined sealed families. Implementing a supported container
+interface does not make unrelated fields safe to print. Standard `Vector` is scanned through its element
+type because its closed implementation hierarchy prints only those elements.
+
+Open container interfaces such as `Iterable[String]`, `Seq[String]`, and `Map[String, String]` are now
+refused when reached behind an enclosing ordinary `toString`. This deliberately tightens previously
+accepted source code: an implementation can print annotated state unrelated to its element types.
+Direct container fields remain supported through structural rendering.
+
+Give the enclosing nested type its own `PrettyPrintable` to choose safe handling, or exclude its field
+on the derived parent. An instance only for a deeper descendant is bypassed by the enclosing `toString`.
+For example, derive `Middle` in `Outer(middle: Middle)` when `Middle` holds an open container interface.
+
+Concrete non-final classes remain an escape hatch for Java interoperability. A declared `Base` can hold
+an annotated subclass whose `toString` leaks fields. Provide an explicit safe instance or exclude the field.
+Custom `toString` and custom instances remain responsible for their own output.

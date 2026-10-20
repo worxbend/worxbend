@@ -1,0 +1,13 @@
+package build.libs.commons.`renderer-benchmarks`
+
+import mill.*
+import mill.contrib.jmh.JmhModule
+import mill.scalalib.SbtModule
+import mill.scalalib.scalafmt.ScalafmtModule
+
+object `package` extends SbtModule with JmhModule with ScalafmtModule {
+  def scalaVersion = build.libs.commons.reveal.scalaVersion()
+  def scalacOptions = build.libs.commons.reveal.scalacOptions()
+  def moduleDeps = Seq(build.libs.commons.reveal, build.libs.commons.`pretty-printo`)
+  def jmhCoreVersion = "1.37"
+}

@@ -13,27 +13,35 @@ object `package` extends SbtModule with PublishModule with ScalafmtModule { oute
   // consumers depend on.
   def artifactName = "reveal"
 
-  def scalaVersion = "3.8.4"
+  def scalaVersion = "3.10.0"
 
-  def scalacOptions = Seq("-Wunused:all", "-deprecation", "-feature")
+  def scalacOptions = Seq("-Wunused:all", "-deprecation", "-feature", "-Werror")
 
   def pomSettings = PomSettings(
     description = "Scala 3 configurable toString via inline macros with zero external dependencies. Supports @Redacted, @Excluded annotations and rich formatting configuration.",
     organization = "com.worxbend",
     url = "https://github.com/worxbend/worxbend",
-    licenses = Seq(License.MIT),
+    licenses = Seq(License.`GPL-2.0-only`),
     versionControl = VersionControl.github("worxbend", "worxbend"),
     developers = Seq(Developer("limpid-kzonix", "limpid-kzonix", "https://github.com/limpid-kzonix")),
   )
 
   def publishVersion = "0.1.0-SNAPSHOT"
 
+  def checkConsumer() = Task.Command {
+    os.proc(
+      "python3",
+      moduleDir / "tools" / "check_consumer.py",
+      "--java", javaHome().map(_.path / "bin" / "java").fold("java")(_.toString),
+      "--compiler-classpath", scalaCompilerClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+      "--consumer-classpath", runClasspath().map(_.path).mkString(java.io.File.pathSeparator),
+    ).call(cwd = Task.dest, stdout = os.Inherit, stderr = os.Inherit)
+    ()
+  }
+
   object test extends SbtTests with TestModule.ScalaTest with ScalafmtModule {
 
-    // The macro expands at the *use* site, so `-Xcheck-macros` only checks anything when it is set here rather than on
-    // the module that defines the macro. It validates the trees and types `DescribeMacro` hand-builds outside a quote
-    // (`Select`, `AppliedType`, `Ref`), and detects scope extrusion — which matters because `Expansion` deliberately
-    // captures one `Quotes`. Deliberately kept off the published module so consumers do not pay for the check.
+    // Check generated trees at expansion sites. Published code pays no checking cost.
     def scalacOptions = outer.scalacOptions() ++ Seq("-Xcheck-macros")
 
 

@@ -105,20 +105,11 @@ private[reveal] object PrettyPrintableMacro:
       instance
     }
 
-  /** [[ToString.derived]] takes its configuration as an `inline` parameter, and an inline parameter creates no
-    * binding: the argument tree is substituted at every occurrence. The expansion reads the configuration roughly
-    * twice per rendered field at every level of nesting, so splicing `conf` directly would re-evaluate the caller's
-    * expression once per occurrence — measured at 30 evaluations for a fifteen-node model. Binding it to a `val`
-    * first makes it one evaluation whose result every occurrence shares, which also guarantees that a single render
-    * cannot mix two different configurations. [[deriveImpl]] needs no equivalent: its `conf` is a lambda parameter
-    * and is therefore already a stable local.
+  /** Bind configuration, then root, once each. Hidden fields remain unread.
     *
-    * Two further consequences, observable only for a configuration expression that does something. The binding is
-    * evaluated before the value expression, where previously the value came first; and it is evaluated
-    * unconditionally, where previously a `null` root short-circuited inside `Rendering.nullOr` without ever reading
-    * the configuration — so a configuration that throws now propagates on a `null` root instead of rendering `null`.
-    * Both are accepted deliberately: an effectful configuration is already outside what this API promises, and one
-    * evaluation with a predictable order is a better contract than N with none.
+    * The public value parameter is by-name: a default argument getter for the second parameter list also receives
+    * the first list. An inline value would be evaluated there and again here. By-name keeps that getter lazy;
+    * this binding is the single evaluation point, even when singleton rendering needs only the type's name.
     */
   def toStringImpl[T: Type](
       value: Expr[T],
@@ -126,7 +117,8 @@ private[reveal] object PrettyPrintableMacro:
   )(using Quotes): Expr[String] =
     '{
       val configuration: Configuration = $conf
-      ${ Expansion[T]('configuration, None).renderRoot(value) }
+      val root: T                      = $value
+      ${ Expansion[T]('configuration, None).renderRoot('root) }
     }
 
   /** One expansion of one root type `T`.
@@ -168,6 +160,7 @@ private[reveal] object PrettyPrintableMacro:
       case Clean
       case Annotated(owner: TypeRepr, field: Symbol)
       case Unprovable(at: TypeRepr)
+      case Unresolved(at: TypeRepr)
 
     // --------------------------------------------------------------- nesting
 
@@ -204,11 +197,12 @@ private[reveal] object PrettyPrintableMacro:
     private val redactedSymbol: Symbol  = TypeRepr.of[Redacted].typeSymbol
     private val transientSymbol: Symbol = TypeRepr.of[scala.transient].typeSymbol
 
-    /** The container classes [[renderValue]] dispatches on, resolved once through `TypeRepr.of[_].typeSymbol` rather
+    /** The container classes used by rendering and reachability, resolved once through `TypeRepr.of[_].typeSymbol` rather
       * than looked up by name on every call. Naming the class in Scala rather than in a string is what the macro
       * guides prescribe, and it makes a typo a compile error here instead of an expansion-time crash at a use site.
       */
     private val optionClass: Symbol        = TypeRepr.of[Option[Any]].typeSymbol
+    private val vectorClass: Symbol        = TypeRepr.of[Vector[Any]].typeSymbol
     private val scalaMapClass: Symbol      = TypeRepr.of[scala.collection.Map[Any, Any]].typeSymbol
     private val scalaIterableClass: Symbol = TypeRepr.of[scala.collection.Iterable[Any]].typeSymbol
     private val javaMapClass: Symbol       = TypeRepr.of[java.util.Map[Any, Any]].typeSymbol
@@ -217,6 +211,22 @@ private[reveal] object PrettyPrintableMacro:
     /** Types that carry no information about what they actually hold, so nothing may be assumed about their fields. */
     private val universalTypes: List[TypeRepr] =
       List(TypeRepr.of[Any], TypeRepr.of[AnyRef], TypeRepr.of[AnyVal], TypeRepr.of[Matchable])
+
+    // Primitive symbols are abstract in compiler metadata, but cannot carry annotated subtypes.
+    private val scanLeafTypes: List[TypeRepr] = List(
+      TypeRepr.of[String],
+      TypeRepr.of[Char],
+      TypeRepr.of[Boolean],
+      TypeRepr.of[Byte],
+      TypeRepr.of[Short],
+      TypeRepr.of[Int],
+      TypeRepr.of[Long],
+      TypeRepr.of[Float],
+      TypeRepr.of[Double],
+      TypeRepr.of[Unit],
+      TypeRepr.of[Null],
+      TypeRepr.of[Nothing],
+    )
 
     // ------------------------------------------------------------------ types
 
@@ -286,14 +296,14 @@ private[reveal] object PrettyPrintableMacro:
       * so a field declared at `class Base` accepts a `final case class Sub(@Redacted secret: String) extends Base`
       * and prints the secret in the clear. Closing it means refusing anything but a final class, which also refuses
       * `java.lang.Throwable` and most of the Java library — `OpaqueTypeSuite` pins `Throwable` as renderable, and
-      * neither module's README says which way this should go. It is a specification decision, not an oversight; do
-      * not close it here without settling that first.
+      * the README documents the limitation. Use an explicit instance or exclusion when a non-final declared
+      * class can hold sensitive subtypes.
       */
     private def isAbstractlyTyped(tpe: TypeRepr): Boolean =
       tpe match
-        case AndType(_, _) | OrType(_, _) => true
-        case Refinement(parent, _, _)     => isAbstractlyTyped(parent)
-        case _                            =>
+        case AndType(_, _) | OrType(_, _) | TypeBounds(_, _) => true
+        case Refinement(parent, _, _)                        => isAbstractlyTyped(parent)
+        case _                                               =>
           val symbol = tpe.typeSymbol
           symbol.isAbstractType || symbol.flags.is(Flags.Trait) || symbol.flags.is(Flags.Abstract) ||
           universalTypes.exists(tpe =:= _)
@@ -376,8 +386,7 @@ private[reveal] object PrettyPrintableMacro:
       * resolve to `Any.toString` and box every primitive field of every rendered value. The repetition is
       * load-bearing.
       *
-      * This is also the one structural handler consulted ahead of [[renderSelf]] and [[renderSummoned]] — see the note
-      * on [[renderSummoned]] for why primitives are deliberately not overridable.
+      * Used after instance lookup. Custom scalar instances win; these arms supply the default.
       */
     private def renderPrimitive(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       tpe.asType match
@@ -393,12 +402,7 @@ private[reveal] object PrettyPrintableMacro:
         case '[Unit]    => Some('{ ${ term.asExprOf[Unit] }.toString })
         case _          => None
 
-    /** A user-written instance beats every structural handler except [[renderPrimitive]], which [[renderValue]]
-      * consults first. The ten primitive types are therefore resolved statically and are *not* overridable: a
-      * `given PrettyPrintable[Int]` in scope is silently ignored for `Int` fields. That is deliberate — it is what lets this
-      * module ship no per-type instances at all, and it saves an implicit search per primitive field at expansion
-      * time. `KnownDivergenceSuite` records the same design choice from the other direction.
-      */
+    /** A supplied instance wins over built-in rendering, including scalars and singleton branches. */
     private def renderSummoned(tpe: TypeRepr, term: Term): Option[Expr[String]] =
       tpe.asType match
         case '[t] =>
@@ -415,6 +419,17 @@ private[reveal] object PrettyPrintableMacro:
           val value = coerce[T](term)
           '{ Rendering.nested[T]($value, $instance, $conf) }
         }
+
+    private def renderWrappers(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
+      if wrapperArguments(tpe).isEmpty then None
+      else
+        withinBudget(tpe, nesting):
+          renderOption(tpe, term, nesting)
+            .orElse(renderScalaMap(tpe, term, nesting))
+            .orElse(renderArray(tpe, term, nesting))
+            .orElse(renderScalaIterable(tpe, term, nesting))
+            .orElse(renderJavaMap(tpe, term, nesting))
+            .orElse(renderJavaIterable(tpe, term, nesting))
 
     private def renderOption(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
       typeArgsOf(tpe, optionClass).collect {
@@ -547,7 +562,9 @@ private[reveal] object PrettyPrintableMacro:
       * be seen through.
       */
     private def renderStructure(tpe: TypeRepr, term: Term, nesting: Nesting): Option[Expr[String]] =
-      if isModuleType(tpe) then Some(nameExpr(namingSymbolOf(tpe)))
+      if isModuleType(tpe) then
+        val value = term.asExprOf[Any]
+        Some('{ Rendering.nullOr[Any]($value, _ => ${ nameExpr(namingSymbolOf(tpe)) }) })
       else if isSealedParent(tpe) then Some(withinBudget(tpe, nesting)(renderSealed(tpe, term, nesting)))
       else if isValueClass(tpe) then Some(withinBudget(tpe, nesting)(renderValueClass(tpe, term, nesting)))
       else if isCaseClass(tpe) && (nesting.types == 0 || nesting.branch || isTuple(tpe)) then
@@ -602,11 +619,21 @@ private[reveal] object PrettyPrintableMacro:
             )
           )
 
+        case Reachability.Unresolved(at) =>
+          Some(
+            report.errorAndAbort(
+              s"PrettyPrintable cannot prove that rendering ${tpe.show} with toString would not print a @Redacted field: " +
+                s"the descendant ${at.show} is unresolved and may contain annotated runtime values. Add " +
+                s"`derives PrettyPrintable` to ${tpe.show}, provide a `given PrettyPrintable[${tpe.show}]`, or mark the field " +
+                "@Excluded here."
+            )
+          )
+
     /** The first `@Redacted` or `@Excluded` field reachable from `tpe`, with the type that declares it.
       *
       * Reachability follows case-class fields, the type arguments of applied types — so a `List[Secret]` is caught —
-      * and the branches of sealed families. `seen` makes an ordinary recursive model terminate; a type already on the
-      * path cannot introduce an annotation that has not been examined at its first occurrence. `depth` handles the
+      * and the branches of sealed families. `seen` contains ancestors and completed sibling scans; revisiting them
+      * cannot introduce an annotation not examined at their first occurrence. `depth` handles the
       * case `seen` cannot: a type whose arguments grow at every step never repeats, so there is no cycle to detect
       * and the walk would otherwise hang the compiler. See [[MaxScanDepth]].
       *
@@ -614,7 +641,7 @@ private[reveal] object PrettyPrintableMacro:
       * type is rendered by `toString`, every instance below it is bypassed too.
       */
     private def annotatedWithin(tpe: TypeRepr, seen: List[TypeRepr], depth: Int): Reachability =
-      if seen.exists(_ =:= tpe) then Reachability.Clean
+      if scanLeafTypes.exists(_ =:= tpe) || seen.exists(_ =:= tpe) then Reachability.Clean
       else if depth > MaxScanDepth then Reachability.Unprovable(tpe)
       else
         val declaredHere =
@@ -622,35 +649,62 @@ private[reveal] object PrettyPrintableMacro:
             tpe.typeSymbol.caseFields.find(field => ruleOf(field) != FieldRule.Render).map(field => (tpe, field))
           else None
         declaredHere match
-          case Some((owner, field)) => Reachability.Annotated(owner, field)
-          case None                 =>
-            val next = tpe :: seen
-            // Keeps the first non-Clean answer and stops recursing once one is found.
-            reachableFrom(tpe).foldLeft(Reachability.Clean: Reachability):
-              case (Reachability.Clean, candidate) => annotatedWithin(candidate, next, depth + 1)
-              case (decided, _)                    => decided
+          case Some((owner, field))                                   => Reachability.Annotated(owner, field)
+          case None if isAbstractlyTyped(tpe) && !isSealedParent(tpe) =>
+            Reachability.Unresolved(tpe)
+          case None                                                   =>
+            // Reuse checked payloads in fields and sealed children: List/Option branches otherwise rescan the same
+            // nested argument exponentially. A non-Clean result stops traversal before its candidate is reused.
+            val (descendants, scanned) = reachableFrom(tpe).foldLeft((Reachability.Clean: Reachability, tpe :: seen)):
+              case ((Reachability.Clean, checked), candidate) =>
+                (annotatedWithin(candidate, checked, depth + 1), candidate :: checked)
+              case (decided, _)                               => decided
+            descendants match
+              case Reachability.Clean => annotatedBranches(tpe, scanned, depth + 1)
+              case decided            => decided
 
-    /** Types whose annotations `toString` on `tpe` would also expose: its fields, its type arguments, its branches. */
+    /** A container subtype can carry independent type arguments as well as inherited element or key/value types. */
     private def reachableFrom(tpe: TypeRepr): List[TypeRepr] =
-      val arguments = tpe match
+      val arguments         = tpe match
         case AppliedType(_, args) => args
         case _                    => Nil
-      val fields    =
+      val fields            =
         if isCaseClass(tpe) then tpe.typeSymbol.caseFields.map(field => tpe.memberType(field))
         else Nil
-      // The uninstantiated child reference is enough: only annotations are read here, and those do not depend on
-      // how the family's type parameters happen to be applied.
-      val branches  =
-        if isSealedParent(tpe) then tpe.typeSymbol.children.map(_.typeRef)
-        else Nil
-      // Abstract types are deliberately NOT filtered out here. A `List[Secret]` field and a sealed-trait field are
-      // both abstract at the top, and skipping them would hide exactly the descendants this scan exists to find —
-      // their type arguments and branches are the interesting part. They contribute no `caseFields` of their own, so
-      // including them only widens reachability; `seen` is what makes it terminate.
-      (arguments ++ fields ++ branches).map(structural)
+      val inheritedPayloads = wrapperArguments(tpe).toList.flatten.filterNot(payload => arguments.exists(_ =:= payload))
+      (arguments ++ inheritedPayloads ++ fields).map(structural)
+
+    /** Scala's closed Vector implementations stringify only elements. Their private VectorImpl hierarchy need not
+      * be instantiated, but the element type must still be scanned. This exception uses the exact standard symbol:
+      * an arbitrary Iterable implementation can print unrelated annotated fields.
+      */
+    private def shouldScanSealedChildren(tpe: TypeRepr): Boolean =
+      isSealedParent(tpe) && tpe.typeSymbol != vectorClass
+
+    private def annotatedBranches(tpe: TypeRepr, seen: List[TypeRepr], depth: Int): Reachability =
+      if !shouldScanSealedChildren(tpe) then Reachability.Clean
+      else
+        tpe.typeSymbol.children.foldLeft(Reachability.Clean: Reachability):
+          case (Reachability.Clean, child) =>
+            moduleOf(child).map(_.termRef).orElse(resolveChildType(tpe, child)) match
+              case Some(applied) => annotatedWithin(structural(applied), seen, depth)
+              // The raw reference identifies the unresolved child in the diagnostic; it is never scanned.
+              case None          => Reachability.Unresolved(child.typeRef)
+          case (decided, _)                => decided
+
+    /** Extract container payloads for structural rendering and scanning; this does not prove toString safety. */
+    private def wrapperArguments(tpe: TypeRepr): Option[List[TypeRepr]] =
+      typeArgsOf(tpe, optionClass)
+        .orElse(typeArgsOf(tpe, scalaMapClass))
+        .orElse(typeArgsOf(tpe, scalaIterableClass))
+        .orElse(typeArgsOf(tpe, javaMapClass))
+        .orElse(typeArgsOf(tpe, javaIterableClass))
+        .orElse(tpe match
+          case AppliedType(array, args) if array.typeSymbol == defn.ArrayClass => Some(args)
+          case _                                                               => None)
 
     /** Both caps name the type that is actually too deep, and prescribe a remedy implicit search really does honour. */
-    private def withinBudget(tpe: TypeRepr, nesting: Nesting)(rendered: => Expr[String]): Expr[String] =
+    private def withinBudget[A](tpe: TypeRepr, nesting: Nesting)(rendered: => A): A =
       if nesting.types > MaxNestedTypes then report.errorAndAbort(tooDeep(tpe, s"$MaxNestedTypes levels of nesting"))
       else if nesting.layers > MaxEmittedLayers then
         report.errorAndAbort(
@@ -683,12 +737,7 @@ private[reveal] object PrettyPrintableMacro:
       renderSelf(tpe, term)
         .orElse(renderSummoned(tpe, term))
         .orElse(renderPrimitive(tpe, term))
-        .orElse(renderOption(tpe, term, nesting))
-        .orElse(renderScalaMap(tpe, term, nesting))
-        .orElse(renderArray(tpe, term, nesting))
-        .orElse(renderScalaIterable(tpe, term, nesting))
-        .orElse(renderJavaMap(tpe, term, nesting))
-        .orElse(renderJavaIterable(tpe, term, nesting))
+        .orElse(renderWrappers(tpe, term, nesting))
         .orElse(renderCycle(tpe, nesting))
         .orElse(renderStructure(tpe, term, nesting))
         .getOrElse(renderOpaque(tpe, term))
@@ -773,28 +822,32 @@ private[reveal] object PrettyPrintableMacro:
         case (AppliedType(_, declared), AppliedType(_, actual)) if declared.sizeIs == actual.size =>
           val bindings =
             declared.zip(actual).collect {
-              case (slot, argument) if slot.typeSymbol.isTypeParam => slot.typeSymbol -> argument
+              case (slot, argument) if slot.typeSymbol.isTypeParam => (slot.typeSymbol, argument)
             }.toMap
           val resolved = parameters.map(bindings.get)
           Option.when(resolved.forall(_.isDefined))(child.typeRef.appliedTo(resolved.flatten))
         case _                                                                                    => None
 
-    /** The child as it exists inside `parent`. Never the raw `child.typeRef`: that drops the type arguments and makes
-      * the compiler fail inside the inliner instead of here.
+    /** Resolve the applied child without choosing a remedy: scanning and structural dispatch delegate at different types.
       */
-    private def appliedChildType(parent: TypeRepr, child: Symbol): TypeRepr =
+    private def resolveChildType(parent: TypeRepr, child: Symbol): Option[TypeRepr] =
       val parameters = typeParametersOf(child)
-      if parameters.isEmpty then child.typeRef
+      if parameters.isEmpty then Some(child.typeRef)
       else
         sumElementTypes(parent)
           .find(_.typeSymbol == child)
           .orElse(unifyChild(parent, child, parameters))
-          .getOrElse(
-            report.errorAndAbort(
-              s"PrettyPrintable cannot work out the type arguments of ${child.fullName} inside ${parent.show}. Provide a " +
-                s"`given PrettyPrintable[${parent.show}]` in scope so that the family is rendered by an instance instead."
-            )
-          )
+
+    /** The child as it exists inside `parent`. Never the raw `child.typeRef`: that drops the type arguments and makes
+      * the compiler fail inside the inliner instead of here.
+      */
+    private def appliedChildType(parent: TypeRepr, child: Symbol): TypeRepr =
+      resolveChildType(parent, child).getOrElse(
+        report.errorAndAbort(
+          s"PrettyPrintable cannot work out the type arguments of ${child.fullName} inside ${parent.show}. Provide a " +
+            s"`given PrettyPrintable[${parent.show}]` in scope so that the family is rendered by an instance instead."
+        )
+      )
 
     /** The child with wildcard type arguments, so the emitted type test is checkable and warning free. */
     private def erasedChildType(child: Symbol): TypeRepr =
@@ -831,7 +884,8 @@ private[reveal] object PrettyPrintableMacro:
         nesting: Nesting,
     )(using Quotes): Expr[String] =
       moduleOf(child) match
-        case Some(module) => nameExpr(module)
+        case Some(module) =>
+          renderSummoned(module.termRef, Ref(module)).getOrElse(nameExpr(module))
         case None         =>
           val applied = appliedChildType(parent, child)
           applied.asType match
