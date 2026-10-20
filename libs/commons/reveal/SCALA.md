@@ -24,6 +24,13 @@ Upgrade both libraries together; run tests, external consumer checks, POM checks
 - Supplied instances win for scalars and singleton branches. Delegation ends expansion at that boundary.
 - Wrapper emission spends the layer budget before recursing, including scalar-ending chains.
 - Reachability uncertainty means refusal. Known containers expose payloads; sealed families expose applied children.
+- Container subtypes retain their own type arguments and sealed children, even when their element type is safe.
+- Only the exact standard Vector symbol skips child scanning; its element type is still checked. Recheck this
+  closed implementation assumption on Scala upgrades.
+- Open container interfaces behind ordinary nested `toString` are refused. Direct structural rendering still works.
+- Unresolvable children report the enclosing fallback boundary as the place to provide an instance.
+- Reuse completed payload scans when inspecting siblings and sealed children; nested List/Option branches must not
+  multiply work before the depth limit can refuse a growing type graph.
 
 Concrete non-final opaque classes remain supported for Java interoperability. Their runtime subclasses can
 expose secrets through `toString`. Use an explicit safe instance or `@Excluded` for such fields.
@@ -43,7 +50,9 @@ Run from repository root:
 
 `checkConsumer` needs Python 3 and the build JDK. It starts fresh Scala compilers at `-Xss1m`.
 Checks: 80 wrappers without derivation compile; 20 wrappers derive; 21 and 80 wrappers refuse with the
-layer diagnostic. Runtime checks cover singleton effects, exception propagation, nested redaction,
+layer diagnostic. A sealed container with an unrelated annotated child field must fail compilation.
+An argument-growing recursive type must reach the scan-depth refusal without exhausting the compiler stack.
+Runtime checks cover singleton effects, exception propagation, nested redaction,
 and custom sealed-singleton dispatch. Scratch output is temporary; failures fail the command.
 
 Timing and allocation runs: [benchmark instructions](../renderer-benchmarks/README.md).

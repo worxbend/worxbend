@@ -55,6 +55,19 @@ def check_runtime(arguments, directory):
     )
 
 
+def check_reachability_refusals(arguments, directory):
+    for name, expected in [
+        ("ContainerRefusal", ["will not render consumer.Middle with toString",
+                              "consumer.SecretValues", "declares `token`"]),
+        ("GrowingRefusal", ["cannot prove", "still growing", "64 levels"]),
+    ]:
+        source = (Path(__file__).parent / f"{name}.scala").read_text()
+        code, output, _ = compile_source(arguments, directory, name, source)
+        if code == 0 or not all(fragment in output for fragment in expected):
+            raise RuntimeError(f"{name}: expected controlled reachability refusal\n{output}")
+        print(f"{name}: passed", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--java", required=True)
@@ -64,6 +77,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="reveal-consumer-") as temporary:
         directory = Path(temporary)
         check_wrappers(arguments, directory)
+        check_reachability_refusals(arguments, directory)
         check_runtime(arguments, directory)
 
 

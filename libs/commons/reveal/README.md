@@ -462,8 +462,19 @@ Renovate follows stable Scala 3 releases, including non-LTS releases. Dependency
 ### Redaction boundary
 
 Ordinary nested `toString` cannot honor annotations. Reveal refuses annotated or unresolved descendants,
-including `Any` and open traits. Known containers expose their element types to this scan.
-Give the enclosing nested type its own `PrettyPrintable` to choose safe handling.
+including `Any` and open traits. The scan follows declared type arguments, inherited container payloads,
+case-class fields, and applied children of user-defined sealed families. Implementing a supported container
+interface does not make unrelated fields safe to print. Standard `Vector` is scanned through its element
+type because its closed implementation hierarchy prints only those elements.
+
+Open container interfaces such as `Iterable[String]`, `Seq[String]`, and `Map[String, String]` are now
+refused when reached behind an enclosing ordinary `toString`. This deliberately tightens previously
+accepted source code: an implementation can print annotated state unrelated to its element types.
+Direct container fields remain supported through structural rendering.
+
+Give the enclosing nested type its own `PrettyPrintable` to choose safe handling, or exclude its field
+on the derived parent. An instance only for a deeper descendant is bypassed by the enclosing `toString`.
+For example, derive `Middle` in `Outer(middle: Middle)` when `Middle` holds an open container interface.
 
 Concrete non-final classes remain an escape hatch for Java interoperability. A declared `Base` can hold
 an annotated subclass whose `toString` leaks fields. Provide an explicit safe instance or exclude the field.
