@@ -2,6 +2,4 @@ package build.applications.inaya
 
 import build.applications.WxModule
 
-object `package` extends WxModule {
-
-}
+object `package` extends WxModule {}

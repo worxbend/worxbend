@@ -1,7 +1,6 @@
 package build.applications.felis
 
 import build.applications.WxSbtModule
-
 import mill._
 import mill.scalalib._
 
@@ -16,4 +15,5 @@ object `package` extends WxSbtModule {
     mvn"org.typelevel::cats-core:2.13.0",
     mvn"org.typelevel::cats-effect:3.7.1",
   )
+
 }

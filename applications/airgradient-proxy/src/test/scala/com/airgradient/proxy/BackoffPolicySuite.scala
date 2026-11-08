@@ -2,17 +2,18 @@ package com.airgradient.proxy
 
 import com.airgradient.proxy.config.PollingConfig
 import com.airgradient.proxy.polling.BackoffPolicy
-import munit.FunSuite
 
 import scala.concurrent.duration.*
+
+import munit.FunSuite
 
 class BackoffPolicySuite extends FunSuite:
 
   private val pollingCfg = PollingConfig(
-    interval     = 5.seconds,
+    interval = 5.seconds,
     initialFetch = true,
-    jitter       = 250.millis,
-    maxBackoff   = 60.seconds,
+    jitter = 250.millis,
+    maxBackoff = 60.seconds,
   )
 
   private val backoff = new BackoffPolicy(pollingCfg)

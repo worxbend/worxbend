@@ -5,17 +5,18 @@ import com.airgradient.proxy.config.PollingConfig
 import com.airgradient.proxy.metrics.ProxyMetrics
 import com.airgradient.proxy.upstream.AirGradientClient
 import com.airgradient.proxy.upstream.UpstreamError
+
 import izumi.logstage.api.IzLogger
 
 import scala.concurrent.duration.*
 
 final class PollingLoop(
-  client:        AirGradientClient,
-  store:         SnapshotStore,
-  pollingConfig: PollingConfig,
-  backoff:       BackoffPolicy,
-  metrics:       ProxyMetrics,
-  logger:        IzLogger,
+    client: AirGradientClient,
+    store: SnapshotStore,
+    pollingConfig: PollingConfig,
+    backoff: BackoffPolicy,
+    metrics: ProxyMetrics,
+    logger: IzLogger,
 ):
 
   def run(): Unit =
@@ -40,7 +41,7 @@ final class PollingLoop(
           logger.info(
             s"First successful upstream fetch: upstream=${snapshot.upstreamUrl} duration_ms=${snapshot.upstreamDurationMillis}"
           )
-      case Left(err) =>
+      case Left(err)       =>
         store.updateFailure(err.message)
         metrics.recordPollFailure()
         metrics.updateConsecutiveFailures(store.get().consecutiveFailures)

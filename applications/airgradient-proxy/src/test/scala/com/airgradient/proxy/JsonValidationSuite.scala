@@ -2,6 +2,7 @@ package com.airgradient.proxy
 
 import com.airgradient.proxy.upstream.JsonValidator
 import com.airgradient.proxy.upstream.UpstreamError
+
 import munit.FunSuite
 
 class JsonValidationSuite extends FunSuite:

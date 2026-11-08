@@ -1,11 +1,11 @@
 package io.worxbend.aether.proxy
 
+import cats.Id
+
 import io.worxbend.aether.AetherConfig
 import io.worxbend.aether.MeasuresCache
 import io.worxbend.aether.domain.AirGradientMeasures
 import io.worxbend.aether.domain.HealthResponse
-
-import cats.Id
 
 import sttp.model.StatusCode
 import sttp.tapir.*

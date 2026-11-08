@@ -3,12 +3,13 @@ package com.airgradient.proxy
 import com.airgradient.proxy.cache.AtomicSnapshotStore
 import com.airgradient.proxy.config.*
 import com.airgradient.proxy.upstream.SttpAirGradientClient
+
+import scala.concurrent.duration.*
+
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import munit.FunSuite
-
-import scala.concurrent.duration.*
 
 class IntegrationSuite extends FunSuite:
 
@@ -31,7 +32,7 @@ class IntegrationSuite extends FunSuite:
   private def makeClient(port: Int): SttpAirGradientClient =
     new SttpAirGradientClient(
       UpstreamConfig(
-        baseUrl        = s"http://localhost:$port",
+        baseUrl = s"http://localhost:$port",
         connectTimeout = 500.millis,
         requestTimeout = 1.second,
       )

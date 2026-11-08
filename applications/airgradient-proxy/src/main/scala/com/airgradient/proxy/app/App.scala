@@ -8,8 +8,7 @@ import com.airgradient.proxy.metrics.ProxyMetrics
 import com.airgradient.proxy.polling.BackoffPolicy
 import com.airgradient.proxy.polling.PollingLoop
 import com.airgradient.proxy.upstream.SttpAirGradientClient
-import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
+
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.Log
 import izumi.logstage.api.rendering.RenderingOptions
@@ -18,13 +17,16 @@ import izumi.logstage.sink.slf4j.LogSinkLegacySlf4jImpl
 
 import scala.util.control.NonFatal
 
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
+
 object App:
 
   def run(): Unit =
     val logger = makeLogger()
 
     ConfigLoader.load() match
-      case Left(err) =>
+      case Left(err)  =>
         logger.crit(s"Failed to load configuration: $err")
         sys.exit(1)
       case Right(cfg) =>

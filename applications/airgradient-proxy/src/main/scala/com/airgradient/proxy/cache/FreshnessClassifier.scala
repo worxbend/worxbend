@@ -1,8 +1,8 @@
 package com.airgradient.proxy.cache
 
 import com.airgradient.proxy.config.CacheConfig
-import com.airgradient.proxy.domain.CacheStatus
 import com.airgradient.proxy.domain.CachedSnapshot
+import com.airgradient.proxy.domain.CacheStatus
 
 import java.time.Instant
 

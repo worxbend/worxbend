@@ -133,8 +133,8 @@ final class ValueRenderingSuite extends AnyFunSuite:
     )
 
   test("a List renders in brackets with quoted elements"):
-    assert(PrettyPrintable[ValList].describe(ValList(List("a", "b")))(using
-      singleLine) == "ValList(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValList].describe(ValList(List("a", "b")))(using singleLine) ==
+      "ValList(items = [\"a\", \"b\"])")
 
   test("an empty List renders as empty brackets"):
     assert(PrettyPrintable[ValList].describe(ValList(Nil))(using singleLine) == "ValList(items = [])")
@@ -144,17 +144,17 @@ final class ValueRenderingSuite extends AnyFunSuite:
 
   test("a Vector renders in brackets"):
     assert(
-      PrettyPrintable[ValVector].describe(ValVector(Vector("a", "b")))(using
-        singleLine) == "ValVector(items = [\"a\", \"b\"])"
+      PrettyPrintable[ValVector].describe(ValVector(Vector("a", "b")))(using singleLine) ==
+        "ValVector(items = [\"a\", \"b\"])"
     )
 
   test("a Set renders in brackets"):
-    assert(PrettyPrintable[ValSet].describe(ValSet(Set("a", "b")))(using
-      singleLine) == "ValSet(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValSet].describe(ValSet(Set("a", "b")))(using singleLine) ==
+      "ValSet(items = [\"a\", \"b\"])")
 
   test("a Seq renders in brackets"):
-    assert(PrettyPrintable[ValSeq].describe(ValSeq(Seq("a", "b")))(using
-      singleLine) == "ValSeq(items = [\"a\", \"b\"])")
+    assert(PrettyPrintable[ValSeq].describe(ValSeq(Seq("a", "b")))(using singleLine) ==
+      "ValSeq(items = [\"a\", \"b\"])")
 
   test("an IndexedSeq renders in brackets"):
     assert(
@@ -170,8 +170,8 @@ final class ValueRenderingSuite extends AnyFunSuite:
 
   test("an Array renders in brackets"):
     assert(
-      PrettyPrintable[ValArray].describe(ValArray(Array("a", "b")))(using
-        singleLine) == "ValArray(items = [\"a\", \"b\"])"
+      PrettyPrintable[ValArray].describe(ValArray(Array("a", "b")))(using singleLine) ==
+        "ValArray(items = [\"a\", \"b\"])"
     )
 
   test("a null Array renders as null"):
@@ -207,12 +207,12 @@ final class ValueRenderingSuite extends AnyFunSuite:
     )
 
   test("None renders as None"):
-    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(None))(using
-      singleLine) == "ValOptionText(entry = None)")
+    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(None))(using singleLine) ==
+      "ValOptionText(entry = None)")
 
   test("a null Option renders as null, not as None"):
-    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(null))(using
-      singleLine) == "ValOptionText(entry = null)")
+    assert(PrettyPrintable[ValOptionText].describe(ValOptionText(null))(using singleLine) ==
+      "ValOptionText(entry = null)")
 
   test("a null Option payload renders as null"):
     assert(

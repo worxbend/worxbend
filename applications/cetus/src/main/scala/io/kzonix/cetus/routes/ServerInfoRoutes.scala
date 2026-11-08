@@ -9,9 +9,8 @@ class ServerInfoRoutes(serverConfig: Server) extends AppRoutes[Client, Throwable
 
   override def routes: Routes[Client, Throwable] =
     Routes(
-      Method.GET / "info" -> handler { (req: Request) =>
-        serverConfig.port.map(port => Response.json(getServerInfo(req, port).toJson))
-      }
+      Method.GET / "info" ->
+        handler((req: Request) => serverConfig.port.map(port => Response.json(getServerInfo(req, port).toJson)))
     )
 
   private def getServerInfo(req: Request, port: Int) = {

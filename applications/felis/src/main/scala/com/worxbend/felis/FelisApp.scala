@@ -3,13 +3,14 @@ package com.worxbend.felis
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.Lifecycle
 
-import scala.concurrent.duration.DurationInt
-
-import cats.effect.IO
-import cats.effect.IOApp
 import distage.Injector
 import distage.ModuleDef
 import distage.Roots
+
+import cats.effect.IO
+import cats.effect.IOApp
+
+import scala.concurrent.duration.DurationInt
 
 class FelisApp(
     appDependencies: FelisDependencies

@@ -56,8 +56,8 @@ class PrettyPrintableNullSuite extends AnyFunSuite:
 
   test("a null field still prints its declared type under useTypeNames"):
     val conf = Configuration(useTypeNames = true)
-    assert(summon[PrettyPrintable[NullString]].asString(NullString(null))(using
-      conf) == "NullString(value: String = null)")
+    assert(summon[PrettyPrintable[NullString]].asString(NullString(null))(using conf) ==
+      "NullString(value: String = null)")
 
   test("a null redacted field prints the replacement rather than throwing"):
     assert(summon[PrettyPrintable[NullRedacted]].asString(NullRedacted(null)) == "NullRedacted(password = <redacted>)")

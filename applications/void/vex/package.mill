@@ -1,14 +1,15 @@
 package build.applications.void.vex
 
 import build.applications.WxSbtModule
-
 import mill._
 
 object `package` extends WxSbtModule {
 
   trait test extends SbtTests {
 
-    def testSandboxWorkingDir = false
+    def testSandboxWorkingDir  = false
     def testEnableWorkStealing = false
+
   }
+
 }

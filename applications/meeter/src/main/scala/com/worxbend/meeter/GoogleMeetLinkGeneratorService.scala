@@ -1,10 +1,11 @@
 package com.worxbend.meeter
 
-import zio.{UIO, ZIO, ZLayer}
+import zio.UIO
+import zio.ZIO
+import zio.ZLayer
 
 class GoogleMeetLinkGeneratorService extends MeetLinkGeneratorService:
   override def generateLink(): UIO[String] = ZIO.succeed("google-meet")
-
 object GoogleMeetLinkGeneratorService:
 
   val layer: ZLayer[

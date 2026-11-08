@@ -1,7 +1,6 @@
 package build.applications.reqflect
 
 import build.applications.WxSbtModule
-
 import mill._
 import mill.scalalib._
 

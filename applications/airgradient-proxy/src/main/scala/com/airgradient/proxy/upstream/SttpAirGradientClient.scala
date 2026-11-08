@@ -3,6 +3,7 @@ package com.airgradient.proxy.upstream
 import com.airgradient.proxy.config.UpstreamConfig
 import com.airgradient.proxy.domain.CachedSnapshot
 import com.airgradient.proxy.http.AirGradientEndpoints
+
 import sttp.client4.BackendOptions
 import sttp.client4.SttpClientException
 import sttp.client4.asByteArray
@@ -11,10 +12,11 @@ import sttp.client4.okhttp.OkHttpSyncBackend
 import sttp.model.Uri
 import sttp.tapir.client.sttp4.SttpClientInterpreter
 
-import java.net.SocketTimeoutException
-import java.time.Instant
 import scala.util.Try
 import scala.util.control.NonFatal
+
+import java.net.SocketTimeoutException
+import java.time.Instant
 
 final class SttpAirGradientClient(config: UpstreamConfig) extends AirGradientClient:
 
@@ -40,7 +42,7 @@ final class SttpAirGradientClient(config: UpstreamConfig) extends AirGradientCli
       .flatMap { response =>
         val durationMs = System.currentTimeMillis() - start
         response.body match
-          case Left(statusCode) =>
+          case Left(statusCode)        =>
             Left(UpstreamError.BadStatus(statusCode.code, s"upstream returned ${statusCode.code}"))
           case Right((bytes, headers)) =>
             JsonValidator.validate(bytes).map { _ =>
@@ -49,12 +51,12 @@ final class SttpAirGradientClient(config: UpstreamConfig) extends AirGradientCli
                 .map(_.value)
                 .getOrElse("application/json")
               CachedSnapshot(
-                payload                = bytes,
-                contentType            = contentType,
-                receivedAt             = Instant.now(),
+                payload = bytes,
+                contentType = contentType,
+                receivedAt = Instant.now(),
                 upstreamDurationMillis = durationMs,
-                upstreamUrl            = s"${config.baseUrl}/measures/current",
-                upstreamStatusCode     = response.code.code,
+                upstreamUrl = s"${config.baseUrl}/measures/current",
+                upstreamStatusCode = response.code.code,
               )
             }
       }
@@ -88,7 +90,7 @@ final class SttpAirGradientClient(config: UpstreamConfig) extends AirGradientCli
       }
 
   private def mapException(e: Throwable): UpstreamError = e match
-    case e: InterruptedException =>
+    case e: InterruptedException                 =>
       Thread.currentThread().interrupt()
       UpstreamError.Interrupted(s"request interrupted: ${e.getMessage}")
     case e: SttpClientException.ConnectException =>
@@ -96,7 +98,7 @@ final class SttpAirGradientClient(config: UpstreamConfig) extends AirGradientCli
     case e: SttpClientException.ReadException
         if Option(e.getCause).exists(_.isInstanceOf[SocketTimeoutException]) =>
       UpstreamError.Timeout(s"request timed out: ${e.getCause.getMessage}")
-    case e: SttpClientException.ReadException =>
+    case e: SttpClientException.ReadException    =>
       UpstreamError.Network(s"IO error: ${e.getMessage}")
-    case NonFatal(e) =>
+    case NonFatal(e)                             =>
       UpstreamError.Unexpected(s"unexpected error: ${e.getMessage}")

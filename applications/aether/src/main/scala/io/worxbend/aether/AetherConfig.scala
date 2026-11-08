@@ -9,13 +9,13 @@ case class ServerConfig(
 ) derives ConfigReader
 
 case class AirGradientConfig(
-    baseUrl: String,
+    baseUrl:        String,
     pollIntervalMs: Long = 30_000L,
-    timeoutMs: Int = 5_000,
+    timeoutMs:      Int = 5_000,
 ) derives ConfigReader
 
 case class AetherConfig(
-    server: ServerConfig = ServerConfig(),
+    server:      ServerConfig = ServerConfig(),
     airgradient: AirGradientConfig,
 ) derives ConfigReader
 

@@ -63,7 +63,7 @@ final class OpaqueTypeSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private final val abstractTypeRefusal = "the declared type is abstract"
+  final private val abstractTypeRefusal = "the declared type is abstract"
 
   test("a field typed as a non sealed trait is refused rather than rendered with toString"):
     assertDoesNotCompile("PrettyPrintable.derived[OpqAnimalHolder]")
@@ -79,8 +79,8 @@ final class OpaqueTypeSuite extends AnyFunSuite:
     assertDoesNotCompile("PrettyPrintable.derived[OpqShapeHolder]")
 
   test("providing the instance the error asks for makes the same shape compile"):
-    assert(PrettyPrintable[OpqPlantHolder].describe(OpqPlantHolder(OpqFern("f")))(using
-      singleLine) == "OpqPlantHolder(plant = PLANT)")
+    assert(PrettyPrintable[OpqPlantHolder].describe(OpqPlantHolder(OpqFern("f")))(using singleLine) ==
+      "OpqPlantHolder(plant = PLANT)")
 
   test("excluding the field also makes the same shape compile, because the value is never read"):
     assert(

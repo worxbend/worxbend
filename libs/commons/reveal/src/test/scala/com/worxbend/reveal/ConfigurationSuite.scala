@@ -102,8 +102,8 @@ final class ConfigurationSuite extends AnyFunSuite:
 
   test("valuePrefix and valueSuffix also wrap a null value"):
     val configuration = singleLine.copy(valuePrefix = "[", valueSuffix = "]")
-    assert(PrettyPrintable[CfgNullable].describe(CfgNullable(null))(using
-      configuration) == "CfgNullable(value = [null])")
+    assert(PrettyPrintable[CfgNullable].describe(CfgNullable(null))(using configuration) ==
+      "CfgNullable(value = [null])")
 
   test("multiline forces the multiline layout below the threshold"):
     assert(render(singleLine.copy(multiline = true)) == "CfgPair(\n  alpha = \"x\",\n  beta = 1\n)")
@@ -124,8 +124,8 @@ final class ConfigurationSuite extends AnyFunSuite:
   test("multilineIfFieldsAreGreaterOrEqual leaves one field below the threshold on a single line"):
     val configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = 5)
     assert(
-      PrettyPrintable[CfgFour].describe(CfgFour(1, 2, 3, 4))(using
-        configuration) == "CfgFour(a = 1, b = 2, c = 3, d = 4)"
+      PrettyPrintable[CfgFour].describe(CfgFour(1, 2, 3, 4))(using configuration) ==
+        "CfgFour(a = 1, b = 2, c = 3, d = 4)"
     )
 
   test("multilineIfFieldsAreGreaterOrEqual counts fields after exclusion"):

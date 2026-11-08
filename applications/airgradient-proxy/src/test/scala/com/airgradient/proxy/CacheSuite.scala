@@ -3,31 +3,36 @@ package com.airgradient.proxy
 import com.airgradient.proxy.cache.AtomicSnapshotStore
 import com.airgradient.proxy.cache.FreshnessClassifier
 import com.airgradient.proxy.config.CacheConfig
-import com.airgradient.proxy.domain.CacheStatus
 import com.airgradient.proxy.domain.CachedSnapshot
-import munit.FunSuite
+import com.airgradient.proxy.domain.CacheStatus
+
+import scala.concurrent.duration.*
 
 import java.time.Instant
-import scala.concurrent.duration.*
+
+import munit.FunSuite
 
 class CacheSuite extends FunSuite:
 
   private def makeSnapshot(receivedAt: Instant = Instant.now()): CachedSnapshot =
     CachedSnapshot(
-      payload                = """{"wifi":{"rssi":-50}}""".getBytes("UTF-8"),
-      contentType            = "application/json",
-      receivedAt             = receivedAt,
+      payload = """{"wifi":{"rssi":-50}}""".getBytes("UTF-8"),
+      contentType = "application/json",
+      receivedAt = receivedAt,
       upstreamDurationMillis = 42L,
-      upstreamUrl            = "http://upstream/measures/current",
-      upstreamStatusCode     = 200,
+      upstreamUrl = "http://upstream/measures/current",
+      upstreamStatusCode = 200,
     )
 
-  private def makeClassifier(freshTtl: FiniteDuration, staleTtl: FiniteDuration, expiredAfter: FiniteDuration,
-    serveExpired: Boolean = false): FreshnessClassifier =
+  private def makeClassifier(freshTtl: FiniteDuration,
+                             staleTtl: FiniteDuration,
+                             expiredAfter: FiniteDuration,
+                             serveExpired: Boolean = false,
+  ): FreshnessClassifier =
     new FreshnessClassifier(
       CacheConfig(
-        freshTtl     = freshTtl,
-        staleTtl     = staleTtl,
+        freshTtl = freshTtl,
+        staleTtl = staleTtl,
         expiredAfter = expiredAfter,
         serveExpired = serveExpired,
       )
@@ -75,7 +80,7 @@ class CacheSuite extends FunSuite:
     store.updateFailure("first error")
     store.updateFailure("second error")
     store.updateSuccess(snapshot)
-    val state = store.get()
+    val state    = store.get()
     assertEquals(state.snapshot.map(_.upstreamStatusCode), Some(200))
     assertEquals(state.consecutiveFailures, 0)
     assertEquals(state.lastError, None)
@@ -88,7 +93,7 @@ class CacheSuite extends FunSuite:
     store.updateSuccess(snapshot)
     store.updateFailure("network error")
     store.updateFailure("timeout")
-    val state = store.get()
+    val state    = store.get()
     assertEquals(state.consecutiveFailures, 2)
     assertEquals(state.lastError, Some("timeout"))
     assert(state.snapshot.isDefined, "snapshot must be preserved after failure")
@@ -98,6 +103,6 @@ class CacheSuite extends FunSuite:
     val store    = new AtomicSnapshotStore()
     val snapshot = makeSnapshot()
     store.updateSuccess(snapshot)
-    val results = (1 to 100).map(_ => store.get().snapshot.isDefined)
+    val results  = (1 to 100).map(_ => store.get().snapshot.isDefined)
     assert(results.forall(identity))
   }

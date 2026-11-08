@@ -1,7 +1,7 @@
 package com.airgradient.proxy.cache
 
-import com.airgradient.proxy.domain.CacheState
 import com.airgradient.proxy.domain.CachedSnapshot
+import com.airgradient.proxy.domain.CacheState
 
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
@@ -16,11 +16,11 @@ final class AtomicSnapshotStore extends SnapshotStore:
     val now = Instant.now()
     state.updateAndGet { prev =>
       prev.copy(
-        snapshot            = Some(snapshot),
-        lastAttemptAt       = Some(now),
-        lastSuccessAt       = Some(now),
+        snapshot = Some(snapshot),
+        lastAttemptAt = Some(now),
+        lastSuccessAt = Some(now),
         consecutiveFailures = 0,
-        lastError           = None,
+        lastError = None,
       )
     }
     ()
@@ -29,10 +29,10 @@ final class AtomicSnapshotStore extends SnapshotStore:
     val now = Instant.now()
     state.updateAndGet { prev =>
       prev.copy(
-        lastAttemptAt       = Some(now),
-        lastFailureAt       = Some(now),
+        lastAttemptAt = Some(now),
+        lastFailureAt = Some(now),
         consecutiveFailures = prev.consecutiveFailures + 1,
-        lastError           = Some(error),
+        lastError = Some(error),
       )
     }
     ()

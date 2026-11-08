@@ -10,6 +10,7 @@ import sttp.client4.basicRequest
 import sttp.client4.circe.asJson
 
 class AirGradientClient(config: AirGradientConfig):
+
   private val backend = DefaultSyncBackend()
 
   def fetchMeasures(): Either[String, AirGradientMeasures] =
