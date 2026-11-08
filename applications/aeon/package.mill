@@ -8,9 +8,9 @@ import scalalib._
 
 object `package` extends WxModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
 
   def mainClass = Some("com.worxbend.aeon.AeonApp")
 
-  def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.kubernetes:client-java:24.0.0")
+  def mvnDeps = super.mvnDeps() ++ Seq(mvn"io.kubernetes:client-java:28.0.0")
 }

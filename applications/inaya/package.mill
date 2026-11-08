@@ -1,18 +1,7 @@
 package build.applications.inaya
 
 import build.applications.WxModule
-import mill.*
-import mill.javalib.*
-import mill.scalalib.SbtModule
 
 object `package` extends WxModule {
-
-  def scalaVersion = "3.7.1"
-
-  // WxModule already supplies the shared flag set; only add what's unique here.
-  // Re-listing the shared flags trips "Flag set repeatedly" under -Wconf:any:error.
-  def scalacOptions = super.scalacOptions() ++ Seq(
-    "-print-lines",
-  )
 
 }

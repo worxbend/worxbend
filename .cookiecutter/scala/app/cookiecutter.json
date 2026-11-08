@@ -12,5 +12,5 @@
     "GNU GPL v3.0",
     "Apache Software License 2.0"
   ],
-  "scala_version": "3.7.1"
+  "scala_version": "3.10.0"
 }

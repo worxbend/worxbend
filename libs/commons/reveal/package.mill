@@ -13,7 +13,7 @@ object `package` extends SbtModule with PublishModule with ScalafmtModule { oute
   // consumers depend on.
   def artifactName = "reveal"
 
-  def scalaVersion = "3.8.4"
+  def scalaVersion = "3.10.0"
 
   def scalacOptions = Seq("-Wunused:all", "-deprecation", "-feature")
 

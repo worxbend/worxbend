@@ -1021,7 +1021,7 @@ import mill._
 import mill.scalalib._
 
 object myapp extends ScalaModule {
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
 
   def ivyDeps = Agg(
     ivy"dev.zio::zio:2.0.19",
@@ -1039,16 +1039,16 @@ object myapp extends ScalaModule {
 ### Cross-Module Dependencies
 ```scala
 object common extends ScalaModule {
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
 }
 
 object services extends ScalaModule {
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
   def moduleDeps = Seq(common)
 }
 
 object api extends ScalaModule {
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
   def moduleDeps = Seq(common, services)
 }
 ```
