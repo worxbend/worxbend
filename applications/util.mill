@@ -6,7 +6,7 @@ import mill.scalalib.SbtModule
 
 trait WxModule extends ScalaModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-deprecation",
@@ -17,7 +17,7 @@ trait WxModule extends ScalaModule {
     "-new-syntax",
     "-unchecked",
     "-Xsemanticdb",
-    "-Xfatal-warnings",
+    "-Werror",
     "-Xkind-projector",
     "-Wnonunit-statement",
     "-Wconf:any:error",
@@ -26,7 +26,7 @@ trait WxModule extends ScalaModule {
     "-Wunused:locals",
     "-Wunused:privates",
     "-Wunused:params",
-    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:patvars",
     "-Wunused:linted",
   )
 
@@ -34,7 +34,7 @@ trait WxModule extends ScalaModule {
 
 trait WxSbtModule extends SbtModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
 
   def scalacOptions = super.scalacOptions() ++ Seq(
     "-deprecation",
@@ -45,7 +45,7 @@ trait WxSbtModule extends SbtModule {
     "-new-syntax",
     "-unchecked",
     "-Xsemanticdb",
-    "-Xfatal-warnings",
+    "-Werror",
     "-Xkind-projector",
     "-Wnonunit-statement",
     "-Wconf:any:error",
@@ -54,7 +54,7 @@ trait WxSbtModule extends SbtModule {
     "-Wunused:locals",
     "-Wunused:privates",
     "-Wunused:params",
-    "-Wunused:unsafe-warn-patvars",
+    "-Wunused:patvars",
     "-Wunused:linted",
   )
 

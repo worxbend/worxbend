@@ -1,7 +1,6 @@
 package build.applications.felis
 
 import build.applications.WxSbtModule
-
 import mill._
 import mill.scalalib._
 
@@ -12,8 +11,9 @@ object `package` extends WxSbtModule {
   def scalacOptions = super.scalacOptions().filterNot(_ == "-Wnonunit-statement")
 
   def mvnDeps = super.mvnDeps() ++ Seq(
-    mvn"io.7mind.izumi::distage-core:1.2.17",
+    mvn"io.7mind.izumi::distage-core:1.2.25",
     mvn"org.typelevel::cats-core:2.13.0",
-    mvn"org.typelevel::cats-effect:3.6.1",
+    mvn"org.typelevel::cats-effect:3.7.1",
   )
+
 }

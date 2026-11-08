@@ -1,9 +1,9 @@
 package com.airgradient.proxy.config
 
-import pureconfig.*
-
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
+
+import pureconfig.*
 
 object ConfigLoader:
 

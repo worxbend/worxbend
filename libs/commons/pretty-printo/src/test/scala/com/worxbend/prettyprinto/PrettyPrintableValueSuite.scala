@@ -95,7 +95,8 @@ class PrettyPrintableValueSuite extends AnyFunSuite:
     val conf  = Configuration(useTypeNames = true, multilineIfFieldsAreGreaterOrEqual = 0)
     val types = summon[PrettyPrintable[ValNumbers]].asString(value)(using conf)
     assert(
-      types == "ValNumbers(int: Int = 1, long: Long = 2, short: Short = 3, byte: Byte = 4, double: Double = 5.5, " +
+      types ==
+        "ValNumbers(int: Int = 1, long: Long = 2, short: Short = 3, byte: Byte = 4, double: Double = 5.5, " +
         "float: Float = 6.5, bigInt: BigInt = 7, bigDecimal: BigDecimal = 8.50)"
     )
 
@@ -120,8 +121,8 @@ class PrettyPrintableValueSuite extends AnyFunSuite:
 
   test("a boxed java.lang.Integer field prints Integer as its declared type"):
     val conf = Configuration(useTypeNames = true)
-    assert(summon[PrettyPrintable[ValBoxedInt]].asString(ValBoxedInt(7))(using
-      conf) == "ValBoxedInt(value: Integer = 7)")
+    assert(summon[PrettyPrintable[ValBoxedInt]].asString(ValBoxedInt(7))(using conf) ==
+      "ValBoxedInt(value: Integer = 7)")
 
   test("a boxed java.lang.Character is quoted exactly like a Char"):
     assert(summon[PrettyPrintable[ValBoxedChar]].asString(ValBoxedChar('c')) == "ValBoxedChar(value = 'c')")

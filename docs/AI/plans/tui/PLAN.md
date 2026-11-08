@@ -143,7 +143,7 @@ scope to any module above that isn't already covered by §6's tiered widget back
 native-image wiring to copy from, so this is spelled out explicitly rather than left
 for the implementing agent to infer from repo precedent. Verified against Mill's own
 docs (mill-build.org) for the Mill 1.x module system (`package.mill`, matching
-`worxbend`'s `.mill-version` = `1.1.6`):
+`worxbend`'s `.mill-version` = `1.3.1`):
 
 **Root aggregator** (`build.mill`), matching `worxbend`'s `libs/package.mill` pattern:
 
@@ -167,7 +167,7 @@ import mill.scalalib.SbtModule
 
 object `package` extends SbtModule with PublishModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
   def artifactName = "tui-core"
 
   def pomSettings = PomSettings(
@@ -204,7 +204,7 @@ import mill.scalalib.SbtModule
 
 object `package` extends SbtModule with PublishModule {
 
-  def scalaVersion = "3.7.1"
+  def scalaVersion = "3.10.0"
   def artifactName = "tui-terminal"
 
   def moduleDeps = Seq(build.core)

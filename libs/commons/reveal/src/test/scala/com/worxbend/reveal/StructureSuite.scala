@@ -76,8 +76,8 @@ final class StructureSuite extends AnyFunSuite:
 
   test("a null nested case class renders as null"):
     assert(
-      PrettyPrintable[StrBranch].describe(StrBranch(null, "b"))(using
-        singleLine) == "StrBranch(leaf = null, label = \"b\")"
+      PrettyPrintable[StrBranch].describe(StrBranch(null, "b"))(using singleLine) ==
+        "StrBranch(leaf = null, label = \"b\")"
     )
 
   test("four levels of nesting render on a single line"):
@@ -167,8 +167,8 @@ final class StructureSuite extends AnyFunSuite:
     )
 
   test("a null sealed value renders as null"):
-    assert(PrettyPrintable[StrShapeHolder].describe(StrShapeHolder(null))(using
-      singleLine) == "StrShapeHolder(shape = null)")
+    assert(PrettyPrintable[StrShapeHolder].describe(StrShapeHolder(null))(using singleLine) ==
+      "StrShapeHolder(shape = null)")
 
   test("nested renders are inserted verbatim and are not re-indented"):
     val configuration = Configuration(multiline = true)

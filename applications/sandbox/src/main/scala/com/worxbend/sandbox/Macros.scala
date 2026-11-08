@@ -56,7 +56,7 @@ object Macros {
 
   inline def printSymbols(): () => Unit = ${ printSymbolsImpl }
 
-  inline def natConst(inline x: Int): Int = ${ natConstImpl('{ x }) }
+  inline def natConst(inline x: Int): Int = ${ natConstImpl('x) }
 
   def natConstImpl[T <: Product](x: Expr[Int])(using Quotes): Expr[Int] =
     import quotes.reflect.*

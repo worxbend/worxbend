@@ -10,7 +10,7 @@ object JsonValidator:
   private val scanCodec: JsonValueCodec[Unit] = new JsonValueCodec[Unit]:
     def decodeValue(in: JsonReader, default: Unit): Unit = in.skip()
     def encodeValue(x: Unit, out: JsonWriter): Unit      = out.writeNull()
-    def nullValue: Unit                                   = ()
+    def nullValue: Unit                                  = ()
 
   def validate(bytes: Array[Byte]): Either[UpstreamError, Unit] =
     try

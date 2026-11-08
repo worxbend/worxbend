@@ -62,21 +62,21 @@ object MetricsHttpMiddleware {
           Handler.fromFunctionZIO[Request] { request =>
             ZIO.scoped {
               for {
-                _      <- ZIO.logInfo(
-                            "Request handling: " +
-                              s"method=${request.method} " +
-                              s"headers=${request.method} " +
-                              s"path=${request.url.encode} "
-                          )
-                result <- wrapWithMetrics(next, request)
+                _                   <- ZIO.logInfo(
+                                         "Request handling: " +
+                                           s"method=${request.method} " +
+                                           s"headers=${request.method} " +
+                                           s"path=${request.url.encode} "
+                                       )
+                result              <- wrapWithMetrics(next, request)
                 (duration, response) = result
-                _      <- ZIO.logInfo(
-                            "Request handled: " +
-                              s"method=${request.method} " +
-                              s"path=${request.url.encode} " +
-                              s"status=${response.status.code} " +
-                              s"duration=${duration.toMillis}ms"
-                          )
+                _                   <- ZIO.logInfo(
+                                         "Request handled: " +
+                                           s"method=${request.method} " +
+                                           s"path=${request.url.encode} " +
+                                           s"status=${response.status.code} " +
+                                           s"duration=${duration.toMillis}ms"
+                                       )
               } yield response
             }
           }

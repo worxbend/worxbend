@@ -1,6 +1,5 @@
 package io.worxbend.vex
 
-
 object VexApp {
 
   val name = "VexApp"
@@ -10,5 +9,5 @@ object VexApp {
     println(s"Hello, world! $name")
     println(s"Hello, world! ${Helpers.print()}")
   }
-}
 
+}

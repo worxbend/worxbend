@@ -1,14 +1,15 @@
 package com.airgradient.proxy.metrics
 
+import sttp.tapir.server.metrics.EndpointMetric
+import sttp.tapir.server.metrics.Metric
+import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
+
+import java.io.ByteArrayOutputStream
+
 import io.prometheus.metrics.core.metrics.Counter
 import io.prometheus.metrics.core.metrics.Gauge
 import io.prometheus.metrics.expositionformats.ExpositionFormats
 import io.prometheus.metrics.model.registry.PrometheusRegistry
-import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
-import sttp.tapir.server.metrics.EndpointMetric
-import sttp.tapir.server.metrics.Metric
-
-import java.io.ByteArrayOutputStream
 
 final class ProxyMetrics:
 

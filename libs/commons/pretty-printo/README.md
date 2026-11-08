@@ -4,7 +4,7 @@
 
 **Configurable, redaction-aware `toString` derivation for Scala 3, built on [Magnolia](https://github.com/softwaremill/magnolia).**
 
-[![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
+[![Scala](https://img.shields.io/badge/Scala-3.10.0-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
 [![Derivation](https://img.shields.io/badge/derivation-magnolia-8A2BE2)](https://github.com/softwaremill/magnolia)
 [![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
 [![License](https://img.shields.io/badge/license-MIT-blue)](../../../LICENSE)
@@ -77,7 +77,7 @@ costume.
 | **groupId** | `com.worxbend` |
 | **artifactId** | `pretty-printo_3` |
 | **Scala package** | `com.worxbend.prettyprinto` |
-| **Scala version** | 3.8.4 |
+| **Scala version** | 3.10.0 |
 | **Dependency** | `com.softwaremill.magnolia1_3::magnolia` |
 
 **Mill**

@@ -4,7 +4,7 @@
 
 **Configurable, redaction-aware `toString` for Scala 3 — with _zero_ runtime dependencies.**
 
-[![Scala](https://img.shields.io/badge/Scala-3.8.4-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
+[![Scala](https://img.shields.io/badge/Scala-3.10.0-DC322F?logo=scala&logoColor=white)](https://www.scala-lang.org)
 [![Dependencies](https://img.shields.io/badge/runtime%20deps-0-success)](#-why-reveal)
 [![Derivation](https://img.shields.io/badge/derivation-inline%20macro-blueviolet)](#-how-the-macro-works)
 [![Tests](https://img.shields.io/badge/tests-217-brightgreen)](#-testing)
@@ -64,7 +64,7 @@ password field — and it prints it in exactly one shape you cannot change.
 | **groupId** | `com.worxbend` |
 | **artifactId** | `reveal_3` |
 | **Scala package** | `com.worxbend.reveal` |
-| **Scala version** | 3.8.4 |
+| **Scala version** | 3.10.0 |
 
 **Mill**
 

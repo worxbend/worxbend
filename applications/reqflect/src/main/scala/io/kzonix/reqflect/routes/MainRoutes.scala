@@ -13,9 +13,7 @@ class MainRoutes(serverConfig: Server.Config, serverInfoProviderService: ServerI
 
   override def routes: Routes[Client, Throwable] =
     Routes(
-      Method.GET / "info" -> handler { (req: Request) =>
-        getServerInfo(req).map(payload => Response.json(payload.toJson))
-      }
+      Method.GET / "info" -> handler((req: Request) => getServerInfo(req).map(payload => Response.json(payload.toJson)))
     )
 
   private def getServerInfo(req: Request): ZIO[

@@ -49,7 +49,8 @@ final class PrettyPrintableLayoutCompositionSuite extends AnyFunSuite:
       render(
         LcTyped((1, "a"), LcColour.Red, LcId(1L), Some(2)),
         Configuration(useTypeNames = true, multilineIfFieldsAreGreaterOrEqual = -1),
-      ) == """LcTyped(t: Tuple2 = Tuple2(_1: Int = 1, _2: String = "a"), e: LcColour = Red, id: LcId = 1, o: Option = Some(2))"""
+      ) ==
+        """LcTyped(t: Tuple2 = Tuple2(_1: Int = 1, _2: String = "a"), e: LcColour = Red, id: LcId = 1, o: Option = Some(2))"""
     )
 
   // A value class reports the *wrapper* as its declared type while rendering the payload, and an enum case reports
@@ -75,7 +76,8 @@ final class PrettyPrintableLayoutCompositionSuite extends AnyFunSuite:
           shortPackagePrefix = true,
           multilineIfFieldsAreGreaterOrEqual = -1,
         ),
-      ) == "c.w.p.LcTyped(t: s.Tuple2 = s.Tuple2(_1: s.Int = 1, _2: j.l.String = \"a\"), " +
+      ) ==
+        "c.w.p.LcTyped(t: s.Tuple2 = s.Tuple2(_1: s.Int = 1, _2: j.l.String = \"a\"), " +
         "e: c.w.p.LcColour = c.w.p.Red, id: c.w.p.LcId = 1, o: s.Option = None)"
     )
 

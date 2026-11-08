@@ -6,11 +6,6 @@
   "package_prefix": "io.worxbend",
   "full_package": "{{ cookiecutter.package_prefix }}.{{ cookiecutter.project_slug }}",
   "full_package_path": "{{ cookiecutter.full_package|replace('.', '/')}}",
-  "license": [
-    "MIT",
-    "BSD-3",
-    "GNU GPL v3.0",
-    "Apache Software License 2.0"
-  ],
-  "scala_version": "3.7.1"
+  "license": ["MIT", "BSD-3", "GNU GPL v3.0", "Apache Software License 2.0"],
+  "scala_version": "3.10.0"
 }

@@ -1,11 +1,15 @@
 package com.worxbend.meeter
 
-import com.typesafe.config.ConfigFactory
 import com.worxbend.meeter.MeeterAppModule.res
+
+import zio._
+import zio.ZLayer
 import zio.config.typesafe.TypesafeConfigProvider
-import zio.logging.{consoleJsonLogger, logMetrics}
+import zio.logging.consoleJsonLogger
+import zio.logging.logMetrics
 import zio.metrics.jvm.DefaultJvmMetrics
-import zio.{ZLayer, _}
+
+import com.typesafe.config.ConfigFactory
 
 object MeeterApp extends ZIOAppDefault:
 
@@ -32,6 +36,8 @@ object MeeterApp extends ZIOAppDefault:
       _ <-
         (for {
           _ <- ZIO.log("Meow")
-          r <- ZIO.serviceWithZIO[MeetLinkGeneratorService](_.generateLink()).flatMap(link => ZIO.log(link))
+          r <- ZIO
+                 .serviceWithZIO[MeetLinkGeneratorService](_.generateLink())
+                 .flatMap(link => ZIO.log(link))
         } yield r).repeat(Schedule.spaced(1.seconds).forever)
     } yield ()).provide(res)

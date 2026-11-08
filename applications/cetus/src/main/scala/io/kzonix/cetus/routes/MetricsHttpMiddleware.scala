@@ -62,8 +62,8 @@ object MetricsHttpMiddleware {
           Handler.fromFunctionZIO[Request] { request =>
             ZIO.scoped {
               for {
-                _      <- ZIO.logInfo(">>>")
-                result <-
+                _                   <- ZIO.logInfo(">>>")
+                result              <-
                   next.runZIO(request).timed
                     @@ requestHistogram(
                       request.method.toString,
@@ -74,13 +74,13 @@ object MetricsHttpMiddleware {
                       request.url.encode,
                     )
                 (duration, response) = result
-                _      <- ZIO.logInfo(
-                            "Request handled: " +
-                              s"method=${request.method} " +
-                              s"path=${request.url.encode} " +
-                              s"status=${response.status.code} " +
-                              s"duration=${duration.toMillis}ms"
-                          )
+                _                   <- ZIO.logInfo(
+                                         "Request handled: " +
+                                           s"method=${request.method} " +
+                                           s"path=${request.url.encode} " +
+                                           s"status=${response.status.code} " +
+                                           s"duration=${duration.toMillis}ms"
+                                       )
               } yield response
             }
           }

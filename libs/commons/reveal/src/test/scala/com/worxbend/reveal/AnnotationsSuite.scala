@@ -96,18 +96,18 @@ final class AnnotationsSuite extends AnyFunSuite:
 
   test("@Excluded omits the field entirely"):
     assert(
-      PrettyPrintable[AnnExcluded].describe(AnnExcluded("hidden", "bob"))(using
-        singleLine) == "AnnExcluded(name = \"bob\")"
+      PrettyPrintable[AnnExcluded].describe(AnnExcluded("hidden", "bob"))(using singleLine) ==
+        "AnnExcluded(name = \"bob\")"
     )
 
   test("@Excluded never dereferences the value, so a null field still renders"):
-    assert(PrettyPrintable[AnnExcluded].describe(AnnExcluded(null, "bob"))(using
-      singleLine) == "AnnExcluded(name = \"bob\")")
+    assert(PrettyPrintable[AnnExcluded].describe(AnnExcluded(null, "bob"))(using singleLine) ==
+      "AnnExcluded(name = \"bob\")")
 
   test("@transient omits the field, exactly like @Excluded"):
     assert(
-      PrettyPrintable[AnnTransient].describe(AnnTransient("hidden", "bob"))(using
-        singleLine) == "AnnTransient(name = \"bob\")"
+      PrettyPrintable[AnnTransient].describe(AnnTransient("hidden", "bob"))(using singleLine) ==
+        "AnnTransient(name = \"bob\")"
     )
 
   test("@Redacted before @Excluded is omitted, not redacted"):

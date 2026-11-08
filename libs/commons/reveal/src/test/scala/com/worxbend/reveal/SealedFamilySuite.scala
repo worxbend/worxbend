@@ -161,6 +161,6 @@ final class SealedFamilySuite extends AnyFunSuite:
 
   test("a null generic sealed value renders as null"):
     assert(
-      PrettyPrintable[GenEitherHolder].describe(GenEitherHolder(null))(using
-        singleLine) == "GenEitherHolder(value = null)"
+      PrettyPrintable[GenEitherHolder].describe(GenEitherHolder(null))(using singleLine) ==
+        "GenEitherHolder(value = null)"
     )

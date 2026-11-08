@@ -41,7 +41,7 @@ Use Mill from the repository root for normal work:
 ./mill __.reformat
 ```
 
-The repository currently uses Scala `3.7.1`, Scalafmt `3.9.0`, and warning-heavy compiler settings in the shared Mill modules. Do not weaken compiler options to make a warning disappear; fix the code or document a narrow, reviewed exception.
+The repository currently uses Scala `3.10.0`, Scalafmt `3.11.5`, and warning-heavy compiler settings in the shared Mill modules. Do not weaken compiler options to make a warning disappear; fix the code or document a narrow, reviewed exception.
 
 ### Formatter Rules
 

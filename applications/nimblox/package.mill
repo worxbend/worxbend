@@ -1,7 +1,6 @@
 package build.applications.nimblox
 
 import build.applications.WxSbtModule
-
 import mill._
 import mill.scalalib._
 
@@ -9,7 +8,9 @@ object `package` extends WxSbtModule {
 
   trait test extends SbtTests {
 
-    def testSandboxWorkingDir = false
+    def testSandboxWorkingDir  = false
     def testEnableWorkStealing = false
+
   }
+
 }
