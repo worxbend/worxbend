@@ -4,9 +4,11 @@ title: Scala Code Style
 
 ## Overview
 
-This guide defines how we write Scala in Worxbend. It is intentionally more than formatter rules: it describes API design, package boundaries, error handling, concurrency, testing, and the small naming choices that keep a codebase understandable after the original author has moved on.
+This guide defines how we write Scala in Worxbend. It is the only Scala style guide in the repository, for people and for coding agents. It is intentionally more than formatter rules: it describes API design, package boundaries, error handling, concurrency, testing, and the small naming choices that keep a codebase understandable after the original author has moved on.
 
 The default stack is Scala 3 on Mill. New Scala code uses the `com.worxbend` package prefix, direct-style Scala, explicit boundaries, immutable domain models, and boring JVM engineering discipline. Prefer code that a senior engineer from another JVM language can read without learning local folklore.
+
+When an older note, a generated checklist, or an external style guide disagrees with this file, follow this file. The review checklist at the end is the short form.
 
 ## Non-Negotiables
 
@@ -90,7 +92,7 @@ Package names are lowercase words separated by dots. Use concept names such as `
 
 ### File Names
 
-For a primary type named `InvoiceService`, use `InvoiceService.scala`. A sealed family may live in one file when the family is normally read as one concept.
+For a primary type named `InvoiceService`, use `InvoiceService.scala`. Put the type and its companion in that same file. A sealed family may live in one file when the family is normally read as one concept.
 
 Use one file for this kind of small ADT:
 
@@ -131,6 +133,10 @@ final class ReconciliationService(client: LedgerClient):
 ```
 
 Use default public visibility only for APIs intended to be used outside the current concept package. Start narrow, then widen after seeing a real call site.
+
+### Member Order
+
+Inside a class, keep the public surface together and the helpers below it: constructor parameters, then public members, then private members. Do not interleave private state with the methods callers use.
 
 ## Naming
 
@@ -190,6 +196,19 @@ If a constant is business-specific, put it near the business concept. If it is d
 Treat acronyms as words: `HttpClient`, `XmlDocument`, `JsonCodec`. Short JVM terms such as `IO`, `DB`, and `JVM` are acceptable when they are clearer than the expanded form.
 
 Avoid abbreviations in public API unless the abbreviation is more recognizable than the full word. Local variables in tiny scopes may be short when the meaning is obvious.
+
+### Type Parameters
+
+Use a single uppercase letter when the parameter only says "this is polymorphic": `A`, `B`, `E`. Use a descriptive name when the parameter is a domain role, such as `Key` or `Value`.
+
+```scala
+def map[A, B](f: A => B): Option[B]
+
+trait Cache[Key, Value]:
+  def get(key: Key): Option[Value]
+```
+
+Do not spell type parameters as `TYPE1` or `TResult`.
 
 ## Types And Domain Modeling
 
@@ -498,6 +517,8 @@ Choose collections by semantics. The type should tell readers how the data is us
 
 Do not expose mutable collections from APIs. If a third-party library returns mutable data, copy it into an immutable domain value at the boundary.
 
+Prefer `map`, `filter`, `fold`, and `groupBy` over a loop that accumulates into a local `var` or `ListBuffer`. Use a local mutable builder only when a measured hot path needs it, and keep that builder inside the function.
+
 ### Large Data
 
 Never materialize unbounded data into memory. Use paging, streaming, or Ox Flow pipelines.
@@ -739,9 +760,15 @@ object Services:
 
 Do not use field injection. Avoid inheritance-based wiring patterns. Composition is easier to test and change.
 
+Keep a dependency trait as small as its callers. A repository used for reads does not also need schema migration, counting, and every write path. Split the trait when the methods serve different callers, or narrow the visibility when only one concept uses them.
+
+Some modules already run on ZIO. Leave that effect system in place. New direct-style modules use constructor injection and Ox. Do not add ZLayer or distage beside Ox, and do not convert a ZIO module to direct style inside an unrelated change.
+
 ## Testing
 
 Tests should make behavior obvious. A test that verifies everything usually explains nothing.
+
+Put a test in the same package as the code it covers, under that module's test source root. A test of `com.worxbend.orders.CheckoutService` lives in `com.worxbend.orders`.
 
 ### Unit Tests
 
@@ -829,7 +856,8 @@ Use this checklist before opening a pull request or asking another engineer to r
 - Domain invariants are encoded in types.
 - Raw primitives do not cross important domain boundaries.
 - No Boolean argument requires the caller to remember what `true` means.
-- Effects, time, randomness, and external clients are explicit dependencies.
+- Effects, time, randomness, and external clients are explicit constructor dependencies.
+- A dependency trait contains only what its callers use.
 
 ### Implementation
 
@@ -844,7 +872,7 @@ Use this checklist before opening a pull request or asking another engineer to r
 
 ### Tests
 
-- Each test covers one scenario.
+- Each test covers one scenario and lives in the same package as the code it covers.
 - Business rules are testable without external infrastructure.
 - Integration tests focus on real boundaries.
 - Time and randomness are deterministic in tests.
@@ -863,3 +891,7 @@ Use this order of priority:
 5. Leave unrelated cleanup for a separate change.
 
 Style work should make future changes safer. If a refactor does not improve readability, type safety, testability, or operational confidence, do not include it in the same pull request.
+
+## Further Reading
+
+The [Scala style guide](https://docs.scala-lang.org/style/) is useful background for naming and formatting. Follow this document for Worxbend rules. Scalafmt and Scalafix in this repository decide whitespace and import layout.

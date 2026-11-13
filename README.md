@@ -145,8 +145,7 @@ pip install pipx
 Random notes, guides, and research live under [`docs/`](docs/) — everything from infra write-ups to reading
 lists to "why did I do it this way" notes. Also worth a peek:
 
-- [`CODE_STYLE.md`](CODE_STYLE.md) 📐
-- [`SCALA_CODE_STYLE.md`](SCALA_CODE_STYLE.md) 🎯
+- [`SCALA_CODE_STYLE.md`](SCALA_CODE_STYLE.md) — how we write Scala 🎯
 
 ## 🏗️ Infra
 
