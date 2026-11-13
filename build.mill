@@ -1,3 +1,4 @@
+//| mvnDeps: ["com.lihaoyi::mill-contrib-jmh:$MILL_VERSION"]
 package build
 
 import mill.*

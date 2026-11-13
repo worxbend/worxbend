@@ -63,7 +63,7 @@ final class OpaqueTypeSuite extends AnyFunSuite:
 
   private val singleLine: Configuration = Configuration(multilineIfFieldsAreGreaterOrEqual = -1)
 
-  private final val abstractTypeRefusal = "the declared type is abstract"
+  final private val abstractTypeRefusal = "the declared type is abstract"
 
   test("a field typed as a non sealed trait is refused rather than rendered with toString"):
     assertDoesNotCompile("PrettyPrintable.derived[OpqAnimalHolder]")

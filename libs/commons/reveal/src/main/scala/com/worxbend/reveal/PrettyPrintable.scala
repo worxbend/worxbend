@@ -7,7 +7,7 @@ package com.worxbend.reveal
   */
 trait PrettyPrintable[T]:
 
-  /** Renders `value` under `conf`. */
+  /** Derived instances render null as `null`. Hidden fields stay unread; callback failures propagate. */
   def describe(value: T)(using conf: Configuration): String
 
   extension (x: T)
@@ -58,9 +58,11 @@ trait AutoToString:
   */
 object ToString:
 
-  /** Renders `value` at the call site. */
+  /** Renders at the call site. Evaluates configuration once, then value once, including singleton inputs.
+    * Producer exceptions propagate. Null renders as `null`; hidden fields stay unread.
+    */
   inline def derived[T](
-      inline value: T
+      value: => T
   )(
       using inline conf: Configuration = Configuration.default
   ): String = ${ PrettyPrintableMacro.toStringImpl[T]('value, 'conf) }

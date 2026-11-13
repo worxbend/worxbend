@@ -26,6 +26,10 @@ trait PrettyPrintable[T]:
 
   extension (x: T)
 
+    /** Built-in, derived, and factory instances render null as `null`. Null skips user callbacks.
+      * Non-null rendering uses the supplied configuration. Callback failures propagate unchanged.
+      * Handwritten instances own their direct-call null contract.
+      */
     def asString(
         using configuration: Configuration = Configuration.default
     ): String
@@ -48,7 +52,7 @@ trait GenericPrint extends AutoDerivation[PrettyPrintable]:
 
         override def asString(
             using conf: Configuration
-        ): String =
+        ): String = Rendering.nullOr(value):
           if ctx.isObject || isSingleton(value) then tpe.render
           else layout(tpe, renderedFields(value))
 
@@ -80,7 +84,8 @@ trait GenericPrint extends AutoDerivation[PrettyPrintable]:
 
         override def asString(
             using conf: Configuration
-        ): String = ctx.choose(value)(sub => Rendering.value(sub.value)(using sub.typeclass))
+        ): String = Rendering.nullOr(value):
+          ctx.choose(value)(sub => Rendering.value(sub.value)(using sub.typeclass))
 
   private def field[T](
       param: CaseClass.Param[Typeclass, T],
@@ -211,7 +216,7 @@ object PrettyPrintable extends GenericPrint:
 
         override def asString(
             using configuration: Configuration
-        ): String = render(x, configuration)
+        ): String = Rendering.nullOr(x)(render(x, configuration))
 
   private def quotedChar(x: Char): String =
     s"'${Rendering.escaped(x.toString).replace("'", "\\'")}'"

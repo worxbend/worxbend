@@ -1,16 +1,9 @@
 {
   "assignAutomerge": true,
-  "schedule": [
-    "after 10pm every weekday",
-    "before 5am every weekday"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "assignees": [
-    "@limpid-kzonix"
-  ],
-  "branchName": "feature/deps-{{{branchPrefix}}}{{{managerBranchPrefix}}}{{{branchTopic}}}",
+  "schedule": ["after 10pm every weekday", "before 5am every weekday"],
+  "labels": ["dependencies"],
+  "assignees": ["@limpid-kzonix"],
+  "branchPrefix": "feature/deps-renovate/",
   "enabledManagers": [
     "ansible",
     "bazel",
@@ -28,7 +21,7 @@
     "gradle-wrapper",
     "kubernetes",
     "maven",
-    "mill",
+    "custom.regex",
     "npm",
     "pip_requirements",
     "pip_setup",
@@ -37,15 +30,68 @@
     "terraform",
     "travis"
   ],
-  "extends": [
-    "config:base"
-  ],
+  "extends": ["config:recommended"],
   "vulnerabilityAlerts": {
-    "labels": [
-      "security"
-    ],
-    "assignees": [
-      "@limpid-kzonix"
-    ]
-  }
+    "labels": ["security"],
+    "assignees": ["@limpid-kzonix"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Scala compiler for the Reveal and Pretty-Printo libraries",
+      "managerFilePatterns": [
+        "/^libs/commons/(reveal|pretty-printo)/package\\.mill$/"
+      ],
+      "matchStrings": ["def scalaVersion = \"(?<currentValue>[^\"\\s]+)\""],
+      "depNameTemplate": "org.scala-lang:scala3-compiler_3",
+      "datasourceTemplate": "maven",
+      "versioningTemplate": "maven"
+    },
+    {
+      "customType": "regex",
+      "description": "Scala 3 Maven dependencies in the two renderer modules",
+      "managerFilePatterns": [
+        "/^libs/commons/(reveal|pretty-printo)/package\\.mill$/"
+      ],
+      "matchStrings": [
+        "mvn\"(?<groupId>[^\":\\s]+)::(?<artifactId>[^\":\\s]+):(?<currentValue>[^\"\\s]+)\""
+      ],
+      "depNameTemplate": "{{{groupId}}}:{{{artifactId}}}_3",
+      "datasourceTemplate": "maven",
+      "versioningTemplate": "maven"
+    },
+    {
+      "customType": "regex",
+      "description": "JMH used only by renderer benchmarks",
+      "managerFilePatterns": [
+        "/^libs/commons/renderer-benchmarks/package\\.mill$/"
+      ],
+      "matchStrings": ["def jmhCoreVersion = \"(?<currentValue>[^\"\\s]+)\""],
+      "depNameTemplate": "org.openjdk.jmh:jmh-core",
+      "datasourceTemplate": "maven",
+      "versioningTemplate": "maven"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Follow stable Scala 3 releases, including the latest non-LTS line",
+      "matchFileNames": [
+        "libs/commons/reveal/package.mill",
+        "libs/commons/pretty-printo/package.mill"
+      ],
+      "matchPackageNames": ["org.scala-lang:scala3-compiler_3"],
+      "allowedVersions": "/^3\\./",
+      "ignoreUnstable": true
+    },
+    {
+      "description": "Validate shared renderer dependency updates together",
+      "matchFileNames": [
+        "libs/commons/reveal/package.mill",
+        "libs/commons/pretty-printo/package.mill",
+        "libs/commons/renderer-benchmarks/package.mill"
+      ],
+      "groupName": "renderer library dependencies",
+      "automerge": false
+    }
+  ]
 }
